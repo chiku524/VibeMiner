@@ -1,0 +1,17 @@
+{
+  "name": "crypto-miner",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w crypto-miner-web",
+    "build": "npm run build -w @crypto-miner/shared && npm run build -w crypto-miner-web",
+    "desktop": "npm run dev -w crypto-miner-desktop",
+    "desktop:build": "npm run build -w crypto-miner-desktop"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

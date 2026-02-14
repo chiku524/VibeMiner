@@ -1,0 +1,30 @@
+{
+  "name": "crypto-miner-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:web\" \"wait-on http://localhost:3000 && electron .\"",
+    "dev:web": "npm run dev -w crypto-miner-web",
+    "build": "npm run build:web && node -e \"const fs=require('fs'); const p=require('path'); const src=p.join(__dirname,'../web/out'); const dest=p.join(__dirname,'out'); if(fs.existsSync(src)) { fs.cpSync(src, dest, {recursive:true}); }\" && electron-builder",
+    "build:web": "npm run build -w crypto-miner-web",
+    "start": "electron ."
+  },
+  "dependencies": {
+    "electron": "^28.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron-builder": "^24.9.1",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.vibemine.app",
+    "productName": "Vibe Mine",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "out/**/*"],
+    "mac": { "category": "public.app-category.finance", "target": ["dmg"] },
+    "win": { "target": ["nsis"] },
+    "linux": { "target": ["AppImage"] }
+  }
+}

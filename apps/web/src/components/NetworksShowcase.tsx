@@ -1,0 +1,168 @@
+'use client';
+
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { getMainnetNetworks, getDevnetNetworks } from '@crypto-miner/shared';
+import type { BlockchainNetwork } from '@crypto-miner/shared';
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08 },
+  },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 },
+};
+
+function NetworkCard({ network }: { network: BlockchainNetwork }) {
+  const isLive = network.status === 'live';
+  const isRequest = network.status === 'requested';
+  const isDevnet = network.environment === 'devnet';
+
+  return (
+    <motion.article
+      variants={item}
+      className="group relative overflow-hidden rounded-2xl border border-white/5 bg-surface-900/50 p-6 transition hover:border-accent-cyan/20 hover:bg-surface-850/80"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/5 text-2xl">
+            {network.icon}
+          </span>
+          <div>
+            <h3 className="font-display font-semibold text-white">{network.name}</h3>
+            <p className="text-sm text-gray-500">
+              {network.symbol} · {network.algorithm}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {isDevnet && (
+            <span className="rounded-full bg-violet-500/20 px-2.5 py-1 text-xs font-medium text-violet-300">
+              Devnet
+            </span>
+          )}
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              isLive
+                ? 'bg-accent-emerald/20 text-accent-emerald'
+                : isRequest
+                  ? 'bg-accent-amber/20 text-accent-amber'
+                  : 'bg-gray-500/20 text-gray-400'
+            }`}
+          >
+            {network.status === 'live'
+              ? 'Live'
+              : network.status === 'coming-soon'
+                ? 'Soon'
+                : 'Request service'}
+          </span>
+        </div>
+      </div>
+      <p className="mt-4 text-sm leading-relaxed text-gray-400">{network.description}</p>
+      {network.rewardRate && (
+        <p className="mt-2 font-mono text-xs text-accent-cyan">{network.rewardRate}</p>
+      )}
+      <div className="mt-4 flex flex-wrap gap-2">
+        {isLive && (
+          <Link
+            href={`/dashboard?env=${network.environment}&network=${network.id}`}
+            className="rounded-lg bg-accent-cyan/20 px-3 py-1.5 text-sm font-medium text-accent-cyan transition hover:bg-accent-cyan/30"
+          >
+            Mine
+          </Link>
+        )}
+        {network.website && (
+          <a
+            href={network.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-gray-400 transition hover:border-white/20 hover:text-white"
+          >
+            Website
+          </a>
+        )}
+        {isRequest && (
+          <Link
+            href="/#request-service"
+            className="rounded-lg bg-accent-amber/20 px-3 py-1.5 text-sm font-medium text-accent-amber transition hover:bg-accent-amber/30"
+          >
+            Request service
+          </Link>
+        )}
+      </div>
+    </motion.article>
+  );
+}
+
+function NetworkGrid({ networks, title, subtitle, id }: { networks: BlockchainNetwork[]; title: string; subtitle: string; id: string }) {
+  return (
+    <div id={id} className="scroll-mt-24">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="mb-8"
+      >
+        <h3 className="font-display text-2xl font-bold tracking-tight">{title}</h3>
+        <p className="mt-1 text-gray-400">{subtitle}</p>
+      </motion.div>
+      <motion.div
+        variants={container}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, margin: '-40px' }}
+        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        {networks.map((network) => (
+          <NetworkCard key={`${network.environment}-${network.id}`} network={network} />
+        ))}
+      </motion.div>
+    </div>
+  );
+}
+
+export function NetworksShowcase() {
+  const mainnetNetworks = getMainnetNetworks();
+  const devnetNetworks = getDevnetNetworks();
+
+  return (
+    <section id="networks" className="relative border-t border-white/5 py-24">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16 text-center"
+        >
+          <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+            Networks requesting our service
+          </h2>
+          <p className="mt-3 text-gray-400">
+            Mainnet for production mining and sync; devnet for testing. Pick one and start.
+          </p>
+        </motion.div>
+
+        <NetworkGrid
+          id="mainnet"
+          title="Mainnet"
+          subtitle="Production networks. Miners and chains stay in sync here. Real rewards."
+          networks={mainnetNetworks}
+        />
+
+        <div className="mt-16 pt-16 border-t border-white/5">
+          <NetworkGrid
+            id="devnet"
+            title="Devnet"
+            subtitle="Test networks for integration and validation. No real value—for developers and networks testing our service."
+            networks={devnetNetworks}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
