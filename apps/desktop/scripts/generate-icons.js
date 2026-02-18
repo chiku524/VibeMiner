@@ -41,4 +41,16 @@ const macIcns = path.join(buildDir, 'icons', 'mac', 'icon.icns');
 if (fs.existsSync(winIco)) fs.copyFileSync(winIco, path.join(buildDir, 'icon.ico'));
 if (fs.existsSync(macIcns)) fs.copyFileSync(macIcns, path.join(buildDir, 'icon.icns'));
 if (fs.existsSync(outPng)) fs.copyFileSync(outPng, path.join(buildDir, 'icon.png'));
+
+// Linux AppImage expects build/icons/ to contain size-named PNGs (e.g. 256x256.png)
+const iconsDir = path.join(buildDir, 'icons');
+if (!fs.existsSync(iconsDir)) fs.mkdirSync(iconsDir, { recursive: true });
+const sizes = [16, 32, 48, 64, 128, 256, 512];
+for (const size of sizes) {
+  const resvgSize = new Resvg(svg, { fitTo: { mode: 'width', value: size } });
+  const png = resvgSize.render().asPng();
+  fs.writeFileSync(path.join(iconsDir, `${size}x${size}.png`), png);
+}
+console.log('Linux icons ready in build/icons/');
+
 console.log('Icons ready in build/');
