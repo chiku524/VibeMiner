@@ -31,7 +31,17 @@ The `/download` page will then offer the correct installer per platform (and sug
 
 ### Auto-updates
 
-The desktop app uses **electron-updater** and checks GitHub Releases for new versions. When you push a new tag (e.g. `v1.0.2`), the release workflow builds installers and uploads them plus the update metadata (`latest.yml`, etc.) to the release. Installed apps check for updates on startup and every 4 hours; if a new version is available they download it in the background and install on the next quit. No extra setup is required beyond publishing releases as above.
+The desktop app uses **electron-updater** and checks GitHub Releases for new versions. When you push a new tag (e.g. `v1.0.2`), the release workflow builds installers and uploads them plus the update metadata (`latest.yml`, etc.) to the release.
+
+**When updates run (installed app only):**
+
+- **On every app startup** — the app checks for a newer version.
+- **Every 4 hours** — while the app is open, it checks again.
+- **Install happens when you quit** — if an update was found and downloaded, it is applied when you close the app. The next time you open the app, you’re on the new version.
+
+So if you still see old behavior (e.g. dev tools, blank screen): **fully quit the app and open it again**. If an update was already downloaded, that reopen will be the new version. You can also use **Dashboard → Desktop app settings → “Check for updates”** to trigger a check and see “Update available — quit and reopen the app to install” or “You’re up to date”.
+
+**Important:** Auto-update only runs for the **installed** app (the .exe / .dmg / AppImage you downloaded from Releases). If you run the app from source (`npm run dev` or `electron .`), you are not running the installed build — you’ll see dev tools and localhost, and no auto-update. To get the fixed behaviour (no dev tools, no blank screen), run the installer from the [Releases](https://github.com/chiku524/crypto-miner/releases) page.
 
 ---
 

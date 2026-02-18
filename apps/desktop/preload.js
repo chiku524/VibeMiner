@@ -8,4 +8,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setAutoUpdateEnabled: (enabled) => ipcRenderer.invoke('setAutoUpdateEnabled', enabled),
   getAppVersion: () => ipcRenderer.invoke('getAppVersion'),
   reload: () => ipcRenderer.invoke('reload'),
+  checkForUpdates: () => ipcRenderer.invoke('checkForUpdates'),
 });

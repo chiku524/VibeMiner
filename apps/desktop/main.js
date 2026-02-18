@@ -118,6 +118,14 @@ app.whenReady().then(() => {
   });
   ipcMain.handle('getAppVersion', () => app.getVersion());
   ipcMain.handle('reload', () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.reload(); });
+  ipcMain.handle('checkForUpdates', async () => {
+    try {
+      const result = await autoUpdater.checkForUpdatesAndNotify();
+      return { updateAvailable: !!(result && result.updateInfo) };
+    } catch {
+      return { updateAvailable: false, error: true };
+    }
+  });
 
   createWindow();
 });
