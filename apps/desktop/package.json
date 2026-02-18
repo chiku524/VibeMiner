@@ -2,6 +2,7 @@
   "name": "crypto-miner-desktop",
   "version": "1.0.0",
   "private": true,
+  "description": "VibeMiner desktop app — mine for networks that need you. No terminal required.",
   "author": "nico.builds",
   "main": "main.js",
   "scripts": {
@@ -12,10 +13,11 @@
     "start": "electron ."
   },
   "dependencies": {
-    "electron": "^28.0.0"
+    "electron-updater": "^6.3.9"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
+    "electron": "^28.0.0",
     "electron-builder": "^24.9.1",
     "wait-on": "^7.2.0"
   },
@@ -29,6 +31,12 @@
       "main.js",
       "preload.js"
     ],
+    "publish": {
+      "provider": "github",
+      "owner": "chiku524",
+      "repo": "crypto-miner",
+      "vPrefixedTagName": true
+    },
     "mac": {
       "category": "public.app-category.finance",
       "target": [

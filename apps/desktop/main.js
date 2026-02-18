@@ -1,7 +1,37 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const fs = require('fs');
+const { autoUpdater } = require('electron-updater');
 
 const isDev = process.env.NODE_ENV !== 'production' || !app.isPackaged;
+
+const SETTINGS_FILE = 'settings.json';
+function getSettingsPath() {
+  return path.join(app.getPath('userData'), SETTINGS_FILE);
+}
+function loadSettings() {
+  try {
+    const data = fs.readFileSync(getSettingsPath(), 'utf8');
+    const s = JSON.parse(data);
+    return { autoUpdate: s.autoUpdate !== false };
+  } catch {
+    return { autoUpdate: true };
+  }
+}
+function saveSettings(settings) {
+  fs.writeFileSync(getSettingsPath(), JSON.stringify(settings, null, 2), 'utf8');
+}
+
+let updateCheckInterval = null;
+function scheduleAutoUpdateChecks() {
+  if (updateCheckInterval) clearInterval(updateCheckInterval);
+  if (!loadSettings().autoUpdate) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.allowPrerelease = false;
+  autoUpdater.checkForUpdatesAndNotify().catch(() => {});
+  updateCheckInterval = setInterval(() => autoUpdater.checkForUpdatesAndNotify().catch(() => {}), 4 * 60 * 60 * 1000);
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -31,7 +61,21 @@ function createWindow() {
   win.once('ready-to-show', () => win.show());
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  if (!isDev) scheduleAutoUpdateChecks();
+
+  ipcMain.handle('getAutoUpdateEnabled', () => loadSettings().autoUpdate);
+  ipcMain.handle('setAutoUpdateEnabled', (_, enabled) => {
+    const s = loadSettings();
+    s.autoUpdate = !!enabled;
+    saveSettings(s);
+    scheduleAutoUpdateChecks();
+    return s.autoUpdate;
+  });
+  ipcMain.handle('getAppVersion', () => app.getVersion());
+
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

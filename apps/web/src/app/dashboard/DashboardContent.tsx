@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { NetworkModal } from '@/components/ui/NetworkModal';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
+import { DesktopAppSettings } from '@/components/DesktopAppSettings';
 
 const ENV_OPTIONS: { value: NetworkEnvironment; label: string }[] = [
   { value: 'mainnet', label: 'Mainnet' },
@@ -164,6 +165,8 @@ export function DashboardContent() {
             Choose Mainnet or Devnet, then select a network. Press <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs">S</kbd> to quick-start first network, <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs">Esc</kbd> to stop.
           </p>
         </motion.div>
+
+        <DesktopAppSettings />
 
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">

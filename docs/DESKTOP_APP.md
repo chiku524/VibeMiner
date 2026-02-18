@@ -29,6 +29,10 @@ Releases are built and published automatically when you **push a version tag** t
 
 The `/download` page will then offer the correct installer per platform (and suggest the one for the user’s OS).
 
+### Auto-updates
+
+The desktop app uses **electron-updater** and checks GitHub Releases for new versions. When you push a new tag (e.g. `v1.0.2`), the release workflow builds installers and uploads them plus the update metadata (`latest.yml`, etc.) to the release. Installed apps check for updates on startup and every 4 hours; if a new version is available they download it in the background and install on the next quit. No extra setup is required beyond publishing releases as above.
+
 ---
 
 ## 2. Trust & security: code signing and notarization

@@ -48,7 +48,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: desktop-windows
-          path: apps/desktop/dist/*.exe
+          path: |
+            apps/desktop/dist/*.exe
+            apps/desktop/dist/*.yml
+            apps/desktop/dist/*.blockmap
 
   build-macos:
     runs-on: macos-latest
@@ -82,7 +85,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: desktop-macos
-          path: apps/desktop/dist/*.dmg
+          path: |
+            apps/desktop/dist/*.dmg
+            apps/desktop/dist/*.yml
+            apps/desktop/dist/*.blockmap
 
   build-linux:
     runs-on: ubuntu-latest
@@ -113,7 +119,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: desktop-linux
-          path: apps/desktop/dist/*.AppImage
+          path: |
+            apps/desktop/dist/*.AppImage
+            apps/desktop/dist/*.yml
 
   release:
     needs: [build-windows, build-macos, build-linux]
