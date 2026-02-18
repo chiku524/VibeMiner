@@ -41,7 +41,10 @@ export function DownloadPageContent({ initialDownloads, githubReleasesUrl }: Dow
   useEffect(() => {
     fetch('/api/desktop-downloads')
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: DesktopDownloadUrls | null) => data && setLatest(data))
+      .then((data: unknown) => {
+        const urls = data as DesktopDownloadUrls | null;
+        if (urls && (urls.win ?? urls.mac ?? urls.linux)) setLatest(urls);
+      })
       .catch(() => {});
   }, []);
 
