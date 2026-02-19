@@ -6,6 +6,9 @@ import {
   sessionCookieHeader,
 } from '@/lib/auth-server';
 
+const SERVICE_UNAVAILABLE_MESSAGE =
+  'Sign-in service is temporarily unavailable. Please try again in a moment or contact support.';
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -15,7 +18,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing email or password' }, { status: 400 });
     }
 
-    const { DB } = await getEnv();
+    let env: Awaited<ReturnType<typeof getEnv>>;
+    try {
+      env = await getEnv();
+    } catch (err) {
+      console.error('Login getEnv error:', err);
+      return NextResponse.json({ error: SERVICE_UNAVAILABLE_MESSAGE }, { status: 503 });
+    }
+
+    const { DB } = env;
 
     const row = await DB.prepare(
       'select id, email, password_hash, account_type, display_name, network_name, network_website, created_at, updated_at from users where email = ?'
@@ -33,7 +44,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
-    const token = await createSession(row.id as string);
+    let token: string;
+    try {
+      token = await createSession(row.id as string);
+    } catch (sessionErr) {
+      console.error('Login createSession error:', sessionErr);
+      return NextResponse.json({ error: SERVICE_UNAVAILABLE_MESSAGE }, { status: 503 });
+    }
 
     const response = NextResponse.json({
       user: {
@@ -51,6 +68,9 @@ export async function POST(request: Request) {
     return response;
   } catch (err) {
     console.error('Login error:', err);
-    return NextResponse.json({ error: 'Login failed' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Sign-in failed. Please try again or contact support if it persists.' },
+      { status: 500 }
+    );
   }
 }

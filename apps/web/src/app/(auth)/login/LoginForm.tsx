@@ -100,7 +100,11 @@ export function LoginForm() {
         {error && (
           <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
             {error}
-            <span className="mt-1 block text-xs text-gray-500">Check your email and password, or try again.</span>
+            <span className="mt-1 block text-xs text-gray-500">
+              {error.includes('temporarily unavailable') || error.includes('contact support')
+                ? 'If this keeps happening, try again in a moment or contact support.'
+                : 'Check your email and password, or try again.'}
+            </span>
           </p>
         )}
         <button
