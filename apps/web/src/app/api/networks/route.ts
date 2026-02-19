@@ -64,5 +64,7 @@ function rowToNetwork(row: Record<string, unknown>, environment: 'mainnet' | 'de
     website: row.website ?? undefined,
     rewardRate: row.reward_rate ?? undefined,
     minPayout: row.min_payout ?? undefined,
+    /** ISO date when listed (for discovery: newest first). Only on dynamically listed networks. */
+    listedAt: typeof row.created_at === 'string' ? row.created_at : undefined,
   };
 }

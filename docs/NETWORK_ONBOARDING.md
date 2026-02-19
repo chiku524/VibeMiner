@@ -39,15 +39,15 @@ This document describes how to onboard a **testnet** (devnet) network so it appe
   - **Symbol** (e.g. “MYC”)
   - **Algorithm** (e.g. “RandomX”, “kHeavyHash”)
   - **Environment**: choose **Devnet** (testnet). **No listing fee** for devnet.
-  - **Description** (optional; default: “{name} blockchain”)
-  - **Pool URL** and **Pool port** (optional but needed for miners to connect)
+  - **Description** (required, min. 20 characters)—describe your network and why miners would contribute (use case, testnet goals, etc.).
+  - **Pool URL** and **Pool port** (required)—miners connect here; listing is rejected without them.
   - **Website** (optional)
 - Submit the form.
 
 ### 5. What happens on submit
 
 - The app sends a **POST** to **`/api/networks/register`** with the form data.
-- **Validation**: payload is validated with the shared network schema (`id`, `name`, `symbol`, `algorithm`, `environment`, `description`, `icon`, optional `poolUrl`, `poolPort`, `website`, `status`, etc.). The `id` is derived from the network name (lowercase, hyphens).
+- **Validation**: payload is validated with the shared network schema. The API also requires a **description** of at least 20 characters and a valid **pool URL** and **pool port** so listings have a clear use case and miners can connect. The `id` is derived from the network name (lowercase, hyphens).
 - **Devnet**: no payment is required. Mainnet would require the listing fee (see [/fees](/fees)).
 - **Uniqueness**: the API checks that:
   - No row in **`network_listings`** has the same stored id (for devnet the stored id is `{id}-devnet`, e.g. `my-chain-devnet`).
@@ -78,7 +78,7 @@ You can also onboard a devnet network programmatically:
   "symbol": "MYC",
   "algorithm": "MyAlgo",
   "environment": "devnet",
-  "description": "Test network for My Chain.",
+  "description": "Test network for My Chain. Miners can help validate the chain before mainnet launch.",
   "icon": "⛓",
   "status": "live",
   "poolUrl": "pool.dev.mychain.com",
@@ -89,6 +89,7 @@ You can also onboard a devnet network programmatically:
 }
 ```
 
+- **Required for all listings**: `description` (min. 20 characters), `poolUrl`, and `poolPort` (1–65535). Without these, the API returns 400.
 - **Devnet**: do **not** send `feeConfirmed` or `feeTxHash`; they are only required for mainnet when `FEE_CONFIG.NETWORK_LISTING.devnetFree` is true.
 - Stored id in the DB will be **`my-chain-devnet`**.
 - Required fields and limits are defined in `packages/shared/src/schema.ts` (`BlockchainNetworkSchema`).
@@ -102,6 +103,16 @@ You can also onboard a devnet network programmatically:
 | **Fee** | Free | One-time listing fee (see `/fees`) |
 | **Stored id** | `{id}-devnet` | `{id}` |
 | **Payment in API** | Not required | `feeConfirmed: true` or `feeTxHash` required (full payment flow TBD) |
+
+---
+
+## Network discovery
+
+To give new networks a chance to gain traction as the list grows:
+
+- **Dashboard** (`/dashboard`): Networks are loaded from the API (static + dynamically listed). **Sort** options: **Newest first** (default), Name A–Z, Name Z–A. **Search** filters by name, symbol, algorithm, and description. Networks listed in the last 30 days show a **New** badge.
+- **Homepage** (`/#networks`): Mainnet and devnet sections fetch from the API and are ordered **newest first**; search includes description. **New** badge on recently listed networks.
+- **API** (`GET /api/networks`): Returns `mainnet` and `devnet` arrays. Dynamically listed networks include `listedAt` (ISO date) for clients to sort or highlight.
 
 ---
 

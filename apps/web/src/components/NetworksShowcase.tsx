@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
 import { getMainnetNetworks, getDevnetNetworks } from '@vibeminer/shared';
 import type { BlockchainNetwork } from '@vibeminer/shared';
+
+type NetworkWithMeta = BlockchainNetwork & { listedAt?: string };
 
 function filterNetworks(networks: BlockchainNetwork[], query: string): BlockchainNetwork[] {
   if (!query.trim()) return networks;
@@ -13,8 +15,18 @@ function filterNetworks(networks: BlockchainNetwork[], query: string): Blockchai
     (n) =>
       n.name.toLowerCase().includes(q) ||
       n.symbol.toLowerCase().includes(q) ||
-      n.algorithm.toLowerCase().includes(q)
+      n.algorithm.toLowerCase().includes(q) ||
+      (n.description && n.description.toLowerCase().includes(q))
   );
+}
+
+function sortNewestFirst(networks: NetworkWithMeta[]): NetworkWithMeta[] {
+  return [...networks].sort((a, b) => {
+    const aAt = a.listedAt ? new Date(a.listedAt).getTime() : 0;
+    const bAt = b.listedAt ? new Date(b.listedAt).getTime() : 0;
+    if (bAt !== aAt) return bAt - aAt;
+    return (a.name || '').localeCompare(b.name || '');
+  });
 }
 
 const container = {
@@ -30,7 +42,7 @@ const item = {
   show: { opacity: 1, y: 0 },
 };
 
-function NetworkCard({ network }: { network: BlockchainNetwork }) {
+function NetworkCard({ network, isNew }: { network: BlockchainNetwork; isNew?: boolean }) {
   const isLive = network.status === 'live';
   const isRequest = network.status === 'requested';
   const isDevnet = network.environment === 'devnet';
@@ -46,7 +58,14 @@ function NetworkCard({ network }: { network: BlockchainNetwork }) {
             {network.icon}
           </span>
           <div>
-            <h3 className="font-display font-semibold text-white">{network.name}</h3>
+            <h3 className="font-display font-semibold text-white flex items-center gap-2">
+              {network.name}
+              {isNew && (
+                <span className="rounded bg-accent-cyan/20 px-1.5 py-0.5 text-xs font-medium text-accent-cyan">
+                  New
+                </span>
+              )}
+            </h3>
             <p className="text-sm text-gray-500">
               {network.symbol} · {network.algorithm}
             </p>
@@ -111,6 +130,8 @@ function NetworkCard({ network }: { network: BlockchainNetwork }) {
   );
 }
 
+const NEW_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
 function NetworkGrid({
   networks,
   title,
@@ -120,7 +141,7 @@ function NetworkGrid({
   onClearSearch,
   reducedMotion,
 }: {
-  networks: BlockchainNetwork[];
+  networks: NetworkWithMeta[];
   title: string;
   subtitle: string;
   id: string;
@@ -169,9 +190,18 @@ function NetworkGrid({
           viewport={{ once: true, margin: '-40px' }}
           className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
         >
-          {networks.map((network) => (
-            <NetworkCard key={`${network.environment}-${network.id}`} network={network} />
-          ))}
+          {networks.map((network) => {
+            const isNew =
+              network.listedAt &&
+              Date.now() - new Date(network.listedAt).getTime() < NEW_DAYS_MS;
+            return (
+              <NetworkCard
+                key={`${network.environment}-${network.id}`}
+                network={network}
+                isNew={!!isNew}
+              />
+            );
+          })}
         </motion.div>
       )}
     </div>
@@ -181,10 +211,35 @@ function NetworkGrid({
 export function NetworksShowcase() {
   const reduced = useReducedMotion() ?? false;
   const [searchQuery, setSearchQuery] = useState('');
-  const mainnetNetworks = useMemo(() => getMainnetNetworks(), []);
-  const devnetNetworks = useMemo(() => getDevnetNetworks(), []);
-  const filteredMainnet = useMemo(() => filterNetworks(mainnetNetworks, searchQuery), [mainnetNetworks, searchQuery]);
-  const filteredDevnet = useMemo(() => filterNetworks(devnetNetworks, searchQuery), [devnetNetworks, searchQuery]);
+  const [mainnetNetworks, setMainnetNetworks] = useState<NetworkWithMeta[]>(() =>
+    getMainnetNetworks() as NetworkWithMeta[]
+  );
+  const [devnetNetworks, setDevnetNetworks] = useState<NetworkWithMeta[]>(() =>
+    getDevnetNetworks() as NetworkWithMeta[]
+  );
+
+  useEffect(() => {
+    fetch('/api/networks')
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Failed to fetch'))))
+      .then((data: { mainnet?: NetworkWithMeta[]; devnet?: NetworkWithMeta[] }) => {
+        if (Array.isArray(data.mainnet)) {
+          setMainnetNetworks(sortNewestFirst(data.mainnet));
+        }
+        if (Array.isArray(data.devnet)) {
+          setDevnetNetworks(sortNewestFirst(data.devnet));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const filteredMainnet = useMemo(
+    () => filterNetworks(mainnetNetworks, searchQuery),
+    [mainnetNetworks, searchQuery]
+  );
+  const filteredDevnet = useMemo(
+    () => filterNetworks(devnetNetworks, searchQuery),
+    [devnetNetworks, searchQuery]
+  );
 
   return (
     <section id="networks" className="relative border-t border-white/5 py-24">
@@ -200,7 +255,7 @@ export function NetworksShowcase() {
             Networks requesting our service
           </h2>
           <p className="mt-3 text-gray-400">
-            Mainnet for production mining and sync; devnet for testing. Pick one and start.
+            Mainnet for production mining and sync; devnet for testing. New networks surface first—discover and start.
           </p>
         </motion.div>
         <motion.div
@@ -212,7 +267,7 @@ export function NetworksShowcase() {
         >
           <input
             type="search"
-            placeholder="Search networks..."
+            placeholder="Search by name, symbol, algorithm, or description..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="mx-auto block w-full max-w-md rounded-xl border border-white/10 bg-surface-900/50 px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none focus:ring-1 focus:ring-accent-cyan/50"
@@ -223,7 +278,7 @@ export function NetworksShowcase() {
         <NetworkGrid
           id="mainnet"
           title="Mainnet"
-          subtitle="Production networks. Miners and chains stay in sync here. Real rewards."
+          subtitle="Production networks. Miners and chains stay in sync here. Real rewards. Newest listed first."
           networks={filteredMainnet}
           searchQuery={searchQuery}
           onClearSearch={() => setSearchQuery('')}
@@ -234,7 +289,7 @@ export function NetworksShowcase() {
           <NetworkGrid
             id="devnet"
             title="Devnet"
-            subtitle="Test networks for integration and validation. No real value—for developers and networks testing our service."
+            subtitle="Test networks for integration and validation. Newest listed first so new chains get visibility."
             networks={filteredDevnet}
             searchQuery={searchQuery}
             onClearSearch={() => setSearchQuery('')}

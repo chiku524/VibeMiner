@@ -39,16 +39,34 @@ export function RequestListingForm() {
     setErrorMsg(null);
 
     const baseId = toNetworkId(name);
+    const desc = description.trim();
+    const portNum = poolPort ? Number(poolPort) : undefined;
+    if (desc.length < 20) {
+      setStatus('error');
+      setErrorMsg('Please provide a clear description of your network and its use case (at least 20 characters).');
+      return;
+    }
+    if (!poolUrl.trim()) {
+      setStatus('error');
+      setErrorMsg('Pool URL is required so miners can connect to your network.');
+      return;
+    }
+    if (portNum == null || portNum < 1 || portNum > 65535) {
+      setStatus('error');
+      setErrorMsg('Please enter a valid pool port (1–65535).');
+      return;
+    }
+
     const payload = {
       id: baseId,
       name,
       symbol,
       algorithm,
       environment,
-      description: description || `${name} blockchain`,
+      description: desc,
       icon: '⛓',
-      poolUrl: poolUrl || undefined,
-      poolPort: poolPort ? Number(poolPort) : undefined,
+      poolUrl: poolUrl.trim(),
+      poolPort: portNum,
       website: website || undefined,
       status: 'live',
       ...(requiresFee && { feeConfirmed }),
@@ -168,24 +186,29 @@ export function RequestListingForm() {
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="req-pool" className="block text-sm font-medium text-gray-400">Pool URL (optional)</label>
+          <label htmlFor="req-pool" className="block text-sm font-medium text-gray-400">Pool URL (required)</label>
           <input
             id="req-pool"
             type="text"
             value={poolUrl}
             onChange={(e) => setPoolUrl(e.target.value)}
             placeholder="pool.example.com"
+            required
             className="mt-1 w-full rounded-lg border border-white/10 bg-surface-850 px-4 py-2.5 text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none"
           />
+          <p className="mt-1 text-xs text-gray-500">Miners connect here; required for listing.</p>
         </div>
         <div>
-          <label htmlFor="req-port" className="block text-sm font-medium text-gray-400">Pool port (optional)</label>
+          <label htmlFor="req-port" className="block text-sm font-medium text-gray-400">Pool port (required)</label>
           <input
             id="req-port"
             type="number"
             value={poolPort}
             onChange={(e) => setPoolPort(e.target.value)}
             placeholder="3333"
+            min={1}
+            max={65535}
+            required
             className="mt-1 w-full rounded-lg border border-white/10 bg-surface-850 px-4 py-2.5 text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none"
           />
         </div>
@@ -202,15 +225,18 @@ export function RequestListingForm() {
         />
       </div>
       <div>
-        <label htmlFor="req-desc" className="block text-sm font-medium text-gray-400">Description (optional)</label>
+        <label htmlFor="req-desc" className="block text-sm font-medium text-gray-400">Description (required)</label>
         <textarea
           id="req-desc"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
-          placeholder="Brief description of your chain..."
+          minLength={20}
+          placeholder="Describe your network and why miners would contribute (e.g. use case, rewards, testnet goals). Min. 20 characters."
+          required
           className="mt-1 w-full resize-none rounded-lg border border-white/10 bg-surface-850 px-4 py-2.5 text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none"
         />
+        <p className="mt-1 text-xs text-gray-500">Helps miners discover and choose your network. At least 20 characters.</p>
       </div>
 
       {requiresFee && (

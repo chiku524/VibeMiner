@@ -21,9 +21,18 @@ import { DesktopAppSettings } from '@/components/DesktopAppSettings';
 import { NetworkListSkeleton, DashboardSkeleton } from '@/components/ui/Skeleton';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
+/** Network from API may include listedAt for discovery (newest first). */
+type NetworkWithMeta = BlockchainNetwork & { listedAt?: string };
+
 const ENV_OPTIONS: { value: NetworkEnvironment; label: string }[] = [
   { value: 'mainnet', label: 'Mainnet' },
   { value: 'devnet', label: 'Devnet' },
+];
+
+const SORT_OPTIONS: { value: 'newest' | 'name-asc' | 'name-desc'; label: string }[] = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'name-asc', label: 'Name A–Z' },
+  { value: 'name-desc', label: 'Name Z–A' },
 ];
 
 function useStableEnv(searchParams: ReturnType<typeof useSearchParams>): NetworkEnvironment {
@@ -41,8 +50,40 @@ function filterNetworks(networks: BlockchainNetwork[], query: string): Blockchai
     (n) =>
       n.name.toLowerCase().includes(q) ||
       n.symbol.toLowerCase().includes(q) ||
-      n.algorithm.toLowerCase().includes(q)
+      n.algorithm.toLowerCase().includes(q) ||
+      (n.description && n.description.toLowerCase().includes(q))
   );
+}
+
+function sortNetworks(
+  networks: NetworkWithMeta[],
+  sort: 'newest' | 'name-asc' | 'name-desc'
+): NetworkWithMeta[] {
+  const arr = [...networks];
+  if (sort === 'newest') {
+    arr.sort((a, b) => {
+      const aAt = a.listedAt ? new Date(a.listedAt).getTime() : 0;
+      const bAt = b.listedAt ? new Date(b.listedAt).getTime() : 0;
+      if (bAt !== aAt) return bAt - aAt;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+  } else if (sort === 'name-asc') {
+    arr.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  } else {
+    arr.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+  }
+  return arr;
+}
+
+function findInLists(
+  mainnet: NetworkWithMeta[],
+  devnet: NetworkWithMeta[],
+  id: string,
+  environment?: NetworkEnvironment
+): NetworkWithMeta | undefined {
+  if (environment === 'mainnet') return mainnet.find((n) => n.id === id);
+  if (environment === 'devnet') return devnet.find((n) => n.id === id);
+  return mainnet.find((n) => n.id === id) ?? devnet.find((n) => n.id === id);
 }
 
 export function DashboardContent() {
@@ -68,6 +109,9 @@ export function DashboardContent() {
   );
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebouncedValue(searchQuery, 200);
+  const [sortBy, setSortBy] = useState<'newest' | 'name-asc' | 'name-desc'>('newest');
+  const [fetchedMainnet, setFetchedMainnet] = useState<NetworkWithMeta[] | null>(null);
+  const [fetchedDevnet, setFetchedDevnet] = useState<NetworkWithMeta[] | null>(null);
   const [startingId, setStartingId] = useState<string | null>(null);
   const [modalNetwork, setModalNetwork] = useState<BlockchainNetwork | null>(null);
   const modalTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -79,23 +123,58 @@ export function DashboardContent() {
     }
   }, [authLoading, accountType, router]);
 
-  const networksForEnv = useMemo(() => {
-    return selectedEnv === 'devnet' ? getDevnetNetworks() : getMainnetNetworks();
-  }, [selectedEnv]);
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/networks')
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Failed to fetch'))))
+      .then((data: { mainnet?: NetworkWithMeta[]; devnet?: NetworkWithMeta[] }) => {
+        if (cancelled) return;
+        setFetchedMainnet(Array.isArray(data.mainnet) ? data.mainnet : null);
+        setFetchedDevnet(Array.isArray(data.devnet) ? data.devnet : null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFetchedMainnet(null);
+          setFetchedDevnet(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const networksForEnv = useMemo((): NetworkWithMeta[] => {
+    const staticMain = getMainnetNetworks() as NetworkWithMeta[];
+    const staticDev = getDevnetNetworks() as NetworkWithMeta[];
+    const main = fetchedMainnet ?? staticMain;
+    const dev = fetchedDevnet ?? staticDev;
+    return selectedEnv === 'devnet' ? dev : main;
+  }, [selectedEnv, fetchedMainnet, fetchedDevnet]);
+
+  const sortedNetworks = useMemo(
+    () => sortNetworks(networksForEnv, sortBy),
+    [networksForEnv, sortBy]
+  );
 
   const filteredNetworks = useMemo(
-    () => filterNetworks(networksForEnv, debouncedSearch),
-    [networksForEnv, debouncedSearch]
+    () => filterNetworks(sortedNetworks, debouncedSearch),
+    [sortedNetworks, debouncedSearch]
   );
 
   const preselected = useMemo(() => {
     if (!preselectedId) return null;
+    const fromApi = findInLists(
+      fetchedMainnet ?? getMainnetNetworks() as NetworkWithMeta[],
+      fetchedDevnet ?? getDevnetNetworks() as NetworkWithMeta[],
+      preselectedId
+    );
+    if (fromApi) return fromApi;
     const byMain = getNetworkById(preselectedId, 'mainnet');
     const byDev = getNetworkById(preselectedId, 'devnet');
     if (byMain) return byMain;
     if (byDev) return byDev;
     return getNetworkById(preselectedId);
-  }, [preselectedId]);
+  }, [preselectedId, fetchedMainnet, fetchedDevnet]);
 
   const { session, startMining, stopMining } = useMiningSession();
 
@@ -121,8 +200,12 @@ export function DashboardContent() {
 
   const currentNetwork = useMemo(() => {
     if (!session) return null;
+    const main = fetchedMainnet ?? getMainnetNetworks() as NetworkWithMeta[];
+    const dev = fetchedDevnet ?? getDevnetNetworks() as NetworkWithMeta[];
+    const found = findInLists(main, dev, session.networkId, session.environment);
+    if (found) return found;
     return getNetworkById(session.networkId, session.environment);
-  }, [session]);
+  }, [session, fetchedMainnet, fetchedDevnet]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -238,12 +321,28 @@ export function DashboardContent() {
             </div>
             <input
               type="search"
-              placeholder="Search networks..."
+              placeholder="Search by name, symbol, algorithm..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="mb-4 w-full rounded-xl border border-white/10 bg-surface-850 px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none focus:ring-1 focus:ring-accent-cyan/50"
+              className="mb-3 w-full rounded-xl border border-white/10 bg-surface-850 px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none focus:ring-1 focus:ring-accent-cyan/50"
               aria-label="Search networks"
             />
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <label htmlFor="sort-networks" className="text-xs text-gray-500">Sort</label>
+              <select
+                id="sort-networks"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'newest' | 'name-asc' | 'name-desc')}
+                className="rounded-lg border border-white/10 bg-surface-850 px-3 py-1.5 text-sm text-white focus:border-accent-cyan/50 focus:outline-none"
+                aria-label="Sort networks"
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <h2 className="mb-4 font-display text-sm font-semibold uppercase tracking-wider text-gray-500">
               {selectedEnv === 'mainnet' ? 'Mainnet' : 'Devnet'} networks
               <span className="ml-1.5 font-normal normal-case text-gray-600">
@@ -264,6 +363,10 @@ export function DashboardContent() {
                 const isActive =
                   session?.networkId === network.id && session?.environment === network.environment;
                 const isStarting = startingId === network.id;
+                const nWithMeta = network as NetworkWithMeta;
+                const isNewlyListed =
+                  nWithMeta.listedAt &&
+                  (Date.now() - new Date(nWithMeta.listedAt).getTime()) < 30 * 24 * 60 * 60 * 1000;
                 return (
                   <motion.li
                     key={`${network.environment}-${network.id}`}
@@ -300,7 +403,14 @@ export function DashboardContent() {
                             </p>
                           ) : (
                             <>
-                              <p className="font-medium text-white">{network.name}</p>
+                              <p className="font-medium text-white flex items-center gap-2">
+                                {network.name}
+                                {isNewlyListed && (
+                                  <span className="rounded bg-accent-cyan/20 px-1.5 py-0.5 text-xs font-medium text-accent-cyan">
+                                    New
+                                  </span>
+                                )}
+                              </p>
                               <p className="text-xs text-gray-500">
                                 {network.symbol} · {network.algorithm}
                               </p>

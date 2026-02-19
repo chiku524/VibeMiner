@@ -24,6 +24,30 @@ export async function POST(request: Request) {
     const network = result.data;
     const isMainnet = network.environment === 'mainnet';
 
+    // Require use case and connectivity for listing (reduce spam / unusable entries)
+    const desc = typeof network.description === 'string' ? network.description.trim() : '';
+    if (desc.length < 20) {
+      return NextResponse.json(
+        {
+          error: 'Please provide a clear description of your network and its use case (at least 20 characters).',
+          seeAlso: '/fees',
+        },
+        { status: 400 }
+      );
+    }
+    if (!network.poolUrl?.trim()) {
+      return NextResponse.json(
+        { error: 'Pool URL is required so miners can connect to your network.' },
+        { status: 400 }
+      );
+    }
+    if (network.poolPort == null || network.poolPort < 1 || network.poolPort > 65535) {
+      return NextResponse.json(
+        { error: 'A valid pool port (1–65535) is required.' },
+        { status: 400 }
+      );
+    }
+
     if (isMainnet && FEE_CONFIG.NETWORK_LISTING.devnetFree) {
       const paid = feeConfirmed === true || (typeof feeTxHash === 'string' && feeTxHash.length > 0);
       if (!paid) {
