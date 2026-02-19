@@ -163,7 +163,7 @@ If **Register** or **Login** fails with "Registration failed" or "Auth service t
 
 ## 11. Download page (/download)
 
-The **/download** page shows Windows, macOS, and Linux desktop installers. It tries to load the latest links from the **GitHub Releases API**. If that request fails (e.g. rate limit for unauthenticated requests), it falls back to the URLs in **wrangler.toml** [vars]: `NEXT_PUBLIC_DESKTOP_DOWNLOAD_WIN`, `_MAC`, `_LINUX`. Those are set to the latest release (e.g. v1.0.14) so the page always shows three download options after deploy.
+The **/download** page shows Windows, macOS, and Linux desktop installers. It tries to load the latest links from the **GitHub Releases API**. If that request fails (e.g. rate limit for unauthenticated requests), it falls back to the URLs in **wrangler.toml** [vars]: `NEXT_PUBLIC_DESKTOP_DOWNLOAD_WIN`, `_MAC`, `_LINUX`. Those are set to the latest release (e.g. v1.0.15) so the page always shows three download options after deploy.
 
 **Optional:** To use the live GitHub API so the page always shows the newest release without editing wrangler.toml, add a **secret** in the Cloudflare dashboard (Workers & Pages → vibeminer → Settings → Variables → Encrypt): **GITHUB_TOKEN** with a [personal access token](https://github.com/settings/tokens) (no scopes required for public repo). Then the server can call the API with a higher rate limit and return the latest release’s installers.
 
