@@ -25,6 +25,16 @@ Copy the **database_id** (a UUID) from the output and in `apps/web/wrangler.toml
 
 ## 3. Create D1 tables
 
+Wrangler needs your **account ID** for remote commands. Set it in **apps/web/.env** (create the file if it doesn’t exist; it’s gitignored):
+
+```bash
+# apps/web/.env (do not commit; use your real account ID)
+CLOUDFLARE_ACCOUNT_ID=your_account_id_here
+CLOUDFLARE_API_TOKEN=your_api_token_here
+```
+
+You can copy your account ID from the Cloudflare dashboard URL when you open any zone, or from **Workers & Pages** in the right-hand sidebar.
+
 Run the schema from **apps/web** (use `--local` for local dev, `--remote` for production):
 
 ```bash
@@ -33,15 +43,16 @@ cd apps/web
 # Local (for wrangler dev / preview)
 npx wrangler d1 execute vibeminer-db --local --file=./d1/schema.sql
 
-# Remote (for production deploy)
+# Remote (for production deploy) — requires CLOUDFLARE_ACCOUNT_ID in .env or environment
 npx wrangler d1 execute vibeminer-db --remote --file=./d1/schema.sql
 ```
 
-Or from the repo root, use the full path:
+If you see **"Could not route to ... INJECT_ACCOUNT_ID"** or **"object identifier is invalid"**, the account ID is missing: add `CLOUDFLARE_ACCOUNT_ID` to `apps/web/.env` and run the command again from `apps/web`.
+
+Or from the repo root, use the full path (and ensure `.env` in `apps/web` has `CLOUDFLARE_ACCOUNT_ID`):
 
 ```bash
-npx wrangler d1 execute vibeminer-db --local --file=apps/web/d1/schema.sql
-npx wrangler d1 execute vibeminer-db --remote --file=apps/web/d1/schema.sql
+cd apps/web && npx wrangler d1 execute vibeminer-db --remote --file=./d1/schema.sql
 ```
 (Note: wrangler may resolve paths relative to the current directory; if you get "Unable to read SQL text file", run from `apps/web` as above.)
 
