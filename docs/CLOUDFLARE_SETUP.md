@@ -94,7 +94,9 @@ npm run deploy:cloudflare
 
 After deploy succeeds, go to **Workers & Pages** in the dashboard—**vibeminer** will be listed. Add your custom domain under **vibeminer** → **Settings** → **Domains** (see step 8). You’ll get a `*.workers.dev` URL, or you can add a [custom domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).
 
-**Deploying on Windows:** If you see "Missing file or directory" with a path ending in `.wasm?module`, that is a known Windows issue (invalid `?` in paths). Deploy from **GitHub Actions** (runs on Linux) or **WSL** instead: add repo secret `CLOUDFLARE_API_TOKEN` (Settings → Secrets → Actions), then use **Actions → Deploy to Cloudflare → Run workflow**, or run `npm run deploy:cloudflare` from WSL.
+**Deploy via GitHub Actions:** Add two repository secrets (Settings → Secrets and variables → Actions): **CLOUDFLARE_API_TOKEN** (create at [profile API tokens](https://dash.cloudflare.com/profile/api-tokens), use “Edit Cloudflare Workers” template) and **CLOUDFLARE_ACCOUNT_ID** (your account ID—stops “Authentication failed” on `/memberships`; find it in the dashboard URL when you open any zone, or in the right-hand sidebar on **Workers & Pages**). Then run **Actions → Deploy to Cloudflare → Run workflow**.
+
+**Deploying on Windows:** If you see "Missing file or directory" with a path ending in `.wasm?module`, deploy from GitHub Actions or WSL instead (see above).
 
 ### Pages (alternative)
 
