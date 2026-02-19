@@ -220,7 +220,11 @@ export function RegisterForm() {
         {error && (
           <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
             {error}
-            <span className="mt-1 block text-xs text-gray-500">Please check your details and try again.</span>
+            <span className="mt-1 block text-xs text-gray-500">
+              {error.includes('unavailable') || error.includes('try again in a moment') || error.includes('contact support')
+                ? 'If this keeps happening, try again later or contact support.'
+                : 'Please check your details and try again.'}
+            </span>
           </p>
         )}
         <button

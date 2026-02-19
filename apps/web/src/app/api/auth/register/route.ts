@@ -67,22 +67,40 @@ export async function POST(request: Request) {
     const passwordStore = `${saltHex}:${hash}`;
 
     const id = generateId();
-    await DB.prepare(
-      `insert into users (id, email, password_hash, account_type, display_name, network_name, network_website)
-       values (?, ?, ?, ?, ?, ?, ?)`
-    )
-      .bind(
-        id,
-        email.toLowerCase(),
-        passwordStore,
-        accountType,
-        accountType === 'user' ? (displayName || null) : null,
-        accountType === 'network' ? (networkName || null) : null,
-        accountType === 'network' && networkWebsite ? networkWebsite : null
+    try {
+      await DB.prepare(
+        `insert into users (id, email, password_hash, account_type, display_name, network_name, network_website)
+         values (?, ?, ?, ?, ?, ?, ?)`
       )
-      .run();
+        .bind(
+          id,
+          email.toLowerCase(),
+          passwordStore,
+          accountType,
+          accountType === 'user' ? (displayName || null) : null,
+          accountType === 'network' ? (networkName || null) : null,
+          accountType === 'network' && networkWebsite ? networkWebsite : null
+        )
+        .run();
+    } catch (dbErr) {
+      console.error('Register D1 insert error:', dbErr);
+      return NextResponse.json(
+        { error: 'Registration is temporarily unavailable. Please try again in a moment or contact support.' },
+        { status: 503 }
+      );
+    }
 
-    const token = await createSession(id);
+    let token: string;
+    try {
+      token = await createSession(id);
+    } catch (sessionErr) {
+      console.error('Register createSession error:', sessionErr);
+      return NextResponse.json(
+        { error: 'Your account was created but we couldn’t sign you in. Please try signing in.' },
+        { status: 503 }
+      );
+    }
+
     const userRow = await DB.prepare(
       'select id, email, account_type, display_name, network_name, network_website, created_at, updated_at from users where id = ?'
     )
