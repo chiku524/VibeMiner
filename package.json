@@ -9,7 +9,8 @@
     "dev": "npm run dev -w crypto-miner-web",
     "build": "npm run build -w @crypto-miner/shared && npm run build -w crypto-miner-web",
     "desktop": "npm run dev -w crypto-miner-desktop",
-    "desktop:build": "npm run build -w crypto-miner-desktop"
+    "desktop:build": "npm run build -w crypto-miner-desktop",
+    "deploy:cloudflare": "npm run build -w @crypto-miner/shared && npm run deploy -w crypto-miner-web"
   },
   "devDependencies": {
     "typescript": "^5.3.3"

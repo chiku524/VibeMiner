@@ -21,20 +21,15 @@ npx wrangler login
 npx wrangler d1 create vibeminer-db
 ```
 
-Copy the `database_id` from the output and update `wrangler.toml`:
-
-```toml
-[[d1_databases]]
-binding = "DB"
-database_name = "vibeminer-db"
-database_id = "YOUR_D1_DATABASE_ID"   # <- paste here
-```
+Copy the **database_id** (a UUID) from the output and in `apps/web/wrangler.toml` replace `YOUR_D1_DATABASE_ID` with it. If you skip this, remote D1 schema and deploy will fail with "Invalid uuid".
 
 ## 3. Create D1 tables
 
-Run the schema (use `--local` for local dev, `--remote` for production):
+Run the schema from **apps/web** (use `--local` for local dev, `--remote` for production):
 
 ```bash
+cd apps/web
+
 # Local (for wrangler dev / preview)
 npx wrangler d1 execute vibeminer-db --local --file=./d1/schema.sql
 
@@ -42,19 +37,21 @@ npx wrangler d1 execute vibeminer-db --local --file=./d1/schema.sql
 npx wrangler d1 execute vibeminer-db --remote --file=./d1/schema.sql
 ```
 
+Or from the repo root, use the full path:
+
+```bash
+npx wrangler d1 execute vibeminer-db --local --file=apps/web/d1/schema.sql
+npx wrangler d1 execute vibeminer-db --remote --file=apps/web/d1/schema.sql
+```
+(Note: wrangler may resolve paths relative to the current directory; if you get "Unable to read SQL text file", run from `apps/web` as above.)
+
 ## 4. Create KV namespace
 
 ```bash
 npx wrangler kv namespace create SESSIONS
 ```
 
-Copy the `id` from the output and update `wrangler.toml`:
-
-```toml
-[[kv_namespaces]]
-binding = "KV"
-id = "YOUR_KV_NAMESPACE_ID"   # <- paste here
-```
+Copy the **id** from the output and in `apps/web/wrangler.toml` replace `YOUR_KV_NAMESPACE_ID` with it.
 
 ## 5. Create R2 bucket
 
@@ -86,15 +83,16 @@ npm run dev
 
 Auth APIs will fail with “Cloudflare context not available”—use `npm run preview` to test auth locally.
 
-## 7. Deploy to Cloudflare
+## 7. Create the Worker project (first deploy)
 
-### Workers (recommended for full-stack)
+The **vibeminer** project appears in the Cloudflare dashboard only after you deploy. Run from the **repo root** so the shared package is built first (otherwise the build fails with "Can't resolve '@crypto-miner/shared'"):
 
 ```bash
-npm run deploy
+# From repo root (vibeminer/)
+npm run deploy:cloudflare
 ```
 
-This builds with OpenNext and deploys to Cloudflare Workers. You’ll get a `*.workers.dev` URL, or you can add a [custom domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).
+After deploy succeeds, go to **Workers & Pages** in the dashboard—**vibeminer** will be listed. Add your custom domain under **vibeminer** → **Settings** → **Domains** (see step 8). You’ll get a `*.workers.dev` URL, or you can add a [custom domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).
 
 ### Pages (alternative)
 
@@ -115,6 +113,18 @@ You can also deploy to [Cloudflare Pages](https://developers.cloudflare.com/page
 | **D1**    | Users, network_listings (automated onboarding)              |
 | **KV**    | Session tokens (7-day TTL)                                  |
 | **R2**    | File storage (e.g. network logos—future)                    |
+
+## Cloudflare optimizations (already in use)
+
+This setup is already configured for efficiency:
+
+- **D1**: Serverless SQL with no connection pooling; use for users and listings.
+- **KV**: Edge key-value store for session tokens (low latency, 7-day TTL).
+- **R2**: S3-compatible object storage (no egress fees).
+- **Worker**: Single Worker with `nodejs_compat`; OpenNext handles the Next.js runtime.
+- **Custom domain**: Add vibeminer.tech in the Worker so traffic goes to your domain with Cloudflare’s edge network.
+
+After the Worker is deployed, you can use the dashboard for **Analytics**, **Logs** (Real-time Logs or Logpush), and **Settings** (environment variables, secrets). For high traffic, consider **Caching** rules and **Rate limiting** in the dashboard.
 
 ## Network listings
 
