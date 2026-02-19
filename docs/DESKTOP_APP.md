@@ -41,7 +41,9 @@ The desktop app uses **electron-updater** and checks GitHub Releases for new ver
 
 So if you still see old behavior (e.g. dev tools, blank screen): **fully quit the app and open it again**. If an update was already downloaded, that reopen will be the new version. You can also use **Dashboard → Desktop app settings → “Check for updates”** to trigger a check and see “Update available — quit and reopen the app to install” or “You’re up to date”.
 
-**Important:** Auto-update only runs for the **installed** app (the .exe / .dmg / AppImage you downloaded from Releases). If you run the app from source (`npm run dev` or `electron .`), you are not running the installed build — you’ll see dev tools and localhost, and no auto-update. To get the fixed behaviour (no dev tools, no blank screen), run the installer from the [Releases](https://github.com/chiku524/crypto-miner/releases) page.
+**Why don’t I see an update?** Auto-update only finds a new version when a **GitHub Release** exists for a **higher** version than the one you have (e.g. the repo has `v1.0.1` and you have `1.0.0`). The release must include the built installers and update metadata (`latest.yml`, etc.) — which the **release-desktop** workflow creates when you push a version tag. If you haven’t published a release yet, or the latest release is still the same version you installed, the app will report “You’re up to date”. To ship an update: bump the version (e.g. in `apps/desktop/package.json`), push a tag like `v1.0.1`, and let the workflow run; then installed clients will see the update on next check.
+
+**Important:** Auto-update only runs for the **installed** app (the .exe / .dmg / AppImage you downloaded from Releases). If you run the app from source (`npm run dev` or `electron .`), you are not running the installed build — you’ll see dev tools and localhost, and no auto-update. To get the fixed behaviour (no dev tools, no blank screen), run the installer from the [Releases](https://github.com/chiku524/VibeMiner/releases) page.
 
 ---
 

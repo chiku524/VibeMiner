@@ -131,6 +131,25 @@ Browsers show “Not secure” when the page is loaded over **HTTP** or the **SS
 
 After the edge certificate is Active and you use **https://**, the site should show as secure (padlock) in the browser.
 
+## 10. Troubleshooting registration and auth
+
+If **Register** or **Login** fails with "Registration failed" or "Auth service temporarily unavailable":
+
+1. **Apply D1 schema to production**  
+   Registration and login need the `users` table. If you only ran the schema with `--local`, run it for the **remote** database:
+   ```bash
+   cd apps/web
+   npx wrangler d1 execute vibeminer-db --remote --file=./d1/schema.sql
+   ```
+
+2. **Check DB and KV health**  
+   Open **https://vibeminer.tech/api/health/db** in a browser (or `curl https://vibeminer.tech/api/health/db`). You should see:
+   - `"ok": true`, `"d1": true`, `"usersTable": true`, `"kv": true`  
+   If `usersTable` is `false`, apply the schema (step 1). If `ok` is `false` or you get 503, check Worker bindings (D1 database_id, KV id) in `wrangler.toml` and in the Cloudflare dashboard under the **vibeminer** Worker.
+
+3. **Redeploy**  
+   After fixing bindings or schema, run `npm run deploy:cloudflare` from the repo root (or trigger the GitHub Actions deploy).
+
 ## Summary
 
 | Resource   | Purpose                                                    |

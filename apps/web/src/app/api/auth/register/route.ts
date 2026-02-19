@@ -41,7 +41,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
     }
 
-    const { DB } = await getEnv();
+    let env: Awaited<ReturnType<typeof getEnv>>;
+    try {
+      env = await getEnv();
+    } catch (err) {
+      console.error('Register getEnv error:', err);
+      return NextResponse.json(
+        { error: 'Auth service temporarily unavailable. Please try again in a moment or contact support.' },
+        { status: 503 }
+      );
+    }
+
+    const { DB } = env;
 
     const existing = await DB.prepare('select id from users where email = ?')
       .bind(email.toLowerCase())
@@ -98,6 +109,9 @@ export async function POST(request: Request) {
     return response;
   } catch (err) {
     console.error('Register error:', err);
-    return NextResponse.json({ error: 'Registration failed' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Registration failed. Please try again or contact support if it persists.' },
+      { status: 500 }
+    );
   }
 }
