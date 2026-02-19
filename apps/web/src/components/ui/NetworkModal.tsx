@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import type { BlockchainNetwork } from '@crypto-miner/shared';
+import type { BlockchainNetwork } from '@vibeminer/shared';
 
 interface NetworkModalProps {
   network: BlockchainNetwork | null;

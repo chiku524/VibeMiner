@@ -1,0 +1,37 @@
+# Deploy VibeMiner web app to Cloudflare Workers (vibeminer.tech).
+# Runs on Linux to avoid Windows path issues with OpenNext/WASM (e.g. "?module" in paths).
+#
+# Required secret: CLOUDFLARE_API_TOKEN (create at https://dash.cloudflare.com/profile/api-tokens)
+# Optional: trigger on push to main; or run manually via Actions → Deploy to Cloudflare → Run workflow.
+
+name: Deploy to Cloudflare
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'packages/shared/**'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to Cloudflare
+        run: npm run deploy:cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

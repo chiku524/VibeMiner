@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getMainnetNetworks, getDevnetNetworks } from '@crypto-miner/shared';
+import { getMainnetNetworks, getDevnetNetworks } from '@vibeminer/shared';
 import { getEnv } from '@/lib/auth-server';
 
 /** Returns mainnet and devnet networks: static list + dynamic listings from D1. */

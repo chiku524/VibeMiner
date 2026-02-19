@@ -1,16 +1,16 @@
 {
-  "name": "crypto-miner",
+  "name": "vibeminer",
   "private": true,
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w crypto-miner-web",
-    "build": "npm run build -w @crypto-miner/shared && npm run build -w crypto-miner-web",
-    "desktop": "npm run dev -w crypto-miner-desktop",
-    "desktop:build": "npm run build -w crypto-miner-desktop",
-    "deploy:cloudflare": "npm run build -w @crypto-miner/shared && npm run deploy -w crypto-miner-web"
+    "dev": "npm run dev -w vibeminer-web",
+    "build": "npm run build -w @vibeminer/shared && npm run build -w vibeminer-web",
+    "desktop": "npm run dev -w vibeminer-desktop",
+    "desktop:build": "npm run build -w vibeminer-desktop",
+    "deploy:cloudflare": "npm run build -w @vibeminer/shared && npm run deploy -w vibeminer-web"
   },
   "devDependencies": {
     "typescript": "^5.3.3"

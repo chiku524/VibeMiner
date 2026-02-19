@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { MiningSession } from '@crypto-miner/shared';
-import type { NetworkEnvironment } from '@crypto-miner/shared';
+import type { MiningSession } from '@vibeminer/shared';
+import type { NetworkEnvironment } from '@vibeminer/shared';
 
 const SIMULATED_BASE_HASHRATE = 500;
 const SIMULATED_HASHRATE_VARIANCE = 0.15;

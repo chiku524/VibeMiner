@@ -4,8 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useToast } from '@/contexts/ToastContext';
-import { FEE_CONFIG } from '@crypto-miner/shared';
-import type { NetworkEnvironment } from '@crypto-miner/shared';
+import { FEE_CONFIG } from '@vibeminer/shared';
+import type { NetworkEnvironment } from '@vibeminer/shared';
 
 type RequestStatus = 'idle' | 'pending' | 'listed' | 'error';
 

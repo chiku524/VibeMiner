@@ -1,6 +1,6 @@
 # Deploying the web app to Vercel (monorepo)
 
-The web app lives in `apps/web` and depends on the workspace package `@crypto-miner/shared`. For the build to succeed, Vercel must install from the **repository root** so that the shared package is available.
+The web app lives in `apps/web` and depends on the workspace package `@vibeminer/shared`. For the build to succeed, Vercel must install from the **repository root** so that the shared package is available.
 
 ## Project settings
 
@@ -11,7 +11,7 @@ The web app lives in `apps/web` and depends on the workspace package `@crypto-mi
    - **Install:** `cd ../.. && npm install` (runs from repo root)
    - **Build:** `cd ../.. && npm run build` (builds shared then web)
 
-If the build still fails with `Module not found: '@crypto-miner/shared'`, confirm that:
+If the build still fails with `Module not found: '@vibeminer/shared'`, confirm that:
 - The option **Include source files outside of the Root Directory** is enabled.
 - The latest commit (with `apps/web/vercel.json`) is deployed.
 

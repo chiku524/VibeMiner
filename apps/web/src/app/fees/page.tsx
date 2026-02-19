@@ -1,4 +1,4 @@
-import { FEE_CONFIG, formatWithdrawalFee } from '@crypto-miner/shared';
+import { FEE_CONFIG, formatWithdrawalFee } from '@vibeminer/shared';
 import Link from 'next/link';
 import { Nav } from '@/components/Nav';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';

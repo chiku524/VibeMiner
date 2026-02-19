@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { parseNetwork, FEE_CONFIG, getNetworkById } from '@crypto-miner/shared';
+import { parseNetwork, FEE_CONFIG, getNetworkById } from '@vibeminer/shared';
 import { getEnv } from '@/lib/auth-server';
 
 /**

@@ -1,5 +1,5 @@
 {
-  "name": "crypto-miner-web",
+  "name": "vibeminer-web",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -13,7 +13,7 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
-    "@crypto-miner/shared": "*",
+    "@vibeminer/shared": "*",
     "@opennextjs/cloudflare": "^1.0.0",
     "framer-motion": "^11.0.0",
     "next": "^16.1.6",

@@ -3,8 +3,8 @@
 import { useState, useMemo } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
-import { getMainnetNetworks, getDevnetNetworks } from '@crypto-miner/shared';
-import type { BlockchainNetwork } from '@crypto-miner/shared';
+import { getMainnetNetworks, getDevnetNetworks } from '@vibeminer/shared';
+import type { BlockchainNetwork } from '@vibeminer/shared';
 
 function filterNetworks(networks: BlockchainNetwork[], query: string): BlockchainNetwork[] {
   if (!query.trim()) return networks;

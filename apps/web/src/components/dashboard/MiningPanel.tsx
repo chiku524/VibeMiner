@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import type { MiningSession as SessionType } from '@crypto-miner/shared';
-import type { BlockchainNetwork } from '@crypto-miner/shared';
-import { FEE_CONFIG } from '@crypto-miner/shared';
+import type { MiningSession as SessionType } from '@vibeminer/shared';
+import type { BlockchainNetwork } from '@vibeminer/shared';
+import { FEE_CONFIG } from '@vibeminer/shared';
 
 interface MiningPanelProps {
   session: SessionType;

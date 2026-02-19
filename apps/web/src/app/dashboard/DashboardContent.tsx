@@ -10,7 +10,7 @@ import {
   getDevnetNetworks,
   type BlockchainNetwork,
   type NetworkEnvironment,
-} from '@crypto-miner/shared';
+} from '@vibeminer/shared';
 import { MiningPanel } from '@/components/dashboard/MiningPanel';
 import { useMiningSession } from '@/hooks/useMiningSession';
 import { useAuth } from '@/contexts/AuthContext';

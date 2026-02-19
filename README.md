@@ -92,7 +92,7 @@ The current UI uses **simulated** hashrate and earnings for demo purposes. To co
 - **Web**: Next.js 14 (App Router), React 18, Tailwind CSS, Framer Motion, TypeScript
 - **Backend**: Cloudflare Workers (OpenNext), D1, KV, R2
 - **Desktop**: Electron
-- **Shared**: `@crypto-miner/shared` (network config + types)
+- **Shared**: `@vibeminer/shared` (network config + types)
 
 ## License
 

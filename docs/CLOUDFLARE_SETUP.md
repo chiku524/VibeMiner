@@ -85,7 +85,7 @@ Auth APIs will fail with “Cloudflare context not available”—use `npm run p
 
 ## 7. Create the Worker project (first deploy)
 
-The **vibeminer** project appears in the Cloudflare dashboard only after you deploy. Run from the **repo root** so the shared package is built first (otherwise the build fails with "Can't resolve '@crypto-miner/shared'"):
+The **vibeminer** project appears in the Cloudflare dashboard only after you deploy. Run from the **repo root** so the shared package is built first (otherwise the build fails with "Can't resolve '@vibeminer/shared'"):
 
 ```bash
 # From repo root (vibeminer/)
@@ -93,6 +93,8 @@ npm run deploy:cloudflare
 ```
 
 After deploy succeeds, go to **Workers & Pages** in the dashboard—**vibeminer** will be listed. Add your custom domain under **vibeminer** → **Settings** → **Domains** (see step 8). You’ll get a `*.workers.dev` URL, or you can add a [custom domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).
+
+**Deploying on Windows:** If you see "Missing file or directory" with a path ending in `.wasm?module`, that is a known Windows issue (invalid `?` in paths). Deploy from **GitHub Actions** (runs on Linux) or **WSL** instead: add repo secret `CLOUDFLARE_API_TOKEN` (Settings → Secrets → Actions), then use **Actions → Deploy to Cloudflare → Run workflow**, or run `npm run deploy:cloudflare` from WSL.
 
 ### Pages (alternative)
 
