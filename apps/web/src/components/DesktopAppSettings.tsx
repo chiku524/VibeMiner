@@ -12,6 +12,8 @@ declare global {
       getAppVersion: () => Promise<string>;
       reload?: () => Promise<void>;
       checkForUpdates?: () => Promise<{ updateAvailable: boolean; error?: boolean }>;
+      getUpdateDownloaded?: () => Promise<boolean>;
+      onUpdateDownloaded?: (callback: () => void) => void;
     };
   }
 }
@@ -23,6 +25,7 @@ export function DesktopAppSettings() {
   const [version, setVersion] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [updateDownloaded, setUpdateDownloaded] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -32,6 +35,12 @@ export function DesktopAppSettings() {
     if (!mounted || typeof window === 'undefined' || !window.electronAPI?.getAutoUpdateEnabled) return;
     window.electronAPI.getAutoUpdateEnabled().then(setAutoUpdate).catch(() => {});
     window.electronAPI.getAppVersion?.().then(setVersion).catch(() => {});
+    window.electronAPI.getUpdateDownloaded?.().then(setUpdateDownloaded).catch(() => {});
+  }, [mounted]);
+
+  useEffect(() => {
+    if (!mounted || typeof window === 'undefined' || !window.electronAPI?.onUpdateDownloaded) return;
+    window.electronAPI.onUpdateDownloaded(() => setUpdateDownloaded(true));
   }, [mounted]);
 
   const handleToggle = async () => {
@@ -70,11 +79,16 @@ export function DesktopAppSettings() {
 
   return (
     <div className="mb-6 rounded-xl border border-white/10 bg-surface-900/30 px-4 py-3">
+      {updateDownloaded && (
+        <p className="mb-3 rounded-lg border border-accent-cyan/40 bg-accent-cyan/10 px-3 py-2 text-sm text-accent-cyan">
+          Update ready — quit and reopen the app to install.
+        </p>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-white">Desktop app settings</p>
           <p className="text-xs text-gray-500">
-            {version ? `VibeMiner ${version}` : 'VibeMiner desktop'} · Updates run on startup and every 4 hours; install when you quit the app.
+            {version ? `VibeMiner ${version}` : 'VibeMiner desktop'} · Update check on startup and every 4 hours; install when you quit the app.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">

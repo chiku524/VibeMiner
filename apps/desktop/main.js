@@ -24,14 +24,35 @@ function saveSettings(settings) {
 }
 
 let updateCheckInterval = null;
+let updateDownloaded = false;
+
+function runUpdateCheck() {
+  return autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+    console.error('[VibeMiner] Update check failed:', err?.message || err);
+  });
+}
+
 function scheduleAutoUpdateChecks() {
   if (updateCheckInterval) clearInterval(updateCheckInterval);
   if (!loadSettings().autoUpdate) return;
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowPrerelease = false;
-  autoUpdater.checkForUpdatesAndNotify().catch(() => {});
-  updateCheckInterval = setInterval(() => autoUpdater.checkForUpdatesAndNotify().catch(() => {}), 4 * 60 * 60 * 1000);
+
+  // Check immediately on startup (sync when app starts)
+  runUpdateCheck();
+  // Check again after a short delay so the window is open and any notification is visible
+  setTimeout(() => runUpdateCheck(), 5000);
+  updateCheckInterval = setInterval(runUpdateCheck, 4 * 60 * 60 * 1000);
+}
+
+function setupUpdaterEvents() {
+  autoUpdater.on('error', (err) => console.error('[VibeMiner] Updater error:', err?.message || err));
+  autoUpdater.on('update-available', () => console.info('[VibeMiner] Update available, downloading…'));
+  autoUpdater.on('update-downloaded', () => {
+    updateDownloaded = true;
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('update-downloaded');
+  });
 }
 
 const FAILED_LOAD_HTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VibeMiner</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0c0e12;color:#e5e7eb;font-family:system-ui,sans-serif;text-align:center;padding:1.5rem;}h1{font-size:1.25rem;margin-bottom:0.5rem;}p{color:#9ca3af;margin-bottom:1.5rem;}button{background:#22d3ee;color:#0c0e12;border:none;padding:0.75rem 1.5rem;border-radius:0.75rem;font-weight:600;cursor:pointer;}button:hover{filter:brightness(1.1);}</style></head><body><div><h1>Can&rsquo;t connect</h1><p>Check your internet connection, then try again.</p><button type="button" id="retry">Retry</button></div><script>document.getElementById("retry").onclick=function(){if(typeof window.electronAPI!=="undefined"&&window.electronAPI.reload){window.electronAPI.reload();}else{location.reload();}}</script></body></html>`;
@@ -114,7 +135,10 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  if (!isDev) scheduleAutoUpdateChecks();
+  if (!isDev) {
+    setupUpdaterEvents();
+    scheduleAutoUpdateChecks();
+  }
 
   ipcMain.handle('getAutoUpdateEnabled', () => loadSettings().autoUpdate);
   ipcMain.handle('setAutoUpdateEnabled', (_, enabled) => {
@@ -130,10 +154,12 @@ app.whenReady().then(() => {
     try {
       const result = await autoUpdater.checkForUpdatesAndNotify();
       return { updateAvailable: !!(result && result.updateInfo) };
-    } catch {
+    } catch (err) {
+      console.error('[VibeMiner] Manual update check failed:', err?.message || err);
       return { updateAvailable: false, error: true };
     }
   });
+  ipcMain.handle('getUpdateDownloaded', () => updateDownloaded);
 
   createWindow();
 });
