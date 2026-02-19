@@ -1,10 +1,11 @@
 # Cloudflare Workers configuration for VibeMiner (vibeminer.tech)
 #
 # Cloudflare resource IDs (D1, KV) are set below. R2 uses bucket name.
-# To create the Worker: npm run deploy from apps/web. Then add vibeminer.tech in dashboard.
+# account_id is injected by CI from CLOUDFLARE_ACCOUNT_ID secret (avoids /memberships API 9106).
 
 name = "vibeminer"
 main = ".open-next/worker.js"
+account_id = "INJECT_ACCOUNT_ID"
 compatibility_date = "2024-11-11"
 compatibility_flags = ["nodejs_compat"]
 
