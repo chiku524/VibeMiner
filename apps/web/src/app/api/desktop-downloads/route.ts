@@ -8,7 +8,8 @@ import { getLatestDesktopDownloadUrls } from '@/lib/desktop-downloads-api';
  */
 export async function GET() {
   try {
-    const { urls, source, latestTag } = await getLatestDesktopDownloadUrls();
+    const result = await getLatestDesktopDownloadUrls();
+    const { urls, source, latestTag, tokenPresent, githubStatus } = result;
     const hasAny = urls.win || urls.mac || urls.linux;
     if (!hasAny) {
       return NextResponse.json(
@@ -16,11 +17,19 @@ export async function GET() {
         { status: 502 }
       );
     }
-    const body = { ...urls, ...(latestTag && { latestTag }) };
+    const body: Record<string, unknown> = { ...urls, source, tokenPresent };
+    if (latestTag) body.latestTag = latestTag;
+    if (source === 'fallback' && githubStatus != null) body.githubStatus = githubStatus;
+    const isFallback = source === 'fallback';
     return NextResponse.json(body, {
       headers: {
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        'Cache-Control': isFallback
+          ? 'no-store, must-revalidate'
+          : 'public, s-maxage=60, stale-while-revalidate=120',
         'X-Download-Source': source,
+        'X-GitHub-Authenticated': tokenPresent ? 'true' : 'false',
+        ...(latestTag && { 'X-Download-Version': latestTag }),
+        ...(githubStatus != null && { 'X-GitHub-Status': String(githubStatus) }),
       },
     });
   } catch {

@@ -10,7 +10,25 @@
 
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
-/** Get env from Cloudflare request context when running in Worker. Vars and secrets set in dashboard are here. */
+/** Get env from Cloudflare request context when running in Worker. Tries sync first, then async (for SSG/edge). */
+async function getCloudflareEnvAsync(): Promise<Record<string, unknown> | null> {
+  try {
+    const ctx = getCloudflareContext();
+    const env = ctx?.env as unknown as Record<string, unknown> | undefined;
+    if (env) return env;
+  } catch {
+    // sync context not available (e.g. some SSR paths)
+  }
+  try {
+    const ctx = await getCloudflareContext({ async: true });
+    const env = ctx?.env as unknown as Record<string, unknown> | undefined;
+    return env ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Sync version for callers that cannot await (e.g. getRepoFromEnv). Use getCloudflareEnvAsync inside getLatestDesktopDownloadUrls. */
 function getCloudflareEnv(): Record<string, unknown> | null {
   try {
     const ctx = getCloudflareContext();
@@ -97,16 +115,36 @@ export type DesktopDownloadSource = 'github-api' | 'fallback';
 /**
  * Fetches releases and returns download URLs from the release with the **highest semantic version**
  * (e.g. v1.0.8), not GitHub's "latest" which is by publish date and can be an older version.
- * Also returns source and latestTag for debugging / display.
+ * Also returns source, latestTag, tokenPresent, and optionally githubStatus for debugging.
  */
 export async function getLatestDesktopDownloadUrls(): Promise<{
   urls: DesktopDownloadUrls;
   source: DesktopDownloadSource;
   latestTag?: string;
+  tokenPresent: boolean;
+  githubStatus?: number;
 }> {
-  const repo = getRepoFromEnv();
-  const token = getGitHubToken();
-  const fallback = getEnvFallbackDownloads();
+  const env = await getCloudflareEnvAsync();
+  const repoRaw =
+    envStr(env, 'GITHUB_REPO', 'github_repo', 'GITHUB_URL', 'github_url') ??
+    process.env.GITHUB_REPO ??
+    process.env.GITHUB_URL ??
+    'chiku524/VibeMiner';
+  const t = String(repoRaw).trim();
+  let repo = 'chiku524/VibeMiner';
+  if (t && /^[\w.-]+\/[\w.-]+$/.test(t)) repo = t;
+  else {
+    const m = t.match(/github\.com[/:]([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/i);
+    if (m) repo = `${m[1]}/${m[2]}`;
+  }
+  const token =
+    envStr(env, 'GITHUB_TOKEN', 'github_token') ?? process.env.GITHUB_TOKEN ?? process.env.github_token;
+  const tokenPresent = !!token;
+  const fallback: DesktopDownloadUrls = {
+    win: (envStr(env, 'NEXT_PUBLIC_DESKTOP_DOWNLOAD_WIN') ?? process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_WIN) ?? null,
+    mac: (envStr(env, 'NEXT_PUBLIC_DESKTOP_DOWNLOAD_MAC') ?? process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_MAC) ?? null,
+    linux: (envStr(env, 'NEXT_PUBLIC_DESKTOP_DOWNLOAD_LINUX') ?? process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_LINUX) ?? null,
+  };
 
   try {
     const res = await fetch(
@@ -123,12 +161,12 @@ export async function getLatestDesktopDownloadUrls(): Promise<{
     );
 
     if (!res.ok) {
-      return { urls: fallback, source: 'fallback' };
+      return { urls: fallback, source: 'fallback', tokenPresent, githubStatus: res.status };
     }
 
     const releases = (await res.json()) as GhRelease[];
     if (!Array.isArray(releases) || releases.length === 0) {
-      return { urls: fallback, source: 'fallback' };
+      return { urls: fallback, source: 'fallback', tokenPresent };
     }
 
     const sorted = [...releases].sort((a, b) => compareTagVersions(b.tag_name, a.tag_name));
@@ -139,12 +177,12 @@ export async function getLatestDesktopDownloadUrls(): Promise<{
       const mac = assets.find((a) => a.name.endsWith('.dmg'))?.browser_download_url ?? null;
       const linux = assets.find((a) => a.name.endsWith('.AppImage'))?.browser_download_url ?? null;
       if (win || mac || linux) {
-        return { urls: { win, mac, linux }, source: 'github-api', latestTag: release.tag_name };
+        return { urls: { win, mac, linux }, source: 'github-api', latestTag: release.tag_name, tokenPresent };
       }
     }
   } catch {
     // Network or parse error; use fallback
   }
 
-  return { urls: fallback, source: 'fallback' };
+  return { urls: fallback, source: 'fallback', tokenPresent };
 }
