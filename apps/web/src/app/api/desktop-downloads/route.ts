@@ -9,7 +9,7 @@ import { getLatestDesktopDownloadUrls } from '@/lib/desktop-downloads-api';
 export async function GET() {
   try {
     const result = await getLatestDesktopDownloadUrls();
-    const { urls, source, latestTag, tokenPresent, githubStatus } = result;
+    const { urls, source, latestTag, tokenPresent, githubStatus, githubMessage } = result;
     const hasAny = urls.win || urls.mac || urls.linux;
     if (!hasAny) {
       return NextResponse.json(
@@ -20,6 +20,7 @@ export async function GET() {
     const body: Record<string, unknown> = { ...urls, source, tokenPresent };
     if (latestTag) body.latestTag = latestTag;
     if (source === 'fallback' && githubStatus != null) body.githubStatus = githubStatus;
+    if (source === 'fallback' && githubMessage) body.githubMessage = githubMessage;
     const isFallback = source === 'fallback';
     return NextResponse.json(body, {
       headers: {
@@ -30,6 +31,7 @@ export async function GET() {
         'X-GitHub-Authenticated': tokenPresent ? 'true' : 'false',
         ...(latestTag && { 'X-Download-Version': latestTag }),
         ...(githubStatus != null && { 'X-GitHub-Status': String(githubStatus) }),
+        ...(githubMessage && { 'X-GitHub-Message': githubMessage }),
       },
     });
   } catch {

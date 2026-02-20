@@ -123,6 +123,7 @@ export async function getLatestDesktopDownloadUrls(): Promise<{
   latestTag?: string;
   tokenPresent: boolean;
   githubStatus?: number;
+  githubMessage?: string;
 }> {
   const env = await getCloudflareEnvAsync();
   const repoRaw =
@@ -137,14 +138,22 @@ export async function getLatestDesktopDownloadUrls(): Promise<{
     const m = t.match(/github\.com[/:]([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/i);
     if (m) repo = `${m[1]}/${m[2]}`;
   }
-  const token =
+  const rawToken =
     envStr(env, 'GITHUB_TOKEN', 'github_token') ?? process.env.GITHUB_TOKEN ?? process.env.github_token;
+  const token = typeof rawToken === 'string' ? rawToken.trim() : undefined;
   const tokenPresent = !!token;
   const fallback: DesktopDownloadUrls = {
     win: (envStr(env, 'NEXT_PUBLIC_DESKTOP_DOWNLOAD_WIN') ?? process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_WIN) ?? null,
     mac: (envStr(env, 'NEXT_PUBLIC_DESKTOP_DOWNLOAD_MAC') ?? process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_MAC) ?? null,
     linux: (envStr(env, 'NEXT_PUBLIC_DESKTOP_DOWNLOAD_LINUX') ?? process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_LINUX) ?? null,
   };
+
+  const authHeader =
+    token && /^ghp_/.test(token)
+      ? { Authorization: `token ${token}` }
+      : token
+        ? { Authorization: `Bearer ${token}` }
+        : {};
 
   try {
     const res = await fetch(
@@ -154,14 +163,22 @@ export async function getLatestDesktopDownloadUrls(): Promise<{
         headers: {
           Accept: 'application/vnd.github+json',
           'X-GitHub-Api-Version': '2022-11-28',
-          ...(token && { Authorization: `Bearer ${token}` }),
+          ...authHeader,
         },
         next: { revalidate: 0 },
       }
     );
 
     if (!res.ok) {
-      return { urls: fallback, source: 'fallback', tokenPresent, githubStatus: res.status };
+      let githubMessage: string | undefined;
+      try {
+        const errBody = await res.text();
+        const parsed = JSON.parse(errBody) as { message?: string };
+        if (typeof parsed?.message === 'string') githubMessage = parsed.message;
+      } catch {
+        // ignore
+      }
+      return { urls: fallback, source: 'fallback', tokenPresent, githubStatus: res.status, githubMessage };
     }
 
     const releases = (await res.json()) as GhRelease[];
