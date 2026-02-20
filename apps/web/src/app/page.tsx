@@ -57,9 +57,10 @@ export default function Home() {
     setMounted(true);
   }, []);
 
+  // Always render a full-height shell so nav never shows a blank (spinner or content).
   if (!mounted) {
     return (
-      <main className="min-h-screen bg-surface-950 bg-grid flex items-center justify-center">
+      <main className="min-h-screen bg-surface-950 bg-grid flex items-center justify-center" aria-busy="true">
         <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
       </main>
     );

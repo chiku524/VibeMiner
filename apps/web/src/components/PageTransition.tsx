@@ -15,18 +15,18 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     }
   }, [pathname]);
 
-  // Always skip initial fade so the incoming page is never painted at opacity 0 (avoids blank on nav to home/app).
+  // Skip initial fade so the incoming page is never painted at opacity 0.
   const skipInitialFade = true;
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="sync">
       <motion.div
         key={pathname}
         initial={skipInitialFade ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={reduceMotion ? undefined : { opacity: 0 }}
         transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: 'easeOut' }}
-        className="min-h-full"
+        className="min-h-screen"
       >
         {children}
       </motion.div>

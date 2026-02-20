@@ -73,7 +73,7 @@ export function DownloadPageContent({ initialDownloads, githubReleasesUrl }: Dow
             Download VibeMiner desktop
           </h1>
           <p className="mt-2 text-gray-400">
-            Install the app on your computer for a dedicated mining experience. Same dashboard as the
+            Install the latest version on your computer for a dedicated mining experience. Same dashboard as the
             web—runs in its own window. Available for Windows, macOS (Apple Silicon), and Linux.
           </p>
 
@@ -114,7 +114,7 @@ export function DownloadPageContent({ initialDownloads, githubReleasesUrl }: Dow
                 })}
               </div>
               <p className="mt-6 text-sm text-gray-500">
-                Installers are loaded from GitHub Releases (newest version that has assets).{' '}
+                Buttons below open the latest release on GitHub (links always point to the newest version).{' '}
                 <a href={githubReleasesUrl} target="_blank" rel="noopener noreferrer" className="text-accent-cyan underline">View all releases</a>.
               </p>
               <p className="mt-3 text-sm text-gray-500">
