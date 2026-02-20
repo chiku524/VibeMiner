@@ -33,14 +33,19 @@ export default function SettingsPage() {
   }
 
   if (accountType === 'network') {
-    return null;
+    return (
+      <main className="min-h-screen bg-surface-950 bg-grid flex flex-col items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
+        <p className="mt-4 text-sm text-gray-400">Redirecting…</p>
+      </main>
+    );
   }
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
       <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href={isDesktop ? '/dashboard' : '/'} className="flex items-center gap-2 font-display text-lg font-semibold">
+          <Link href={isDesktop ? '/app' : '/'} className="flex items-center gap-2 font-display text-lg font-semibold">
             <span className="text-xl" aria-hidden="true">◇</span>
             <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
               VibeMiner
@@ -50,8 +55,8 @@ export default function SettingsPage() {
             <Link href="/dashboard" className="text-sm text-gray-400 transition hover:text-white">
               Dashboard
             </Link>
-            <Link href={isDesktop ? '/dashboard' : '/'} className="text-sm text-gray-400 transition hover:text-white">
-              {isDesktop ? '← Home' : '← Back home'}
+            <Link href={isDesktop ? '/app' : '/'} className="text-sm text-gray-400 transition hover:text-white">
+              {isDesktop ? '← App home' : '← Back home'}
             </Link>
           </div>
         </div>

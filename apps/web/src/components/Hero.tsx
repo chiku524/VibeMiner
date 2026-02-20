@@ -57,40 +57,20 @@ export function Hero() {
           transition={tDelay(0.7)}
           className="mt-10 flex flex-wrap items-center justify-center gap-4"
         >
-          <Link
-            href="/dashboard"
-            className="group relative overflow-hidden rounded-xl bg-accent-cyan px-6 py-3 font-medium text-surface-950 transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-accent-cyan focus:ring-offset-2 focus:ring-offset-surface-950"
-          >
-            <span className="relative z-10">Start mining</span>
-            <motion.span
-              className="absolute inset-0 bg-white/20"
-              initial={{ x: '-100%' }}
-              whileHover={reduced ? undefined : { x: 0 }}
-              transition={{ duration: 0.3 }}
-            />
-          </Link>
-          <motion.span className="inline-flex gap-4 flex-wrap justify-center">
-            {!isDesktop && (
-              <Link
-                href="/download"
-                className="inline-flex rounded-xl border border-white/10 px-6 py-3 font-medium text-gray-300 transition hover:border-white/20 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-surface-950"
-              >
-                Download desktop
-              </Link>
-            )}
+          {!isDesktop && (
             <Link
-              href="/networks"
+              href="/download"
               className="inline-flex rounded-xl border border-white/10 px-6 py-3 font-medium text-gray-300 transition hover:border-white/20 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-surface-950"
             >
-              View networks
+              Download desktop
             </Link>
-            <Link
-              href="/register"
-              className="inline-flex rounded-xl border border-accent-amber/30 px-6 py-3 font-medium text-accent-amber/90 transition hover:bg-accent-amber/10 focus:outline-none focus:ring-2 focus:ring-accent-amber/50 focus:ring-offset-2 focus:ring-offset-surface-950"
-            >
-              Register your blockchain
-            </Link>
-          </motion.span>
+          )}
+          <Link
+            href="/register"
+            className="inline-flex rounded-xl border border-accent-amber/30 px-6 py-3 font-medium text-accent-amber/90 transition hover:bg-accent-amber/10 focus:outline-none focus:ring-2 focus:ring-accent-amber/50 focus:ring-offset-2 focus:ring-offset-surface-950"
+          >
+            Register your blockchain
+          </Link>
         </motion.div>
       </motion.div>
       <motion.div

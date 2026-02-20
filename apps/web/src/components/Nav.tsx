@@ -44,7 +44,7 @@ export function Nav() {
     >
       <nav className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
         <Link
-          href={isDesktop && user ? '/dashboard' : '/'}
+          href={isDesktop && user ? '/app' : '/'}
           className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight"
         >
           <span className="text-2xl" aria-hidden="true">◇</span>

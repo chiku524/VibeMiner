@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * Renders only in the desktop app on "/".
- * Redirects to /login if not authenticated, or /dashboard (miner) / /dashboard/network (network) if authenticated.
+ * Redirects to /login if not authenticated, or /app (launcher) for miners / /dashboard/network for network accounts.
  * Shows a loading spinner until redirect. Never renders the landing page.
  */
 export function DesktopHomeGate() {
@@ -23,7 +23,7 @@ export function DesktopHomeGate() {
       router.replace('/dashboard/network');
       return;
     }
-    router.replace('/dashboard');
+    router.replace('/app');
   }, [loading, user, accountType, router]);
 
   return (

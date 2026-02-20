@@ -12,9 +12,9 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 NEXT_PUBLIC_APP_URL = "https://vibeminer.tech"
 # Fallback for /download when GitHub API fails. Update when cutting a new desktop release.
-NEXT_PUBLIC_DESKTOP_DOWNLOAD_WIN = "https://github.com/chiku524/VibeMiner/releases/download/v1.0.15/VibeMiner-Setup-1.0.15.exe"
-NEXT_PUBLIC_DESKTOP_DOWNLOAD_MAC = "https://github.com/chiku524/VibeMiner/releases/download/v1.0.15/VibeMiner-1.0.15-arm64.dmg"
-NEXT_PUBLIC_DESKTOP_DOWNLOAD_LINUX = "https://github.com/chiku524/VibeMiner/releases/download/v1.0.15/VibeMiner-1.0.15.AppImage"
+NEXT_PUBLIC_DESKTOP_DOWNLOAD_WIN = "https://github.com/chiku524/VibeMiner/releases/download/v1.0.18/VibeMiner-Setup-1.0.18.exe"
+NEXT_PUBLIC_DESKTOP_DOWNLOAD_MAC = "https://github.com/chiku524/VibeMiner/releases/download/v1.0.18/VibeMiner-1.0.18-arm64.dmg"
+NEXT_PUBLIC_DESKTOP_DOWNLOAD_LINUX = "https://github.com/chiku524/VibeMiner/releases/download/v1.0.18/VibeMiner-1.0.18.AppImage"
 
 # Static assets: run_worker_first = false so asset requests are NOT billed as Worker invocations.
 # Only document/API requests hit the Worker. (Default is false; set explicitly to avoid rate limits.)

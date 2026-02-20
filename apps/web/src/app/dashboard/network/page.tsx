@@ -38,7 +38,7 @@ export default function NetworkDashboardPage() {
     <main className="min-h-screen bg-surface-950 bg-grid">
       <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href={isDesktop ? '/dashboard' : '/'} className="flex items-center gap-2 font-display text-lg font-semibold">
+          <Link href={isDesktop ? '/app' : '/'} className="flex items-center gap-2 font-display text-lg font-semibold">
             <span className="text-xl" aria-hidden="true">◇</span>
             <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
               VibeMiner
@@ -46,8 +46,8 @@ export default function NetworkDashboardPage() {
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/networks" className="text-sm text-gray-400 transition hover:text-white">Networks</Link>
-            <Link href={isDesktop ? '/dashboard' : '/'} className="text-sm text-gray-400 transition hover:text-white">
-              {isDesktop ? '← Home' : '← Back home'}
+            <Link href={isDesktop ? '/app' : '/'} className="text-sm text-gray-400 transition hover:text-white">
+              {isDesktop ? '← App home' : '← Back home'}
             </Link>
           </div>
         </div>

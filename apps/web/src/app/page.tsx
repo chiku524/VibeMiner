@@ -2,13 +2,13 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { Nav } from '@/components/Nav';
 import { Hero } from '@/components/Hero';
 import { CTA } from '@/components/CTA';
 import { Footer } from '@/components/Footer';
 import { BackToTop } from '@/components/BackToTop';
 import { DesktopHomeGate } from '@/components/DesktopHomeGate';
+import { LandingNetworksPreview } from '@/components/LandingNetworksPreview';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 
 const HowItWorks = dynamic(
@@ -38,30 +38,7 @@ function WebLanding() {
     <>
       <Nav />
       <Hero />
-      <section className="relative border-t border-white/5 py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 text-center">
-          <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-            Browse networks & pools
-          </h2>
-          <p className="mt-2 text-gray-400">
-            Choose a network, connect to a pool, and start mining in one click.
-          </p>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <Link
-              href="/networks"
-              className="rounded-xl bg-accent-cyan/20 px-6 py-3 text-sm font-medium text-accent-cyan transition hover:bg-accent-cyan/30"
-            >
-              View all networks
-            </Link>
-            <Link
-              href="/pools"
-              className="rounded-xl border border-white/10 px-6 py-3 text-sm font-medium text-gray-300 transition hover:border-white/20 hover:bg-white/5"
-            >
-              Mining pools
-            </Link>
-          </div>
-        </div>
-      </section>
+      <LandingNetworksPreview />
       <Suspense fallback={<SectionSkeleton />}>
         <HowItWorks />
       </Suspense>
