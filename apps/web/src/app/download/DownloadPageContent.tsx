@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { detectPlatform, type Platform } from '@/lib/downloads';
 import type { DesktopDownloadUrls } from '@/lib/desktop-downloads-api';
 
@@ -31,6 +32,7 @@ interface DownloadPageContentProps {
 }
 
 export function DownloadPageContent({ initialDownloads, githubReleasesUrl }: DownloadPageContentProps) {
+  const isDesktop = useIsDesktop();
   const [suggested, setSuggested] = useState<Platform | null>(null);
   const [latest, setLatest] = useState<DownloadUrls | null>(initialDownloads);
 
@@ -60,8 +62,8 @@ export function DownloadPageContent({ initialDownloads, githubReleasesUrl }: Dow
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
       <Nav />
-      <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
-        <Breadcrumbs crumbs={[{ label: 'Home', href: '/' }, { label: 'Download' }]} />
+      <div className={`mx-auto max-w-2xl px-4 sm:px-6 ${isDesktop ? 'pt-14 pb-16' : 'py-16'}`}>
+        <Breadcrumbs crumbs={[{ label: 'Home', href: isDesktop ? '/app' : '/' }, { label: 'Download' }]} />
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -148,7 +150,7 @@ export function DownloadPageContent({ initialDownloads, githubReleasesUrl }: Dow
           )}
         </motion.div>
       </div>
-      <Footer />
+      {!isDesktop && <Footer />}
     </main>
   );
 }

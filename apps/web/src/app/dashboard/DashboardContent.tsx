@@ -20,6 +20,7 @@ import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { NetworkListSkeleton, DashboardSkeleton } from '@/components/ui/Skeleton';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { DesktopNav } from '@/components/DesktopNav';
 
 /** Network from API may include listedAt for discovery (newest first). */
 type NetworkWithMeta = BlockchainNetwork & { listedAt?: string };
@@ -266,30 +267,34 @@ export function DashboardContent() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href={isDesktop ? '/app' : '/'} className="flex items-center gap-2 font-display text-lg font-semibold">
-            <span className="text-xl" aria-hidden="true">◇</span>
-            <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
-              VibeMiner
-            </span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/networks" className="text-sm text-gray-400 transition hover:text-white">
-              Networks
+      {isDesktop ? (
+        <DesktopNav />
+      ) : (
+        <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+            <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold">
+              <span className="text-xl" aria-hidden="true">◇</span>
+              <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
+                VibeMiner
+              </span>
             </Link>
-            <Link href="/dashboard/settings" className="text-sm text-gray-400 transition hover:text-white">
-              Settings
-            </Link>
-            <Link href={isDesktop ? '/app' : '/'} className="text-sm text-gray-400 transition hover:text-white">
-              {isDesktop ? '← App home' : '← Back home'}
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link href="/networks" className="text-sm text-gray-400 transition hover:text-white">
+                Networks
+              </Link>
+              <Link href="/dashboard/settings" className="text-sm text-gray-400 transition hover:text-white">
+                Settings
+              </Link>
+              <Link href="/" className="text-sm text-gray-400 transition hover:text-white">
+                ← Back home
+              </Link>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <Breadcrumbs crumbs={[{ label: 'Home', href: '/' }, { label: 'Miner dashboard' }]} />
+      <div className={`mx-auto max-w-6xl px-4 sm:px-6 ${isDesktop ? 'pt-14 pb-8' : 'py-8'}`}>
+        <Breadcrumbs crumbs={[{ label: 'Home', href: isDesktop ? '/app' : '/' }, { label: 'Miner dashboard' }]} />
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}

@@ -6,11 +6,16 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { DesktopNav } from '@/components/DesktopNav';
 
 export function Nav() {
   const reduced = useReducedMotion() ?? false;
   const isDesktop = useIsDesktop();
   const { user, profile, accountType, isAdmin, loading, logout } = useAuth();
+
+  if (isDesktop) {
+    return <DesktopNav />;
+  }
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();

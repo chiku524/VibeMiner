@@ -2,27 +2,45 @@
  * Server-side only: fetches latest GitHub release and returns desktop download URLs.
  * Used by the API route and by the download page for initial (SSR) data so the
  * first paint shows the latest release, not build-time env fallback.
- * GITHUB_TOKEN (Cloudflare Worker secret) is used when set so the API has a higher rate limit.
+ *
+ * Cloudflare: Set GITHUB_TOKEN (encrypted secret) and optionally GITHUB_REPO in
+ * Workers & Pages → your project → Settings → Variables and secrets so the
+ * GitHub API is used and links update automatically on new releases.
  */
 
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
-/** Get token from Cloudflare env (production) or process.env (local/preview). */
-function getGitHubToken(): string | undefined {
+/** Get env from Cloudflare request context when running in Worker. Vars and secrets set in dashboard are here. */
+function getCloudflareEnv(): Record<string, unknown> | null {
   try {
     const ctx = getCloudflareContext();
-    const env = ctx.env as unknown as Record<string, string | undefined>;
-    const token = env.GITHUB_TOKEN;
-    if (token) return token;
+    const env = ctx?.env as Record<string, unknown> | undefined;
+    return env ?? null;
   } catch {
-    // Not running in Cloudflare context (e.g. next dev)
+    return null;
   }
-  return process.env.GITHUB_TOKEN ?? process.env.github_token;
 }
 
-/** Repo in owner/name form. Reads GITHUB_REPO or github_repo (Vercel preserves case). */
+function envStr(env: Record<string, unknown> | null, ...keys: string[]): string | undefined {
+  if (!env) return undefined;
+  for (const k of keys) {
+    const v = env[k];
+    if (typeof v === 'string' && v.trim()) return v.trim();
+  }
+  return undefined;
+}
+
+/** Get token from Cloudflare env (dashboard secret) or process.env (local/preview). */
+function getGitHubToken(): string | undefined {
+  const cf = getCloudflareEnv();
+  return envStr(cf, 'GITHUB_TOKEN', 'github_token') ?? process.env.GITHUB_TOKEN ?? process.env.github_token;
+}
+
+/** Repo in owner/name form. From Cloudflare env or process.env. */
 export function getRepoFromEnv(): string {
+  const cf = getCloudflareEnv();
   const repo =
+    envStr(cf, 'GITHUB_REPO', 'github_repo', 'GITHUB_URL', 'github_url') ??
     process.env.GITHUB_REPO ??
     process.env.github_repo ??
     process.env.GITHUB_URL ??
@@ -42,12 +60,13 @@ export type DesktopDownloadUrls = {
   linux: string | null;
 };
 
-/** Fallback when GitHub API fails (e.g. rate limit). Set in wrangler [vars] or env. */
+/** Fallback when GitHub API fails. Read from Cloudflare env first (dashboard vars), then process.env (wrangler [vars] at build). */
 function getEnvFallbackDownloads(): DesktopDownloadUrls {
+  const cf = getCloudflareEnv();
   return {
-    win: process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_WIN ?? null,
-    mac: process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_MAC ?? null,
-    linux: process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_LINUX ?? null,
+    win: (envStr(cf, 'NEXT_PUBLIC_DESKTOP_DOWNLOAD_WIN') ?? process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_WIN) ?? null,
+    mac: (envStr(cf, 'NEXT_PUBLIC_DESKTOP_DOWNLOAD_MAC') ?? process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_MAC) ?? null,
+    linux: (envStr(cf, 'NEXT_PUBLIC_DESKTOP_DOWNLOAD_LINUX') ?? process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_LINUX) ?? null,
   };
 }
 
@@ -73,11 +92,17 @@ interface GhRelease {
   assets?: Array<{ name: string; browser_download_url: string }>;
 }
 
+export type DesktopDownloadSource = 'github-api' | 'fallback';
+
 /**
  * Fetches releases and returns download URLs from the release with the **highest semantic version**
  * (e.g. v1.0.8), not GitHub's "latest" which is by publish date and can be an older version.
+ * Also returns source so the API route can set X-Download-Source for debugging.
  */
-export async function getLatestDesktopDownloadUrls(): Promise<DesktopDownloadUrls> {
+export async function getLatestDesktopDownloadUrls(): Promise<{
+  urls: DesktopDownloadUrls;
+  source: DesktopDownloadSource;
+}> {
   const repo = getRepoFromEnv();
   const token = getGitHubToken();
   const fallback = getEnvFallbackDownloads();
@@ -96,12 +121,12 @@ export async function getLatestDesktopDownloadUrls(): Promise<DesktopDownloadUrl
     );
 
     if (!res.ok) {
-      return fallback;
+      return { urls: fallback, source: 'fallback' };
     }
 
     const releases = (await res.json()) as GhRelease[];
     if (!Array.isArray(releases) || releases.length === 0) {
-      return fallback;
+      return { urls: fallback, source: 'fallback' };
     }
 
     const sorted = [...releases].sort((a, b) => compareTagVersions(b.tag_name, a.tag_name));
@@ -112,12 +137,12 @@ export async function getLatestDesktopDownloadUrls(): Promise<DesktopDownloadUrl
       const mac = assets.find((a) => a.name.endsWith('.dmg'))?.browser_download_url ?? null;
       const linux = assets.find((a) => a.name.endsWith('.AppImage'))?.browser_download_url ?? null;
       if (win || mac || linux) {
-        return { win, mac, linux };
+        return { urls: { win, mac, linux }, source: 'github-api' };
       }
     }
   } catch {
     // Network or parse error; use fallback
   }
 
-  return fallback;
+  return { urls: fallback, source: 'fallback' };
 }

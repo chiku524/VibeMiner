@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
+import { DesktopNav } from '@/components/DesktopNav';
 import { RequestListingForm } from '@/components/RequestListingForm';
 
 export default function NetworkDashboardPage() {
@@ -36,25 +37,25 @@ export default function NetworkDashboardPage() {
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
-      <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href={isDesktop ? '/app' : '/'} className="flex items-center gap-2 font-display text-lg font-semibold">
-            <span className="text-xl" aria-hidden="true">◇</span>
-            <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
-              VibeMiner
-            </span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/networks" className="text-sm text-gray-400 transition hover:text-white">Networks</Link>
-            <Link href={isDesktop ? '/app' : '/'} className="text-sm text-gray-400 transition hover:text-white">
-              {isDesktop ? '← App home' : '← Back home'}
+      {isDesktop ? <DesktopNav /> : (
+        <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+            <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold">
+              <span className="text-xl" aria-hidden="true">◇</span>
+              <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
+                VibeMiner
+              </span>
             </Link>
+            <div className="flex items-center gap-4">
+              <Link href="/networks" className="text-sm text-gray-400 transition hover:text-white">Networks</Link>
+              <Link href="/" className="text-sm text-gray-400 transition hover:text-white">← Back home</Link>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <Breadcrumbs crumbs={[{ label: 'Home', href: '/' }, { label: 'Network dashboard' }]} />
+      <div className={`mx-auto max-w-6xl px-4 sm:px-6 ${isDesktop ? 'pt-14 pb-8' : 'py-8'}`}>
+        <Breadcrumbs crumbs={[{ label: 'Home', href: isDesktop ? '/app' : '/' }, { label: 'Network dashboard' }]} />
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
