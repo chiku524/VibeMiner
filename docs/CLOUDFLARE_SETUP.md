@@ -161,17 +161,39 @@ If **Register** or **Login** fails with "Registration failed" or "Auth service t
 3. **Redeploy**  
    After fixing bindings or schema, run `npm run deploy:cloudflare` from the repo root (or trigger the GitHub Actions deploy).
 
-## 11. Download page (/download)
+## 11. Error 1027 (rate limited / plan limits)
+
+If the site shows **Error 1027** (“This website has been temporarily rate limited” / “owner has reached their plan limits”), the **Worker request limit** for your plan has been hit—not the KV namespace limit.
+
+- **Worker limit**: Every request that hits the Worker (HTML pages, API routes like `/api/auth/session`) counts as one invocation. On the free plan you get a fixed number of invocations per day; exceeding it triggers 1027 for the whole site.
+- **KV limit**: The SESSIONS KV namespace has its own read/write limit. When *KV* hits its limit, the site can still load; only auth (login/register/session) may fail with 503 or errors. So “website loads but KV is capped” (e.g. on your video project) is expected; 1027 is about Worker invocations.
+
+**Why this app can hit the Worker limit sooner**
+
+Every page load and client navigation that needs server data goes through the same Worker (document + `/api/auth/session` + any API calls). We keep **static assets** (JS/CSS/images) from counting as invocations by setting **`run_worker_first = false`** in `wrangler.toml` under `[assets]`, so the edge serves those without running the Worker. If that was ever `true` or omitted in a deploy, every asset request would count and 1027 would happen quickly.
+
+**What to do**
+
+1. In **Cloudflare Dashboard** → **Workers & Pages** → **vibeminer** (or your account overview), check **Usage** / **Analytics** to see Worker requests per day and confirm you’re hitting the cap.
+2. Ensure `apps/web/wrangler.toml` has `run_worker_first = false` under `[assets]` and redeploy so asset requests are not billed.
+3. Upgrade the Workers plan if you need more invocations, or reduce traffic/crawling that hits the Worker.
+
+## 12. Download page (/download)
 
 The **/download** page shows Windows, macOS, and Linux desktop installers. It tries to load the latest links from the **GitHub Releases API**. If that request fails (e.g. rate limit for unauthenticated requests), it falls back to the URLs in **wrangler.toml** [vars]: `NEXT_PUBLIC_DESKTOP_DOWNLOAD_WIN`, `_MAC`, `_LINUX`. Those are set to the latest release (e.g. v1.0.15) so the page always shows three download options after deploy.
 
 **Optional:** To use the live GitHub API so the page always shows the newest release without editing wrangler.toml, add a **secret** in the Cloudflare dashboard (Workers & Pages → vibeminer → Settings → Variables → Encrypt): **GITHUB_TOKEN** with a [personal access token](https://github.com/settings/tokens) (no scopes required for public repo). Then the server can call the API with a higher rate limit and return the latest release’s installers.
 
+## Admin and user wallets
+
+- **admin_users**: Table listing `user_id`s who can access `/dashboard/admin`. Add your user id after signup to become admin. See [USER_WALLETS_AND_ADMIN.md](./USER_WALLETS_AND_ADMIN.md).
+- **miner_balances**: In-platform balance per miner per network; rewards accumulate here. Withdrawal to external wallet incurs the platform fee (see /fees). Run the migration `d1/migrations/001_admin_and_miner_balances.sql` on existing DBs if you already ran the original schema.
+
 ## Summary
 
 | Resource   | Purpose                                                    |
 |-----------|-------------------------------------------------------------|
-| **D1**    | Users, network_listings (automated onboarding)              |
+| **D1**    | Users, network_listings, admin_users, miner_balances       |
 | **KV**    | Session tokens (7-day TTL)                                  |
 | **R2**    | File storage (e.g. network logos—future)                    |
 

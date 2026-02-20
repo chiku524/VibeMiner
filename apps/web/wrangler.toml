@@ -16,9 +16,12 @@ NEXT_PUBLIC_DESKTOP_DOWNLOAD_WIN = "https://github.com/chiku524/VibeMiner/releas
 NEXT_PUBLIC_DESKTOP_DOWNLOAD_MAC = "https://github.com/chiku524/VibeMiner/releases/download/v1.0.15/VibeMiner-1.0.15-arm64.dmg"
 NEXT_PUBLIC_DESKTOP_DOWNLOAD_LINUX = "https://github.com/chiku524/VibeMiner/releases/download/v1.0.15/VibeMiner-1.0.15.AppImage"
 
+# Static assets: run_worker_first = false so asset requests are NOT billed as Worker invocations.
+# Only document/API requests hit the Worker. (Default is false; set explicitly to avoid rate limits.)
 [assets]
 directory = ".open-next/assets"
 binding = "ASSETS"
+run_worker_first = false
 
 # D1 Database (vibeminer-db, region ENAM)
 [[d1_databases]]

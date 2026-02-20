@@ -2,6 +2,7 @@ import { FEE_CONFIG, formatWithdrawalFee } from '@vibeminer/shared';
 import { Nav } from '@/components/Nav';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { site } from '@/lib/site';
+import { PLATFORM_WALLET } from '@/lib/platform-wallet';
 import type { Metadata } from 'next';
 
 const base = site.baseUrl.replace(/\/$/, '');
@@ -94,6 +95,35 @@ export default function FeesPage() {
             <p className="mt-2 text-gray-400">
               Fees cover infrastructure, pool connectivity, and platform maintenance. No hidden charges.
             </p>
+          </section>
+
+          <section className="rounded-2xl border border-white/5 bg-surface-900/30 p-6">
+            <h2 className="font-display text-xl font-semibold text-white">Where fees are sent</h2>
+            <p className="mt-2 text-gray-400">
+              Listing fees (mainnet) and withdrawal fees are sent to the VibeMiner platform wallet below. You can verify payouts on-chain.
+            </p>
+            <div className="mt-4 space-y-3">
+              <div className="rounded-lg border border-white/10 bg-surface-900/50 px-4 py-3">
+                <span className="text-xs font-medium uppercase tracking-wider text-gray-500">ETH</span>
+                <p className="mt-1 font-mono text-sm break-all text-gray-300">{PLATFORM_WALLET.ETH}</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-surface-900/50 px-4 py-3">
+                <span className="text-xs font-medium uppercase tracking-wider text-gray-500">SOL</span>
+                <p className="mt-1 font-mono text-sm break-all text-gray-300">{PLATFORM_WALLET.SOL}</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-surface-900/50 px-4 py-3">
+                <span className="text-xs font-medium uppercase tracking-wider text-gray-500">DOGE (xpub)</span>
+                <p className="mt-1 font-mono text-sm break-all text-gray-300">{PLATFORM_WALLET.DOGE_XPUB}</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-surface-900/50 px-4 py-3">
+                <span className="text-xs font-medium uppercase tracking-wider text-gray-500">BTC (xpub)</span>
+                <p className="mt-1 font-mono text-sm break-all text-gray-300">{PLATFORM_WALLET.BTC_XPUB}</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-surface-900/50 px-4 py-3">
+                <span className="text-xs font-medium uppercase tracking-wider text-gray-500">LTC (xpub)</span>
+                <p className="mt-1 font-mono text-sm break-all text-gray-300">{PLATFORM_WALLET.LTC_XPUB}</p>
+              </div>
+            </div>
           </section>
         </div>
 

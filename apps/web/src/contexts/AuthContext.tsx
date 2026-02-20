@@ -9,6 +9,7 @@ type AuthState = {
   user: User | null;
   profile: User | null;
   accountType: AccountType | null;
+  isAdmin: boolean;
   loading: boolean;
   configured: boolean;
 };
@@ -17,6 +18,7 @@ const defaultState: AuthState = {
   user: null,
   profile: null,
   accountType: null,
+  isAdmin: false,
   loading: true,
   configured: true,
 };
@@ -37,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           user,
           profile: user,
           accountType: user.account_type as AccountType,
+          isAdmin: !!user.is_admin,
           loading: false,
           configured: true,
         });
@@ -45,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           user: null,
           profile: null,
           accountType: null,
+          isAdmin: false,
           loading: false,
           configured: true,
         });
@@ -54,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user: null,
         profile: null,
         accountType: null,
+        isAdmin: false,
         loading: false,
         configured: true,
       });
@@ -75,6 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user: null,
       profile: null,
       accountType: null,
+      isAdmin: false,
       loading: false,
       configured: true,
     });

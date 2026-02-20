@@ -13,6 +13,8 @@ export interface User {
   network_website: string | null;
   created_at: string;
   updated_at: string;
+  /** True if user is in admin_users; can access admin dashboard. */
+  is_admin?: boolean;
 }
 
 export interface AuthResponse {

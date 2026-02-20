@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
-import { getMainnetNetworks, getDevnetNetworks } from '@vibeminer/shared';
+import { getMainnetNetworksListed, getDevnetNetworks } from '@vibeminer/shared';
 import { getEnv } from '@/lib/auth-server';
 
-/** Returns mainnet and devnet networks: static list + dynamic listings from D1. */
+/** Returns mainnet and devnet networks: static list + dynamic listings from D1. Excludes placeholder "Your Network". */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const env = searchParams.get('env'); // 'mainnet' | 'devnet' | null (all)
 
-    const staticMainnet = getMainnetNetworks();
+    const staticMainnet = getMainnetNetworksListed();
     const staticDevnet = getDevnetNetworks();
 
     let dynamicMainnet: unknown[] = [];

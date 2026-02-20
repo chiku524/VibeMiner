@@ -32,6 +32,7 @@ export interface User {
   network_website: string | null;
   created_at: string;
   updated_at: string;
+  is_admin?: boolean;
 }
 
 export function hashPassword(password: string, salt: Buffer): Promise<string> {

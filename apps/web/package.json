@@ -1,6 +1,6 @@
 {
   "name": "vibeminer-web",
-  "version": "1.0.0",
+  "version": "1.0.16",
   "private": true,
   "scripts": {
     "dev": "next dev",

@@ -10,7 +10,7 @@ import { useIsDesktop } from '@/hooks/useIsDesktop';
 export function Nav() {
   const reduced = useReducedMotion() ?? false;
   const isDesktop = useIsDesktop();
-  const { user, profile, accountType, loading, logout } = useAuth();
+  const { user, profile, accountType, isAdmin, loading, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -43,17 +43,23 @@ export function Nav() {
       className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-surface-950/80 backdrop-blur-xl"
     >
       <nav className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight">
+        <Link
+          href={isDesktop && user ? '/dashboard' : '/'}
+          className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight"
+        >
           <span className="text-2xl" aria-hidden="true">◇</span>
           <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
             VibeMiner
           </span>
         </Link>
         <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-          <Link href="/#networks" className="text-sm font-medium text-gray-400 transition hover:text-white">
+          <Link href="/networks" className="text-sm font-medium text-gray-400 transition hover:text-white">
             Networks
           </Link>
-          <Link href="/#how-it-works" className="text-sm font-medium text-gray-400 transition hover:text-white">
+          <Link href="/pools" className="text-sm font-medium text-gray-400 transition hover:text-white">
+            Pools
+          </Link>
+          <Link href="/#how-it-works" className="text-sm font-medium text-gray-400 transition hover:text-white" title="Scrolls to section on home">
             How it works
           </Link>
           {!isDesktop && (
@@ -77,7 +83,7 @@ export function Nav() {
                 >
                   <span className="max-w-[120px] truncate">{displayLabel}</span>
                   <span className="rounded bg-white/10 px-1.5 py-0.5 text-xs text-gray-400">
-                    {accountType === 'network' ? 'Network' : 'Miner'}
+                    {isAdmin ? 'Admin' : accountType === 'network' ? 'Network' : 'Miner'}
                   </span>
                   <span className="text-gray-500" aria-hidden="true">▾</span>
                 </button>
@@ -103,6 +109,15 @@ export function Nav() {
                         className="block px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white"
                       >
                         Network dashboard
+                      </Link>
+                    )}
+                    {isAdmin && (
+                      <Link
+                        href="/dashboard/admin"
+                        onClick={() => setOpen(false)}
+                        className="block px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white"
+                      >
+                        Admin
                       </Link>
                     )}
                     <button

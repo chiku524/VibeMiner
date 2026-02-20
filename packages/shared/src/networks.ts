@@ -149,6 +149,11 @@ export function getMainnetNetworks(): BlockchainNetwork[] {
   return MAINNET_NETWORKS;
 }
 
+/** Mainnet networks that are actually listed (excludes "Your Network" / request CTA). Use for mining grid and API. */
+export function getMainnetNetworksListed(): BlockchainNetwork[] {
+  return MAINNET_NETWORKS.filter((n) => n.status !== 'requested');
+}
+
 /** Get all devnet networks. Safe to use in UI and dashboard. */
 export function getDevnetNetworks(): BlockchainNetwork[] {
   return DEVNET_NETWORKS;

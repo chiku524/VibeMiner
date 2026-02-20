@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
   getNetworkById,
-  getMainnetNetworks,
+  getMainnetNetworksListed,
   getDevnetNetworks,
   type BlockchainNetwork,
   type NetworkEnvironment,
@@ -17,9 +17,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { NetworkModal } from '@/components/ui/NetworkModal';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
-import { DesktopAppSettings } from '@/components/DesktopAppSettings';
 import { NetworkListSkeleton, DashboardSkeleton } from '@/components/ui/Skeleton';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 
 /** Network from API may include listedAt for discovery (newest first). */
 type NetworkWithMeta = BlockchainNetwork & { listedAt?: string };
@@ -88,6 +88,7 @@ function findInLists(
 
 export function DashboardContent() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const { accountType, loading: authLoading } = useAuth();
   const { addToast } = useToast();
   const searchParams = useSearchParams();
@@ -145,7 +146,7 @@ export function DashboardContent() {
   }, []);
 
   const networksForEnv = useMemo((): NetworkWithMeta[] => {
-    const staticMain = getMainnetNetworks() as NetworkWithMeta[];
+    const staticMain = getMainnetNetworksListed() as NetworkWithMeta[];
     const staticDev = getDevnetNetworks() as NetworkWithMeta[];
     const main = fetchedMainnet ?? staticMain;
     const dev = fetchedDevnet ?? staticDev;
@@ -165,7 +166,7 @@ export function DashboardContent() {
   const preselected = useMemo(() => {
     if (!preselectedId) return null;
     const fromApi = findInLists(
-      fetchedMainnet ?? getMainnetNetworks() as NetworkWithMeta[],
+      fetchedMainnet ?? getMainnetNetworksListed() as NetworkWithMeta[],
       fetchedDevnet ?? getDevnetNetworks() as NetworkWithMeta[],
       preselectedId
     );
@@ -201,7 +202,7 @@ export function DashboardContent() {
 
   const currentNetwork = useMemo(() => {
     if (!session) return null;
-    const main = fetchedMainnet ?? getMainnetNetworks() as NetworkWithMeta[];
+    const main = fetchedMainnet ?? getMainnetNetworksListed() as NetworkWithMeta[];
     const dev = fetchedDevnet ?? getDevnetNetworks() as NetworkWithMeta[];
     const found = findInLists(main, dev, session.networkId, session.environment);
     if (found) return found;
@@ -236,11 +237,11 @@ export function DashboardContent() {
       <>
         <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-            <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold">
+            <Link href={isDesktop ? '/dashboard' : '/'} className="flex items-center gap-2 font-display text-lg font-semibold">
               <span className="text-xl" aria-hidden="true">◇</span>
               <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">VibeMiner</span>
             </Link>
-            <Link href="/" className="text-sm text-gray-400 transition hover:text-white">← Back home</Link>
+            <Link href={isDesktop ? '/dashboard' : '/'} className="text-sm text-gray-400 transition hover:text-white">← Back home</Link>
           </div>
         </header>
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
@@ -267,15 +268,23 @@ export function DashboardContent() {
     <>
       <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold">
+          <Link href={isDesktop ? '/dashboard' : '/'} className="flex items-center gap-2 font-display text-lg font-semibold">
             <span className="text-xl" aria-hidden="true">◇</span>
             <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
               VibeMiner
             </span>
           </Link>
-          <Link href="/" className="text-sm text-gray-400 transition hover:text-white">
-            ← Back home
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/networks" className="text-sm text-gray-400 transition hover:text-white">
+              Networks
+            </Link>
+            <Link href="/dashboard/settings" className="text-sm text-gray-400 transition hover:text-white">
+              Settings
+            </Link>
+            <Link href={isDesktop ? '/dashboard' : '/'} className="text-sm text-gray-400 transition hover:text-white">
+              {isDesktop ? '← Home' : '← Back home'}
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -291,8 +300,6 @@ export function DashboardContent() {
             Choose Mainnet or Devnet, then select a network. Press <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs">S</kbd> to quick-start first network, <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs">Esc</kbd> to stop.
           </p>
         </motion.div>
-
-        <DesktopAppSettings />
 
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">

@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
-import { getMainnetNetworks, getDevnetNetworks } from '@vibeminer/shared';
+import { getMainnetNetworksListed, getDevnetNetworks } from '@vibeminer/shared';
 import type { BlockchainNetwork } from '@vibeminer/shared';
 
 type NetworkWithMeta = BlockchainNetwork & { listedAt?: string };
@@ -212,7 +212,7 @@ export function NetworksShowcase() {
   const reduced = useReducedMotion() ?? false;
   const [searchQuery, setSearchQuery] = useState('');
   const [mainnetNetworks, setMainnetNetworks] = useState<NetworkWithMeta[]>(() =>
-    getMainnetNetworks() as NetworkWithMeta[]
+    getMainnetNetworksListed() as NetworkWithMeta[]
   );
   const [devnetNetworks, setDevnetNetworks] = useState<NetworkWithMeta[]>(() =>
     getDevnetNetworks() as NetworkWithMeta[]

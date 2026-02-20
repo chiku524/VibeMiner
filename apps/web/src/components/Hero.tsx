@@ -79,7 +79,7 @@ export function Hero() {
               </Link>
             )}
             <Link
-              href="/#networks"
+              href="/networks"
               className="inline-flex rounded-xl border border-white/10 px-6 py-3 font-medium text-gray-300 transition hover:border-white/20 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-surface-950"
             >
               View networks

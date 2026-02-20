@@ -52,6 +52,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: SERVICE_UNAVAILABLE_MESSAGE }, { status: 503 });
     }
 
+    const adminRow = await DB.prepare('select 1 from admin_users where user_id = ?').bind(row.id).first();
     const response = NextResponse.json({
       user: {
         id: row.id,
@@ -62,6 +63,7 @@ export async function POST(request: Request) {
         network_website: row.network_website,
         created_at: row.created_at,
         updated_at: row.updated_at,
+        is_admin: !!adminRow,
       },
     });
     response.headers.set('Set-Cookie', sessionCookieHeader(token));

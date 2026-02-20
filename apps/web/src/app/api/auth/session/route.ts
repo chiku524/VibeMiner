@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
     const { DB } = await getEnv();
     const row = await DB.prepare(
-      'select id, email, account_type, display_name, network_name, network_website, created_at, updated_at from users where id = ?'
+      'select u.id, u.email, u.account_type, u.display_name, u.network_name, u.network_website, u.created_at, u.updated_at, (select 1 from admin_users a where a.user_id = u.id limit 1) as is_admin from users u where u.id = ?'
     )
       .bind(userId)
       .first();
@@ -34,6 +34,7 @@ export async function GET(request: Request) {
         network_website: row.network_website,
         created_at: row.created_at,
         updated_at: row.updated_at,
+        is_admin: !!row.is_admin,
       },
     });
   } catch (err) {
