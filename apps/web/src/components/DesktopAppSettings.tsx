@@ -3,6 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useToast } from '@/contexts/ToastContext';
 
+type UpdateAvailableInfo = {
+  latestVersion: string;
+  releasePageUrl: string;
+  directDownloadUrl: string;
+};
+
 declare global {
   interface Window {
     electronAPI?: {
@@ -11,9 +17,19 @@ declare global {
       setAutoUpdateEnabled: (enabled: boolean) => Promise<boolean>;
       getAppVersion: () => Promise<string>;
       reload?: () => Promise<void>;
-      checkForUpdates?: () => Promise<{ updateAvailable: boolean; latestVersion?: string | null; error?: boolean; message?: string }>;
+      checkForUpdates?: () => Promise<{
+        updateAvailable: boolean;
+        latestVersion?: string | null;
+        releasePageUrl?: string;
+        directDownloadUrl?: string;
+        error?: boolean;
+        message?: string;
+      }>;
       getUpdateDownloaded?: () => Promise<boolean>;
+      getUpdateAvailableInfo?: () => Promise<UpdateAvailableInfo | null>;
+      openExternal?: (url: string) => Promise<void>;
       onUpdateDownloaded?: (callback: () => void) => void;
+      onUpdateAvailable?: (callback: (info: UpdateAvailableInfo) => void) => void;
     };
   }
 }
@@ -26,6 +42,7 @@ export function DesktopAppSettings() {
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(false);
   const [updateDownloaded, setUpdateDownloaded] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<UpdateAvailableInfo | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -36,11 +53,17 @@ export function DesktopAppSettings() {
     window.electronAPI.getAutoUpdateEnabled().then(setAutoUpdate).catch(() => {});
     window.electronAPI.getAppVersion?.().then(setVersion).catch(() => {});
     window.electronAPI.getUpdateDownloaded?.().then(setUpdateDownloaded).catch(() => {});
+    window.electronAPI.getUpdateAvailableInfo?.().then(setUpdateInfo).catch(() => {});
   }, [mounted]);
 
   useEffect(() => {
     if (!mounted || typeof window === 'undefined' || !window.electronAPI?.onUpdateDownloaded) return;
     window.electronAPI.onUpdateDownloaded(() => setUpdateDownloaded(true));
+  }, [mounted]);
+
+  useEffect(() => {
+    if (!mounted || typeof window === 'undefined' || !window.electronAPI?.onUpdateAvailable) return;
+    window.electronAPI.onUpdateAvailable((info) => setUpdateInfo(info));
   }, [mounted]);
 
   const handleToggle = async () => {
@@ -67,6 +90,13 @@ export function DesktopAppSettings() {
       } else if (result?.updateAvailable) {
         const v = result.latestVersion ? ` (v${result.latestVersion})` : '';
         addToast(`Update available${v} — quit and reopen the app to install`, 'success');
+        if (result.latestVersion && result.releasePageUrl) {
+          setUpdateInfo({
+            latestVersion: result.latestVersion,
+            releasePageUrl: result.releasePageUrl,
+            directDownloadUrl: result.directDownloadUrl ?? result.releasePageUrl,
+          });
+        }
       } else {
         addToast('You’re up to date', 'success');
       }
@@ -86,6 +116,19 @@ export function DesktopAppSettings() {
       {updateDownloaded && (
         <p className="mb-3 rounded-lg border border-accent-cyan/40 bg-accent-cyan/10 px-3 py-2 text-sm text-accent-cyan">
           Update ready — quit and reopen the app to install.
+        </p>
+      )}
+      {updateInfo && !updateDownloaded && (
+        <p className="mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+          Update available (v{updateInfo.latestVersion}).{' '}
+          <button
+            type="button"
+            onClick={() => window.electronAPI?.openExternal?.(updateInfo.directDownloadUrl)}
+            className="font-medium text-accent-cyan underline hover:no-underline"
+          >
+            Download installer
+          </button>
+          {' '}· Or quit and reopen the app if the update was already downloaded.
         </p>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">

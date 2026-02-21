@@ -1,6 +1,6 @@
 {
   "name": "vibeminer-desktop",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "private": true,
   "description": "VibeMiner desktop app — mine for networks that need you. No terminal required.",
   "author": "nico.builds",

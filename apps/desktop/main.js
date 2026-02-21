@@ -5,6 +5,15 @@ const { autoUpdater } = require('electron-updater');
 
 const GITHUB_OWNER = 'chiku524';
 const GITHUB_REPO = 'VibeMiner';
+const RELEASE_PAGE_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
+
+function getDirectDownloadUrl(platform) {
+  const base = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest/download`;
+  if (platform === 'win32') return `${base}/VibeMiner-Setup-latest.exe`;
+  if (platform === 'darwin') return `${base}/VibeMiner-latest-arm64.dmg`;
+  if (platform === 'linux') return `${base}/VibeMiner-latest.AppImage`;
+  return RELEASE_PAGE_URL;
+}
 
 // Packaged app = production (no dev tools, load vibeminer.tech). Unpackaged = dev (localhost + dev tools).
 const isDev = !app.isPackaged;
@@ -68,6 +77,19 @@ function saveSettings(settings) {
 
 let updateCheckInterval = null;
 let updateDownloaded = false;
+/** When we detect a newer version (from API or updater), store so the UI can show a download link. */
+let latestUpdateAvailable = null;
+
+function notifyUpdateAvailable(latestVersion) {
+  latestUpdateAvailable = {
+    latestVersion,
+    releasePageUrl: RELEASE_PAGE_URL,
+    directDownloadUrl: getDirectDownloadUrl(process.platform),
+  };
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update-available', latestUpdateAvailable);
+  }
+}
 
 function runUpdateCheck() {
   return autoUpdater.checkForUpdatesAndNotify().catch((err) => {
@@ -90,10 +112,26 @@ function scheduleAutoUpdateChecks() {
   updateCheckInterval = setInterval(runUpdateCheck, 4 * 60 * 60 * 1000);
 }
 
+// Run once after startup: if GitHub API shows a newer version, notify UI so the download link appears even without clicking "Check for updates".
+function runStartupUpdateCheck() {
+  if (!app.isPackaged) return;
+  const currentVersion = app.getVersion();
+  fetchLatestReleaseFromGitHub()
+    .then((fromApi) => {
+      if (fromApi && isNewerVersion(currentVersion, fromApi)) {
+        console.info('[VibeMiner] Update available (startup check):', fromApi);
+        notifyUpdateAvailable(fromApi);
+      }
+    })
+    .catch((err) => console.error('[VibeMiner] Startup update check failed:', err?.message || err));
+}
+
 function setupUpdaterEvents() {
   autoUpdater.on('error', (err) => console.error('[VibeMiner] Updater error:', err?.message || err));
   autoUpdater.on('update-available', (info) => {
-    console.info('[VibeMiner] Update available:', info?.version || 'unknown', '- downloading…');
+    const v = info?.version || 'unknown';
+    console.info('[VibeMiner] Update available:', v, '- downloading…');
+    if (v && v !== 'unknown') notifyUpdateAvailable(v);
   });
   autoUpdater.on('update-not-available', (info) => {
     console.info('[VibeMiner] No update (current:', app.getVersion(), ', latest:', info?.version || 'unknown', ')');
@@ -283,17 +321,30 @@ app.whenReady().then(() => {
 
       if (updateAvailable) {
         console.info('[VibeMiner] Update available:', latestVersion);
+        notifyUpdateAvailable(latestVersion);
       } else {
         console.info('[VibeMiner] Check complete. Current:', currentVersion, 'Latest:', latestVersion || 'same');
       }
-      return { updateAvailable, latestVersion, error: false };
+      return {
+        updateAvailable,
+        latestVersion,
+        releasePageUrl: RELEASE_PAGE_URL,
+        directDownloadUrl: getDirectDownloadUrl(process.platform),
+        error: false,
+      };
     } catch (err) {
       console.error('[VibeMiner] Manual update check failed:', err?.message || err);
-      // Still try GitHub API so user gets a result (e.g. "Update available" with link).
       try {
         const fromApi = await fetchLatestReleaseFromGitHub();
         if (fromApi && isNewerVersion(currentVersion, fromApi)) {
-          return { updateAvailable: true, latestVersion: fromApi, error: false };
+          notifyUpdateAvailable(fromApi);
+          return {
+            updateAvailable: true,
+            latestVersion: fromApi,
+            releasePageUrl: RELEASE_PAGE_URL,
+            directDownloadUrl: getDirectDownloadUrl(process.platform),
+            error: false,
+          };
         }
       } catch (_) {
         // ignore
@@ -302,6 +353,10 @@ app.whenReady().then(() => {
     }
   });
   ipcMain.handle('getUpdateDownloaded', () => updateDownloaded);
+  ipcMain.handle('getUpdateAvailableInfo', () => latestUpdateAvailable);
+  ipcMain.handle('openExternal', (_, url) => {
+    if (url && typeof url === 'string') shell.openExternal(url);
+  });
 
   if (!isDev) {
     const iconName = process.platform === 'win32' ? 'icon.ico' : process.platform === 'darwin' ? 'icon.icns' : 'icon.png';
@@ -319,6 +374,8 @@ app.whenReady().then(() => {
   }
 
   createWindow();
+  // After a short delay, check for updates via GitHub API so the UI can show "Download" even if electron-updater didn't find one.
+  setTimeout(() => runStartupUpdateCheck(), 5000);
 });
 
 app.on('window-all-closed', () => {
