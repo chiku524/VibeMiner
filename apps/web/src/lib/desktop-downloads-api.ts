@@ -1,10 +1,13 @@
 /**
- * Server-side only: returns desktop download URLs that always point to the latest release.
+ * Server-side only: returns desktop download URLs that always point to the true latest release.
  *
- * Uses GitHub's redirect URLs (releases/latest/download/AssetName), so no API or token
- * is needed. The release workflow uploads assets with fixed names (VibeMiner-Setup-latest.exe
- * etc.) so these URLs redirect to the current latest release. Every new tag + release
- * automatically becomes the target of these links.
+ * Primary: fetch GitHub API /repos/.../releases/latest and build versioned asset URLs
+ * (e.g. .../v1.0.22/VibeMiner-Setup-1.0.22.exe). This guarantees users get the actual
+ * latest version and is never misleading.
+ *
+ * Fallback: use GitHub redirect URLs (releases/latest/download/...) only when the API
+ * fails. GitHub's "latest" redirect points at the most recent release; the workflow
+ * must upload -latest asset copies so that redirect resolves to a real file.
  */
 
 import { getCloudflareContext } from '@opennextjs/cloudflare';
@@ -53,19 +56,19 @@ export type DesktopDownloadUrls = {
   linux: string | null;
 };
 
-/** Fixed asset names uploaded by the release workflow; GitHub redirects /releases/latest/download/Name to the current latest. */
-const LATEST_ASSET_NAMES = {
-  win: 'VibeMiner-Setup-latest.exe',
-  mac: 'VibeMiner-latest-arm64.dmg',
-  linux: 'VibeMiner-latest.AppImage',
+/** Versioned asset names produced by electron-builder; these always exist on each release. */
+const VERSIONED_ASSET_NAMES = {
+  win: (v: string) => `VibeMiner-Setup-${v}.exe`,
+  mac: (v: string) => `VibeMiner-${v}-arm64.dmg`,
+  linux: (v: string) => `VibeMiner-${v}.AppImage`,
 } as const;
 
-export type DesktopDownloadSource = 'static-latest' | 'fallback';
+export type DesktopDownloadSource = 'github-api' | 'static-latest' | 'fallback';
 
 /**
- * Returns desktop download URLs that always point to the latest release.
- * Uses GitHub's redirect URLs (no API, no token). The release workflow uploads
- * assets with these fixed names so each new tag + release automatically becomes the target.
+ * Returns desktop download URLs that point to the true latest release only.
+ * Prefer: GitHub API latest release + versioned asset URLs (explicit, never misleading).
+ * Fallback: /releases/latest/download/-latest (GitHub redirects to the current latest release).
  */
 export async function getLatestDesktopDownloadUrls(): Promise<{
   urls: DesktopDownloadUrls;
@@ -73,11 +76,36 @@ export async function getLatestDesktopDownloadUrls(): Promise<{
   latestTag?: string;
 }> {
   const repo = getRepoFromEnv();
+  const versionedBase = (tag: string) => `https://github.com/${repo}/releases/download/${tag}`;
+
+  try {
+    const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
+      headers: { Accept: 'application/vnd.github.v3+json' },
+      next: { revalidate: 60 },
+    });
+    if (res.ok) {
+      const data = (await res.json()) as { tag_name?: string };
+      const tag = data?.tag_name;
+      if (tag && typeof tag === 'string') {
+        const version = tag.replace(/^v/i, '');
+        const urls: DesktopDownloadUrls = {
+          win: `${versionedBase(tag)}/${VERSIONED_ASSET_NAMES.win(version)}`,
+          mac: `${versionedBase(tag)}/${VERSIONED_ASSET_NAMES.mac(version)}`,
+          linux: `${versionedBase(tag)}/${VERSIONED_ASSET_NAMES.linux(version)}`,
+        };
+        return { urls, source: 'github-api', latestTag: tag };
+      }
+    }
+  } catch {
+    // ignore: fall back to static URLs
+  }
+
+  // Fallback: redirect URLs (work when release workflow uploads -latest assets)
   const base = `https://github.com/${repo}/releases/latest/download`;
   const urls: DesktopDownloadUrls = {
-    win: `${base}/${LATEST_ASSET_NAMES.win}`,
-    mac: `${base}/${LATEST_ASSET_NAMES.mac}`,
-    linux: `${base}/${LATEST_ASSET_NAMES.linux}`,
+    win: `${base}/VibeMiner-Setup-latest.exe`,
+    mac: `${base}/VibeMiner-latest-arm64.dmg`,
+    linux: `${base}/VibeMiner-latest.AppImage`,
   };
   return { urls, source: 'static-latest' };
 }

@@ -186,13 +186,17 @@ jobs:
 
       # Copy versioned assets to fixed "latest" names so the website can use
       # /releases/latest/download/VibeMiner-Setup-latest.exe (no API or token needed).
+      # download-artifact with merge-multiple puts each artifact in a subdir (desktop-windows, etc.)
       - name: Add latest redirect assets
         run: |
           cd artifacts
-          for f in VibeMiner-Setup-*.exe; do [ -f "$f" ] && cp "$f" VibeMiner-Setup-latest.exe && break; done
-          for f in VibeMiner-*-arm64.dmg; do [ -f "$f" ] && cp "$f" VibeMiner-latest-arm64.dmg && break; done
-          for f in VibeMiner-*.AppImage; do [ -f "$f" ] && cp "$f" VibeMiner-latest.AppImage && break; done
+          for f in $(find . -name "VibeMiner-Setup-*.exe" -type f); do cp "$f" VibeMiner-Setup-latest.exe && break; done
+          for f in $(find . -name "VibeMiner-*-arm64.dmg" -type f); do cp "$f" VibeMiner-latest-arm64.dmg && break; done
+          for f in $(find . -name "VibeMiner-*.AppImage" -type f); do cp "$f" VibeMiner-latest.AppImage && break; done
           ls -la
+          test -f VibeMiner-Setup-latest.exe || (echo "Missing VibeMiner-Setup-latest.exe" && exit 1)
+          test -f VibeMiner-latest-arm64.dmg || (echo "Missing VibeMiner-latest-arm64.dmg" && exit 1)
+          test -f VibeMiner-latest.AppImage || (echo "Missing VibeMiner-latest.AppImage" && exit 1)
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
