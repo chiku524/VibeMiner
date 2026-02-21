@@ -3,17 +3,20 @@
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { DesktopAppSettings } from '@/components/DesktopAppSettings';
 import { DesktopNav } from '@/components/DesktopNav';
 
+const AUTH_LOAD_TIMEOUT_MS = 6000;
+
 export default function SettingsPage() {
   const isDesktop = useIsDesktop();
   const { user, accountType, loading } = useAuth();
   const router = useRouter();
+  const [authTimedOut, setAuthTimedOut] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -25,26 +28,48 @@ export default function SettingsPage() {
     }
   }, [loading, user, accountType, router]);
 
-  if (loading || !user) {
-    return (
-      <main className="min-h-screen bg-surface-950 bg-grid flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
-      </main>
-    );
-  }
+  useEffect(() => {
+    const t = setTimeout(() => setAuthTimedOut(true), AUTH_LOAD_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, []);
 
-  if (accountType === 'network') {
+  const showNav = isDesktop;
+  const loadingOrRedirect = loading || !user || accountType === 'network';
+
+  if (loadingOrRedirect) {
     return (
-      <main className="min-h-screen bg-surface-950 bg-grid flex flex-col items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
-        <p className="mt-4 text-sm text-gray-400">Redirecting…</p>
+      <main className="min-h-screen bg-surface-950 bg-grid">
+        {showNav && <DesktopNav />}
+        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${isDesktop ? 'pt-14' : ''}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
+          <p className="mt-4 text-sm text-gray-400">
+            {accountType === 'network' ? 'Redirecting…' : 'Loading…'}
+          </p>
+          {authTimedOut && !user && (
+            <p className="mt-6 max-w-sm text-center text-sm text-gray-500">
+              Taking a while?{' '}
+              <Link href="/login" className="text-accent-cyan hover:underline">
+                Sign in
+              </Link>
+              {isDesktop && (
+                <>
+                  {' or '}
+                  <Link href="/app" className="text-accent-cyan hover:underline">
+                    open app launcher
+                  </Link>
+                </>
+              )}
+              .
+            </p>
+          )}
+        </div>
       </main>
     );
   }
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
-      {isDesktop ? <DesktopNav /> : (
+      {!isDesktop && (
         <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
             <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold">
@@ -65,7 +90,7 @@ export default function SettingsPage() {
         </header>
       )}
 
-      <div className={`mx-auto max-w-2xl px-4 sm:px-6 ${isDesktop ? 'pt-14 pb-8' : 'py-8'}`}>
+      <div className={`mx-auto max-w-2xl px-4 sm:px-6 ${isDesktop ? 'pb-8' : 'py-8'}`}>
         <Breadcrumbs
           crumbs={[
             { label: 'Home', href: isDesktop ? '/app' : '/' },

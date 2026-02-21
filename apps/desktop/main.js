@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
@@ -144,6 +144,20 @@ function createWindow() {
   win.setMenu(null);
 
   mainWindow = win;
+
+  // Open external links (target="_blank" to other origins) in the system browser
+  const appOrigin = isDev ? 'http://localhost:3000' : (process.env.APP_URL || 'https://vibeminer.tech');
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    try {
+      const u = new URL(url);
+      const base = new URL(appOrigin);
+      if (u.origin !== base.origin) {
+        shell.openExternal(url).catch(() => {});
+        return { action: 'deny' };
+      }
+    } catch (_) {}
+    return { action: 'allow' };
+  });
 
   // Use a normal Chrome user agent so the web app doesn't block or treat the request differently
   const chromeUA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';

@@ -1,5 +1,6 @@
 import { site } from '@/lib/site';
 import type { Metadata } from 'next';
+import { SettingsLayoutClient } from './SettingsLayoutClient';
 
 const base = site.baseUrl.replace(/\/$/, '');
 
@@ -14,5 +15,5 @@ export default function SettingsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return <SettingsLayoutClient>{children}</SettingsLayoutClient>;
 }

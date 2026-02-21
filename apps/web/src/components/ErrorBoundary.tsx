@@ -39,6 +39,14 @@ export class ErrorBoundary extends React.Component<{ children: React.ReactNode }
             >
               Go home
             </Link>
+            {typeof window !== 'undefined' && (window as unknown as { electronAPI?: { isDesktop?: boolean } }).electronAPI?.isDesktop && (
+              <Link
+                href="/app"
+                className="rounded-xl border border-white/20 px-6 py-2.5 font-medium text-gray-200 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-accent-cyan focus:ring-offset-2 focus:ring-offset-surface-950"
+              >
+                App launcher
+              </Link>
+            )}
           </div>
         </div>
       );

@@ -1,5 +1,6 @@
 import { site } from '@/lib/site';
 import type { Metadata } from 'next';
+import { NetworksLayoutClient } from './NetworksLayoutClient';
 
 const base = site.baseUrl.replace(/\/$/, '');
 
@@ -10,5 +11,9 @@ export const metadata: Metadata = {
 };
 
 export default function NetworksLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <main className="min-h-screen bg-surface-950 bg-grid">
+      <NetworksLayoutClient>{children}</NetworksLayoutClient>
+    </main>
+  );
 }
