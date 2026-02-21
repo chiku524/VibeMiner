@@ -227,25 +227,32 @@ export function DashboardContent() {
 
   if (!authLoading && accountType === 'network') {
     return (
-      <main className="min-h-screen bg-surface-950 flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
-      </main>
+      <>
+        {isDesktop && <DesktopNav />}
+        <main className={`min-h-screen bg-surface-950 bg-grid flex items-center justify-center ${isDesktop ? 'pt-14' : ''}`}>
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
+        </main>
+      </>
     );
   }
 
   if (authLoading) {
     return (
       <>
-        <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-            <Link href={isDesktop ? '/app' : '/'} className="flex items-center gap-2 font-display text-lg font-semibold">
-              <span className="text-xl" aria-hidden="true">◇</span>
-              <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">VibeMiner</span>
-            </Link>
-            <Link href={isDesktop ? '/app' : '/'} className="text-sm text-gray-400 transition hover:text-white">← App home</Link>
-          </div>
-        </header>
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        {isDesktop ? (
+          <DesktopNav />
+        ) : (
+          <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
+            <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+              <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold">
+                <span className="text-xl" aria-hidden="true">◇</span>
+                <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">VibeMiner</span>
+              </Link>
+              <Link href="/" className="text-sm text-gray-400 transition hover:text-white">← App home</Link>
+            </div>
+          </header>
+        )}
+        <div className={`mx-auto max-w-6xl px-4 py-8 sm:px-6 ${isDesktop ? 'pt-14' : ''}`}>
           <Breadcrumbs crumbs={[{ label: 'Home', href: isDesktop ? '/app' : '/' }, { label: 'Miner dashboard' }]} />
           <div className="mb-8 mt-4 h-16 w-64 rounded-lg bg-white/5 animate-pulse" aria-hidden />
           <div className="grid gap-8 lg:grid-cols-3">

@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { RegisterForm } from './RegisterForm';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
+import { DesktopNav } from '@/components/DesktopNav';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 
 function RegisterFallback() {
@@ -23,14 +24,17 @@ export default function RegisterPage() {
   const isDesktop = useIsDesktop();
   const homeHref = isDesktop ? '/app' : '/';
   return (
-    <main className="flex min-h-screen flex-col items-center bg-surface-950 bg-grid px-4 py-24">
-      <div className="w-full max-w-md">
-        <Breadcrumbs crumbs={[{ label: 'Home', href: homeHref }, { label: 'Register' }]} />
-      </div>
-      <div className="mt-8 flex w-full max-w-md flex-1 justify-center">
-        <Suspense fallback={<RegisterFallback />}>
-          <RegisterForm />
-        </Suspense>
+    <main className="flex min-h-screen flex-col bg-surface-950 bg-grid">
+      {isDesktop && <DesktopNav />}
+      <div className={`flex flex-1 flex-col items-center px-4 ${isDesktop ? 'pt-14 py-24' : 'py-24'}`}>
+        <div className="w-full max-w-md">
+          <Breadcrumbs crumbs={[{ label: 'Home', href: homeHref }, { label: 'Register' }]} />
+        </div>
+        <div className="mt-8 flex w-full max-w-md flex-1 justify-center">
+          <Suspense fallback={<RegisterFallback />}>
+            <RegisterForm />
+          </Suspense>
+        </div>
       </div>
     </main>
   );

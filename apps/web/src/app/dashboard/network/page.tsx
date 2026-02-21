@@ -15,10 +15,13 @@ export default function NetworkDashboardPage() {
 
   if (!loading && !user) {
     return (
-      <main className="min-h-screen bg-surface-950 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-400">Sign in to access the network dashboard.</p>
-          <Link href="/login" className="mt-4 inline-block text-accent-cyan hover:underline">Sign in</Link>
+      <main className="min-h-screen bg-surface-950 bg-grid">
+        {isDesktop && <DesktopNav />}
+        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${isDesktop ? 'pt-14' : ''}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
+          <div className="text-center">
+            <p className="text-gray-400">Sign in to access the network dashboard.</p>
+            <Link href="/login" className="mt-4 inline-block text-accent-cyan hover:underline">Sign in</Link>
+          </div>
         </div>
       </main>
     );
@@ -26,10 +29,13 @@ export default function NetworkDashboardPage() {
 
   if (!loading && user && profile?.account_type !== 'network') {
     return (
-      <main className="min-h-screen bg-surface-950 flex items-center justify-center">
-        <div className="text-center">
+      <main className="min-h-screen bg-surface-950 bg-grid">
+        {isDesktop && <DesktopNav />}
+        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${isDesktop ? 'pt-14' : ''}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
+          <div className="text-center">
           <p className="text-gray-400">This dashboard is for network accounts. You’re signed in as a miner.</p>
-          <Link href="/dashboard" className="mt-4 inline-block text-accent-cyan hover:underline">Go to miner dashboard</Link>
+            <Link href="/dashboard" className="mt-4 inline-block text-accent-cyan hover:underline">Go to miner dashboard</Link>
+          </div>
         </div>
       </main>
     );

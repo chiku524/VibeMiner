@@ -43,8 +43,12 @@ export default function AdminDashboardPage() {
 
   if (loading || !user) {
     return (
-      <main className="min-h-screen bg-surface-950 bg-grid flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
+      <main className="min-h-screen bg-surface-950 bg-grid">
+        {isDesktop && <DesktopNav />}
+        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${isDesktop ? 'pt-14' : ''}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
+          <p className="mt-4 text-sm text-gray-400">Loading…</p>
+        </div>
       </main>
     );
   }
