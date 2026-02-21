@@ -208,15 +208,27 @@ function NetworkGrid({
   );
 }
 
+function getInitialMainnet(): NetworkWithMeta[] {
+  try {
+    return getMainnetNetworksListed() as NetworkWithMeta[];
+  } catch {
+    return [];
+  }
+}
+
+function getInitialDevnet(): NetworkWithMeta[] {
+  try {
+    return getDevnetNetworks() as NetworkWithMeta[];
+  } catch {
+    return [];
+  }
+}
+
 export function NetworksShowcase() {
   const reduced = useReducedMotion() ?? false;
   const [searchQuery, setSearchQuery] = useState('');
-  const [mainnetNetworks, setMainnetNetworks] = useState<NetworkWithMeta[]>(() =>
-    getMainnetNetworksListed() as NetworkWithMeta[]
-  );
-  const [devnetNetworks, setDevnetNetworks] = useState<NetworkWithMeta[]>(() =>
-    getDevnetNetworks() as NetworkWithMeta[]
-  );
+  const [mainnetNetworks, setMainnetNetworks] = useState<NetworkWithMeta[]>(getInitialMainnet);
+  const [devnetNetworks, setDevnetNetworks] = useState<NetworkWithMeta[]>(getInitialDevnet);
 
   useEffect(() => {
     fetch('/api/networks')

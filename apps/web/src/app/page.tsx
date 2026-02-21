@@ -57,18 +57,34 @@ export default function Home() {
     setMounted(true);
   }, []);
 
-  // Always render a full-height shell so nav never shows a blank (spinner or content).
+  // In desktop, show gate with nav so we never show a blank screen.
+  if (mounted && isDesktop) {
+    return <DesktopHomeGate />;
+  }
+
+  // Before mount (or desktop not yet detected): show a minimal shell so we're never blank. Desktop users can click "App" to reach /app.
   if (!mounted) {
     return (
-      <main className="min-h-screen bg-surface-950 bg-grid flex items-center justify-center" aria-busy="true">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
+      <main className="min-h-screen bg-surface-950 bg-grid" aria-busy="true">
+        <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-surface-950/95 backdrop-blur-md">
+          <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+            <a href="/" className="flex items-center gap-2 font-display text-base font-semibold text-white/95">
+              <span className="text-lg" aria-hidden="true">◇</span>
+              <span>VibeMiner</span>
+            </a>
+            <a href="/app" className="rounded px-2.5 py-1.5 text-sm text-gray-400 hover:bg-white/5 hover:text-white">
+              App
+            </a>
+          </nav>
+        </header>
+        <div className="flex min-h-screen flex-col items-center justify-center pt-14">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
+        </div>
       </main>
     );
   }
 
-  if (isDesktop) {
-    return <DesktopHomeGate />;
-  }
+  // Web, mounted: show full landing.
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
