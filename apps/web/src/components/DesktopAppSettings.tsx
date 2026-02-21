@@ -61,15 +61,17 @@ export function DesktopAppSettings() {
     addToast('Checking for updates…', 'info');
     try {
       const result = await window.electronAPI.checkForUpdates();
-      if (result.error) {
+      if (result?.error) {
         const msg = result.message ? `Could not check: ${result.message}` : 'Could not check for updates';
         addToast(msg, 'error');
-      } else if (result.updateAvailable) {
+      } else if (result?.updateAvailable) {
         const v = result.latestVersion ? ` (v${result.latestVersion})` : '';
         addToast(`Update available${v} — quit and reopen the app to install`, 'success');
       } else {
         addToast('You’re up to date', 'success');
       }
+    } catch {
+      addToast('Could not check for updates', 'error');
     } finally {
       setChecking(false);
     }

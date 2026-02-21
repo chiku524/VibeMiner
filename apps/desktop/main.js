@@ -1,7 +1,10 @@
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
+
+const GITHUB_OWNER = 'chiku524';
+const GITHUB_REPO = 'VibeMiner';
 
 // Packaged app = production (no dev tools, load vibeminer.tech). Unpackaged = dev (localhost + dev tools).
 const isDev = !app.isPackaged;
@@ -13,6 +16,37 @@ function configureUpdater() {
     'User-Agent': `VibeMiner-updater/${version} (${process.platform}; ${process.arch})`,
     Accept: 'application/vnd.github.v3+json',
   };
+}
+
+// Simple semver comparison: returns true if a < b (e.g. "1.0.22" < "1.0.24").
+function isNewerVersion(current, latest) {
+  if (!latest || typeof latest !== 'string') return false;
+  const cur = (current || '').replace(/^v/i, '').split('.').map(Number);
+  const lat = latest.replace(/^v/i, '').split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    const c = cur[i] || 0;
+    const l = lat[i] || 0;
+    if (l > c) return true;
+    if (l < c) return false;
+  }
+  return false;
+}
+
+// Fallback: fetch latest release from GitHub API when electron-updater doesn't find one.
+async function fetchLatestReleaseFromGitHub() {
+  const version = app.getVersion();
+  const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
+  const res = await net.fetch(url, {
+    headers: {
+      'User-Agent': `VibeMiner-updater/${version} (${process.platform}; ${process.arch})`,
+      Accept: 'application/vnd.github.v3+json',
+    },
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  const tag = data && data.tag_name;
+  if (!tag || typeof tag !== 'string') return null;
+  return tag.replace(/^v/i, '');
 }
 
 const SETTINGS_FILE = 'settings.json';
@@ -231,18 +265,39 @@ app.whenReady().then(() => {
   ipcMain.handle('getAppVersion', () => app.getVersion());
   ipcMain.handle('reload', () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.reload(); });
   ipcMain.handle('checkForUpdates', async () => {
+    const currentVersion = app.getVersion();
     try {
       const result = await autoUpdater.checkForUpdatesAndNotify();
-      const updateAvailable = !!(result && result.updateInfo);
-      const latestVersion = result?.updateInfo?.version || null;
+      let updateAvailable = !!(result && result.updateInfo);
+      let latestVersion = result?.updateInfo?.version || null;
+
+      // If electron-updater didn't find an update, fallback to GitHub API (avoids 403/feed issues).
+      if (!updateAvailable && !latestVersion) {
+        const fromApi = await fetchLatestReleaseFromGitHub();
+        if (fromApi && isNewerVersion(currentVersion, fromApi)) {
+          latestVersion = fromApi;
+          updateAvailable = true;
+          console.info('[VibeMiner] Update available (from GitHub API):', latestVersion);
+        }
+      }
+
       if (updateAvailable) {
         console.info('[VibeMiner] Update available:', latestVersion);
       } else {
-        console.info('[VibeMiner] Check complete. Current:', app.getVersion(), 'Latest:', latestVersion || 'same');
+        console.info('[VibeMiner] Check complete. Current:', currentVersion, 'Latest:', latestVersion || 'same');
       }
       return { updateAvailable, latestVersion, error: false };
     } catch (err) {
       console.error('[VibeMiner] Manual update check failed:', err?.message || err);
+      // Still try GitHub API so user gets a result (e.g. "Update available" with link).
+      try {
+        const fromApi = await fetchLatestReleaseFromGitHub();
+        if (fromApi && isNewerVersion(currentVersion, fromApi)) {
+          return { updateAvailable: true, latestVersion: fromApi, error: false };
+        }
+      } catch (_) {
+        // ignore
+      }
       return { updateAvailable: false, latestVersion: null, error: true, message: err?.message || String(err) };
     }
   });
