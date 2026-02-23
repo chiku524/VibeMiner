@@ -2,11 +2,16 @@
 
 import { useState, useEffect } from 'react';
 
+function getIsDesktop(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.electronAPI?.isDesktop === true;
+}
+
 export function useIsDesktop(): boolean {
-  const [isDesktop, setIsDesktop] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(getIsDesktop);
 
   useEffect(() => {
-    setIsDesktop(typeof window !== 'undefined' && window.electronAPI?.isDesktop === true);
+    setIsDesktop(getIsDesktop());
   }, []);
 
   return isDesktop;

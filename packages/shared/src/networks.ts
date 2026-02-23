@@ -125,6 +125,20 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
     rewardRate: 'Test only',
     minPayout: 'N/A',
   },
+  // Boing testnet — integration spec: boing-network/docs/VIBEMINER-INTEGRATION.md
+  {
+    id: 'boing-devnet',
+    name: 'Boing (Testnet)',
+    symbol: 'BOING',
+    description: 'Boing testnet: run a validator or full node (boing-node) with one click. JSON-RPC on port 8545; testnet faucet available. PoS chain—stake BOING to validate.',
+    icon: '◎',
+    algorithm: 'PoS',
+    environment: 'devnet',
+    website: 'https://github.com/boing-network/boing-network',
+    status: 'live',
+    rewardRate: 'Test only',
+    minPayout: 'N/A',
+  },
 ];
 
 function validateAndGetNetworks(raw: unknown[], label: string): BlockchainNetwork[] {
