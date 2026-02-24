@@ -1,6 +1,6 @@
 import { site } from '@/lib/site';
 import type { Metadata } from 'next';
-import { NetworksNavClient } from './NetworksNavClient';
+import { NetworksLayoutClient } from './NetworksLayoutClient';
 
 const base = site.baseUrl.replace(/\/$/, '');
 
@@ -11,16 +11,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Nav uses NetworksNavClient so the logo links to /app in desktop and / on web.
- * Shell is always visible so the Networks page is never blank.
+ * Uses NetworksLayoutClient so desktop app gets DesktopNav + content (no blank). Web gets NetworksNavClient.
  */
 export default function NetworksLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <main className="min-h-screen bg-surface-950 bg-grid">
-      <NetworksNavClient />
-      <div className="mx-auto max-w-6xl px-4 pt-14 sm:px-6">
-        {children}
-      </div>
-    </main>
-  );
+  return <NetworksLayoutClient>{children}</NetworksLayoutClient>;
 }

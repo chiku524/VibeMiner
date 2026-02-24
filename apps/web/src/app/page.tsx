@@ -9,7 +9,7 @@ import { Footer } from '@/components/Footer';
 import { BackToTop } from '@/components/BackToTop';
 import { DesktopHomeGate } from '@/components/DesktopHomeGate';
 import { LandingNetworksPreview } from '@/components/LandingNetworksPreview';
-import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useDesktopCheck } from '@/hooks/useIsDesktop';
 
 const HowItWorks = dynamic(
   () => import('@/components/HowItWorks').then((m) => ({ default: m.HowItWorks })),
@@ -49,42 +49,44 @@ function WebLanding() {
   );
 }
 
+function MinimalShell() {
+  return (
+    <main className="min-h-screen bg-surface-950 bg-grid" aria-busy="true">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-surface-950/95 backdrop-blur-md">
+        <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+          <a href="/" className="flex items-center gap-2 font-display text-base font-semibold text-white/95">
+            <span className="text-lg" aria-hidden="true">◇</span>
+            <span>VibeMiner</span>
+          </a>
+          <a href="/app" className="rounded px-2.5 py-1.5 text-sm text-gray-400 hover:bg-white/5 hover:text-white">
+            App
+          </a>
+        </nav>
+      </header>
+      <div className="flex min-h-screen flex-col items-center justify-center pt-14">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
+        <p className="mt-4 text-sm text-gray-400">Loading…</p>
+      </div>
+    </main>
+  );
+}
+
 export default function Home() {
   const [mounted, setMounted] = useState(false);
-  const isDesktop = useIsDesktop();
+  const { isDesktop, hasChecked } = useDesktopCheck();
 
   useLayoutEffect(() => {
     setMounted(true);
   }, []);
 
-  // In desktop, show gate with nav so we never show a blank screen.
-  if (mounted && isDesktop) {
+  // Before mount or before we know desktop: show minimal shell so we never flash web-only content in Electron.
+  if (!mounted || !hasChecked) {
+    return <MinimalShell />;
+  }
+
+  if (isDesktop) {
     return <DesktopHomeGate />;
   }
-
-  // Before mount (or desktop not yet detected): show a minimal shell so we're never blank. Desktop users can click "App" to reach /app.
-  if (!mounted) {
-    return (
-      <main className="min-h-screen bg-surface-950 bg-grid" aria-busy="true">
-        <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-surface-950/95 backdrop-blur-md">
-          <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-            <a href="/" className="flex items-center gap-2 font-display text-base font-semibold text-white/95">
-              <span className="text-lg" aria-hidden="true">◇</span>
-              <span>VibeMiner</span>
-            </a>
-            <a href="/app" className="rounded px-2.5 py-1.5 text-sm text-gray-400 hover:bg-white/5 hover:text-white">
-              App
-            </a>
-          </nav>
-        </header>
-        <div className="flex min-h-screen flex-col items-center justify-center pt-14">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
-        </div>
-      </main>
-    );
-  }
-
-  // Web, mounted: show full landing.
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">

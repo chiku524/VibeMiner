@@ -1,17 +1,18 @@
 'use client';
 
-import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useDesktopCheck } from '@/hooks/useIsDesktop';
 import { DesktopNav } from '@/components/DesktopNav';
 
 /**
  * Shown during client-side navigation (e.g. dashboard → home, → settings, → networks).
  * Must always show visible content so the user never sees a dark blank screen.
- * Desktop: show DesktopNav + loading area. Web: full-screen overlay with visible spinner + text.
+ * When we haven't checked desktop yet, show desktop shell (avoids blank in Electron).
  */
 export default function Loading() {
-  const isDesktop = useIsDesktop();
+  const { isDesktop, hasChecked } = useDesktopCheck();
 
-  if (isDesktop) {
+  // Before we've checked, assume desktop so we never show a bare overlay that could look blank in app.
+  if (!hasChecked || isDesktop) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
         <DesktopNav />

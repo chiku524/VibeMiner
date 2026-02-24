@@ -16,3 +16,14 @@ export function useIsDesktop(): boolean {
 
   return isDesktop;
 }
+
+/** Returns isDesktop and whether we've run the check (so we can avoid showing web-only content in desktop before check). */
+export function useDesktopCheck(): { isDesktop: boolean; hasChecked: boolean } {
+  const [state, setState] = useState({ isDesktop: false, hasChecked: false });
+
+  useEffect(() => {
+    setState({ isDesktop: getIsDesktop(), hasChecked: true });
+  }, []);
+
+  return state;
+}
