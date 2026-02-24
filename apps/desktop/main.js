@@ -169,6 +169,21 @@ let splashWindow = null;
 let mainReady = false;
 let splashMinElapsed = false;
 
+/** Resolve app icon path so taskbar/window use it (packaged: prefer app.asar.unpacked/build). */
+function getIconPath() {
+  const iconName = process.platform === 'win32' ? 'icon.ico' : process.platform === 'darwin' ? 'icon.icns' : 'icon.png';
+  const candidates = [];
+  if (app.isPackaged && process.resourcesPath) {
+    candidates.push(path.join(process.resourcesPath, 'app.asar.unpacked', 'build', iconName));
+    candidates.push(path.join(process.resourcesPath, 'build', iconName));
+  }
+  candidates.push(path.join(__dirname, 'build', iconName));
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
 function maybeShowMainAndCloseSplash() {
   if (!mainReady || !splashMinElapsed || !mainWindow || mainWindow.isDestroyed()) return;
   if (splashWindow && !splashWindow.isDestroyed()) {
@@ -199,21 +214,14 @@ function createSplashWindow(iconPath) {
 
 function createWindow() {
   mainReady = false;
-  // Resolve icon: when packaged, use unpacked resources so Windows taskbar gets the correct icon
-  const iconName = process.platform === 'win32' ? 'icon.ico' : process.platform === 'darwin' ? 'icon.icns' : 'icon.png';
-  let iconPath = path.join(__dirname, 'build', iconName);
-  if (app.isPackaged && process.resourcesPath) {
-    const unpackedIcon = path.join(process.resourcesPath, 'app.asar.unpacked', 'build', iconName);
-    if (fs.existsSync(unpackedIcon)) iconPath = unpackedIcon;
-  }
-  if (!fs.existsSync(iconPath)) iconPath = path.join(__dirname, 'build', iconName);
+  const iconPath = getIconPath();
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
     minWidth: 900,
     minHeight: 600,
     title: 'VibeMiner',
-    icon: fs.existsSync(iconPath) ? iconPath : undefined,
+    icon: iconPath || undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -225,6 +233,10 @@ function createWindow() {
 
   // No menu bar — app feels like a normal desktop app, not a browser
   win.setMenu(null);
+
+  if (iconPath && process.platform === 'win32') {
+    win.setIcon(iconPath);
+  }
 
   mainWindow = win;
 
@@ -438,14 +450,7 @@ app.whenReady().then(() => {
   });
 
   if (!isDev) {
-    const iconName = process.platform === 'win32' ? 'icon.ico' : process.platform === 'darwin' ? 'icon.icns' : 'icon.png';
-    let iconPath = path.join(__dirname, 'build', iconName);
-    if (app.isPackaged && process.resourcesPath) {
-      const unpackedIcon = path.join(process.resourcesPath, 'app.asar.unpacked', 'build', iconName);
-      if (fs.existsSync(unpackedIcon)) iconPath = unpackedIcon;
-    }
-    if (!fs.existsSync(iconPath)) iconPath = path.join(__dirname, 'build', iconName);
-    splashWindow = createSplashWindow(fs.existsSync(iconPath) ? iconPath : null);
+    splashWindow = createSplashWindow(getIconPath());
     setTimeout(() => {
       splashMinElapsed = true;
       maybeShowMainAndCloseSplash();
