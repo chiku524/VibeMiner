@@ -1,21 +1,24 @@
 'use client';
 
-import React from 'react';
-import { useDesktopCheck } from '@/hooks/useIsDesktop';
+import React, { useEffect, useState } from 'react';
 import { DesktopNav } from '@/components/DesktopNav';
 import { NetworksNavClient } from './NetworksNavClient';
 import { NetworksPageContent } from './NetworksPageContent';
 
 /**
  * Networks layout: desktop gets DesktopNav + content rendered directly; web gets
- * NetworksNavClient + router children. On desktop we do not use the layout's
- * children slot so we never depend on the router filling it (avoids blank screen
- * on return navigation). On web we use children as usual.
+ * NetworksNavClient + router children. We default to the desktop branch so the
+ * desktop app never shows a blank (avoids timing/hydration issues with electronAPI).
+ * Only after mount do we set isDesktop from window.electronAPI?.isDesktop.
  */
 export function NetworksLayoutClient({ children }: { children: React.ReactNode }) {
-  const { isDesktop, hasChecked } = useDesktopCheck();
+  const [isDesktop, setIsDesktop] = useState(true);
 
-  if (!hasChecked || isDesktop) {
+  useEffect(() => {
+    setIsDesktop(typeof window !== 'undefined' && window.electronAPI?.isDesktop === true);
+  }, []);
+
+  if (isDesktop) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
         <DesktopNav />

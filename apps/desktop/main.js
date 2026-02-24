@@ -107,11 +107,7 @@ function scheduleAutoUpdateChecks() {
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowPrerelease = false;
 
-  // First check after a short delay so app and network are ready (avoids silent failures on cold start)
-  setTimeout(() => runUpdateCheck(), 2000);
-  // Second check after window has been open a bit so any notification is visible
-  setTimeout(() => runUpdateCheck(), 8000);
-  // Then every 4 hours
+  // Check runs on every app open (main window did-finish-load). Here we only schedule the 4-hour interval.
   updateCheckInterval = setInterval(runUpdateCheck, 4 * 60 * 60 * 1000);
 }
 
@@ -319,6 +315,10 @@ function createWindow() {
       } else {
         showWhenReady();
       }
+      if (!isDev) {
+        runStartupUpdateCheck();
+        runUpdateCheck();
+      }
     }
   });
 
@@ -517,8 +517,6 @@ app.whenReady().then(() => {
   }
 
   createWindow();
-  // Run startup update check soon so the UI can show "Download" if a newer version exists (electron-updater also runs at 2s and 8s).
-  setTimeout(() => runStartupUpdateCheck(), 1500);
 });
 
 app.on('window-all-closed', () => {
