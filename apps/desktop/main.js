@@ -18,13 +18,15 @@ function getDirectDownloadUrl(platform) {
 // Packaged app = production (no dev tools, load vibeminer.tech). Unpackaged = dev (localhost + dev tools).
 const isDev = !app.isPackaged;
 
-// GitHub API requires a valid User-Agent; otherwise requests can get 403 and no update is found.
+// GitHub API and release asset downloads require a valid User-Agent (403 otherwise).
+// Accept: application/octet-stream can help when downloading installer assets from GitHub's CDN.
 function configureUpdater() {
   const version = app.getVersion();
   autoUpdater.requestHeaders = {
     'User-Agent': `VibeMiner-updater/${version} (${process.platform}; ${process.arch})`,
-    Accept: 'application/vnd.github.v3+json',
+    Accept: 'application/vnd.github.v3+json, application/octet-stream',
   };
+  autoUpdater.channel = 'latest';
 }
 
 // Simple semver comparison: returns true if a < b (e.g. "1.0.22" < "1.0.24").
@@ -127,7 +129,10 @@ function runStartupUpdateCheck() {
 }
 
 function setupUpdaterEvents() {
-  autoUpdater.on('error', (err) => console.error('[VibeMiner] Updater error:', err?.message || err));
+  autoUpdater.on('error', (err) => {
+    console.error('[VibeMiner] Updater error:', err?.message || err);
+    if (err?.stack) console.error('[VibeMiner] Updater stack:', err.stack);
+  });
   autoUpdater.on('update-available', (info) => {
     const v = info?.version || 'unknown';
     console.info('[VibeMiner] Update available:', v, '- downloading…');
@@ -305,17 +310,23 @@ app.whenReady().then(() => {
   ipcMain.handle('checkForUpdates', async () => {
     const currentVersion = app.getVersion();
     try {
-      const result = await autoUpdater.checkForUpdatesAndNotify();
+      let result = await autoUpdater.checkForUpdatesAndNotify();
       let updateAvailable = !!(result && result.updateInfo);
       let latestVersion = result?.updateInfo?.version || null;
 
-      // If electron-updater didn't find an update, fallback to GitHub API (avoids 403/feed issues).
+      // If electron-updater didn't find an update, try GitHub API and optionally retry the updater once.
       if (!updateAvailable && !latestVersion) {
         const fromApi = await fetchLatestReleaseFromGitHub();
         if (fromApi && isNewerVersion(currentVersion, fromApi)) {
-          latestVersion = fromApi;
-          updateAvailable = true;
-          console.info('[VibeMiner] Update available (from GitHub API):', latestVersion);
+          console.info('[VibeMiner] GitHub API reports newer version:', fromApi, '- retrying updater once');
+          result = await autoUpdater.checkForUpdatesAndNotify();
+          updateAvailable = !!(result && result.updateInfo);
+          latestVersion = result?.updateInfo?.version || fromApi;
+          if (!updateAvailable) {
+            updateAvailable = true;
+            latestVersion = fromApi;
+            console.info('[VibeMiner] Update available (from GitHub API; use Download installer):', latestVersion);
+          }
         }
       }
 
@@ -334,6 +345,7 @@ app.whenReady().then(() => {
       };
     } catch (err) {
       console.error('[VibeMiner] Manual update check failed:', err?.message || err);
+      if (err?.code) console.error('[VibeMiner] Error code:', err.code);
       try {
         const fromApi = await fetchLatestReleaseFromGitHub();
         if (fromApi && isNewerVersion(currentVersion, fromApi)) {

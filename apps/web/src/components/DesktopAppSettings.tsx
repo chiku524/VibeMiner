@@ -89,7 +89,7 @@ export function DesktopAppSettings() {
         addToast(msg, 'error');
       } else if (result?.updateAvailable) {
         const v = result.latestVersion ? ` (v${result.latestVersion})` : '';
-        addToast(`Update available${v} — quit and reopen the app to install`, 'success');
+        addToast(`Update available${v}. Use “Download installer” below, or quit and reopen if already downloaded.`, 'success');
         if (result.latestVersion && result.releasePageUrl) {
           setUpdateInfo({
             latestVersion: result.latestVersion,
@@ -120,7 +120,7 @@ export function DesktopAppSettings() {
       )}
       {updateInfo && !updateDownloaded && (
         <p className="mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-          Update available (v{updateInfo.latestVersion}).{' '}
+          Update available (v{updateInfo.latestVersion}). Click{' '}
           <button
             type="button"
             onClick={() => window.electronAPI?.openExternal?.(updateInfo.directDownloadUrl)}
@@ -128,7 +128,7 @@ export function DesktopAppSettings() {
           >
             Download installer
           </button>
-          {' '}· Or quit and reopen the app if the update was already downloaded.
+          {' '}to get the latest version, or quit and reopen the app if the update was already downloaded.
         </p>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
