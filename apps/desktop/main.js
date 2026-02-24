@@ -164,6 +164,15 @@ const SPLASH_HTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name
 @keyframes fade{from{opacity:0;transform:scale(0.96);}to{opacity:1;transform:scale(1);}}
 </style></head><body><div class="symbol" aria-hidden="true">◇</div><div class="name">VibeMiner</div><p class="tag">Mine without the grind.</p></body></html>`;
 
+const UPDATE_WINDOW_HTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VibeMiner — Updating</title><style>
+*{box-sizing:border-box;}body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0c0e12;color:#e5e7eb;font-family:system-ui,sans-serif;text-align:center;padding:2rem;}
+.symbol{width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:linear-gradient(135deg,rgba(34,211,238,0.25),rgba(52,211,153,0.2));border-radius:1rem;}
+.name{font-size:1.35rem;font-weight:700;background:linear-gradient(90deg,#22d3ee,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent;margin-top:0.75rem;}
+.spinner{margin-top:1.5rem;height:10px;width:10px;border:2px solid rgba(34,211,238,0.3);border-top-color:#22d3ee;border-radius:50%;animation:spin 0.8s linear infinite;}
+.status{margin-top:1rem;font-size:0.9rem;color:#9ca3af;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style></head><body><div class="symbol" aria-hidden="true">◇</div><div class="name">VibeMiner</div><div class="spinner" aria-hidden="true"></div><p class="status" id="update-status">Downloading update…</p></body></html>`;
+
 let mainWindow = null;
 let splashWindow = null;
 let mainReady = false;
@@ -210,6 +219,38 @@ function createSplashWindow(iconPath) {
   splash.once('ready-to-show', () => splash.show());
   splash.on('closed', () => { splashWindow = null; });
   return splash;
+}
+
+function createUpdateWindow(iconPath) {
+  const win = new BrowserWindow({
+    width: 380,
+    height: 300,
+    frame: false,
+    transparent: false,
+    backgroundColor: '#0c0e12',
+    icon: iconPath || undefined,
+    show: false,
+    webPreferences: { nodeIntegration: false, contextIsolation: true },
+  });
+  win.setMenu(null);
+  win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(UPDATE_WINDOW_HTML));
+  win.once('ready-to-show', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      win.setParentWindow(mainWindow);
+      const bounds = mainWindow.getBounds();
+      const w = 380;
+      const h = 300;
+      win.setBounds({
+        x: Math.floor(bounds.x + (bounds.width - w) / 2),
+        y: Math.floor(bounds.y + (bounds.height - h) / 2),
+        width: w,
+        height: h,
+      });
+    }
+    win.show();
+    win.focus();
+  });
+  return win;
 }
 
 function createWindow() {
@@ -409,6 +450,10 @@ app.whenReady().then(() => {
     if (latestUpdateAvailable.latestVersion && !isNewerVersion(version, latestUpdateAvailable.latestVersion)) {
       return { ok: false, error: 'Already up to date' };
     }
+
+    const iconPath = getIconPath();
+    const updateWin = createUpdateWindow(iconPath);
+
     const url = latestUpdateAvailable.directDownloadUrl;
     const headers = {
       'User-Agent': `VibeMiner-updater/${version} (${process.platform}; ${process.arch})`,
@@ -420,20 +465,34 @@ app.whenReady().then(() => {
 
     try {
       const res = await net.fetch(url, { headers });
-      if (!res.ok) return { ok: false, error: `Download failed: ${res.status}` };
+      if (!res.ok) {
+        if (updateWin && !updateWin.isDestroyed()) updateWin.close();
+        return { ok: false, error: `Download failed: ${res.status}` };
+      }
       const buf = await res.arrayBuffer();
       fs.writeFileSync(tempFile, new Uint8Array(buf), { flag: 'w' });
     } catch (err) {
       console.error('[VibeMiner] Update download failed:', err?.message || err);
+      if (updateWin && !updateWin.isDestroyed()) updateWin.close();
       return { ok: false, error: err?.message || String(err) };
     }
 
+    try {
+      await updateWin.webContents.executeJavaScript(
+        "document.getElementById('update-status').textContent = 'Installing update… Closing app.';"
+      );
+    } catch (_) {}
+    await new Promise((r) => setTimeout(r, 1600));
+
     const platform = process.platform;
     if (platform === 'win32') {
-      const batPath = path.join(tempDir, 'VibeMiner-Update-Launcher.bat');
-      const quoted = tempFile.replace(/"/g, '""');
-      fs.writeFileSync(batPath, `@echo off\ntimeout /t 2 /nobreak > nul\nstart "" "${quoted}"\n`, 'utf8');
-      spawn('cmd.exe', ['/c', batPath], { detached: true, stdio: 'ignore' });
+      const exeArg = tempFile.replace(/'/g, "''");
+      const ps = `Start-Sleep -Seconds 2; Start-Process -FilePath '${exeArg}' -ArgumentList '/S'`;
+      spawn('powershell.exe', ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', ps], {
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true,
+      });
     } else if (platform === 'darwin') {
       const scriptPath = path.join(tempDir, 'VibeMiner-Update-Launcher.sh');
       fs.writeFileSync(scriptPath, `#!/bin/sh\nsleep 2\nopen "${tempFile.replace(/"/g, '\\"')}"\n`, 'utf8');
