@@ -28,6 +28,8 @@ declare global {
       getUpdateDownloaded?: () => Promise<boolean>;
       getUpdateAvailableInfo?: () => Promise<UpdateAvailableInfo | null>;
       openExternal?: (url: string) => Promise<void>;
+      quitAndInstall?: () => Promise<void>;
+      installUpdateNow?: () => Promise<{ ok: boolean; error?: string }>;
       onUpdateDownloaded?: (callback: () => void) => void;
       onUpdateAvailable?: (callback: (info: UpdateAvailableInfo) => void) => void;
     };
@@ -41,6 +43,7 @@ export function DesktopAppSettings() {
   const [version, setVersion] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [installing, setInstalling] = useState(false);
   const [updateDownloaded, setUpdateDownloaded] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<UpdateAvailableInfo | null>(null);
 
@@ -89,7 +92,7 @@ export function DesktopAppSettings() {
         addToast(msg, 'error');
       } else if (result?.updateAvailable) {
         const v = result.latestVersion ? ` (v${result.latestVersion})` : '';
-        addToast(`Update available${v}. Use “Download installer” below, or quit and reopen if already downloaded.`, 'success');
+        addToast(`Update available${v}. Click "Update now" to install without leaving the app.`, 'success');
         if (result.latestVersion && result.releasePageUrl) {
           setUpdateInfo({
             latestVersion: result.latestVersion,
@@ -111,25 +114,63 @@ export function DesktopAppSettings() {
     return null;
   }
 
+  const handleUpdateNow = async () => {
+    if (!window.electronAPI?.installUpdateNow || installing) return;
+    setInstalling(true);
+    addToast('Downloading update…', 'info');
+    try {
+      const result = await window.electronAPI.installUpdateNow();
+      if (result?.ok) {
+        addToast('Update downloaded. App will close and the installer will open.', 'success');
+      } else {
+        addToast(result?.error ? `Update failed: ${result.error}` : 'Update failed', 'error');
+        setInstalling(false);
+      }
+    } catch {
+      addToast('Update failed', 'error');
+      setInstalling(false);
+    }
+  };
+
+  const handleRestartToInstall = () => {
+    window.electronAPI?.quitAndInstall?.();
+  };
+
   return (
     <div className="mb-6 rounded-xl border border-white/10 bg-surface-900/30 px-4 py-3">
       {updateDownloaded && (
-        <p className="mb-3 rounded-lg border border-accent-cyan/40 bg-accent-cyan/10 px-3 py-2 text-sm text-accent-cyan">
-          Update ready — quit and reopen the app to install.
-        </p>
-      )}
-      {updateInfo && !updateDownloaded && (
-        <p className="mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-          Update available (v{updateInfo.latestVersion}). Click{' '}
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-accent-cyan/40 bg-accent-cyan/10 px-3 py-2">
+          <p className="text-sm text-accent-cyan">Update ready — restart to install.</p>
           <button
             type="button"
-            onClick={() => window.electronAPI?.openExternal?.(updateInfo.directDownloadUrl)}
-            className="font-medium text-accent-cyan underline hover:no-underline"
+            onClick={handleRestartToInstall}
+            className="shrink-0 rounded-lg bg-accent-cyan px-3 py-1.5 text-xs font-medium text-surface-950 hover:bg-accent-cyan/90"
           >
-            Download installer
+            Restart to install
           </button>
-          {' '}to get the latest version, or quit and reopen the app if the update was already downloaded.
-        </p>
+        </div>
+      )}
+      {updateInfo && !updateDownloaded && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2">
+          <p className="text-sm text-amber-200">Update available (v{updateInfo.latestVersion}).</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleUpdateNow}
+              disabled={installing}
+              className="shrink-0 rounded-lg bg-accent-cyan px-3 py-1.5 text-xs font-medium text-surface-950 hover:bg-accent-cyan/90 disabled:opacity-50"
+            >
+              {installing ? 'Downloading…' : 'Update now'}
+            </button>
+            <button
+              type="button"
+              onClick={() => window.electronAPI?.openExternal?.(updateInfo.directDownloadUrl)}
+              className="shrink-0 text-xs font-medium text-accent-cyan underline hover:no-underline"
+            >
+              Download installer
+            </button>
+          </div>
+        </div>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>

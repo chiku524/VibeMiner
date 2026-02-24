@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, shell, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { spawn } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 
 const GITHUB_OWNER = 'chiku524';
@@ -368,6 +369,59 @@ app.whenReady().then(() => {
   ipcMain.handle('getUpdateAvailableInfo', () => latestUpdateAvailable);
   ipcMain.handle('openExternal', (_, url) => {
     if (url && typeof url === 'string') shell.openExternal(url);
+  });
+
+  // Install update that electron-updater already downloaded (quit and run installer).
+  ipcMain.handle('quitAndInstall', () => {
+    if (updateDownloaded) {
+      autoUpdater.quitAndInstall(false, true);
+    }
+  });
+
+  // Download installer in-app and run it after quit (so user doesn't have to open browser).
+  ipcMain.handle('installUpdateNow', async () => {
+    if (!latestUpdateAvailable?.directDownloadUrl) {
+      return { ok: false, error: 'No update URL' };
+    }
+    const version = app.getVersion();
+    const url = latestUpdateAvailable.directDownloadUrl;
+    const headers = {
+      'User-Agent': `VibeMiner-updater/${version} (${process.platform}; ${process.arch})`,
+      Accept: 'application/octet-stream',
+    };
+    const ext = path.extname(new URL(url).pathname) || (process.platform === 'win32' ? '.exe' : process.platform === 'darwin' ? '.dmg' : '');
+    const tempDir = app.getPath('temp');
+    const tempFile = path.join(tempDir, `VibeMiner-Update${ext}`);
+
+    try {
+      const res = await net.fetch(url, { headers });
+      if (!res.ok) return { ok: false, error: `Download failed: ${res.status}` };
+      const buf = await res.arrayBuffer();
+      fs.writeFileSync(tempFile, new Uint8Array(buf), { flag: 'w' });
+    } catch (err) {
+      console.error('[VibeMiner] Update download failed:', err?.message || err);
+      return { ok: false, error: err?.message || String(err) };
+    }
+
+    const platform = process.platform;
+    if (platform === 'win32') {
+      const batPath = path.join(tempDir, 'VibeMiner-Update-Launcher.bat');
+      const quoted = tempFile.replace(/"/g, '""');
+      fs.writeFileSync(batPath, `@echo off\ntimeout /t 2 /nobreak > nul\nstart "" "${quoted}"\n`, 'utf8');
+      spawn('cmd.exe', ['/c', batPath], { detached: true, stdio: 'ignore' });
+    } else if (platform === 'darwin') {
+      const scriptPath = path.join(tempDir, 'VibeMiner-Update-Launcher.sh');
+      fs.writeFileSync(scriptPath, `#!/bin/sh\nsleep 2\nopen "${tempFile.replace(/"/g, '\\"')}"\n`, 'utf8');
+      fs.chmodSync(scriptPath, 0o755);
+      spawn(scriptPath, [], { detached: true, stdio: 'ignore' });
+    } else {
+      const scriptPath = path.join(tempDir, 'VibeMiner-Update-Launcher.sh');
+      fs.writeFileSync(scriptPath, `#!/bin/sh\nsleep 2\nchmod +x "${tempFile.replace(/"/g, '\\"')}"\nexec "${tempFile.replace(/"/g, '\\"')}"\n`, 'utf8');
+      fs.chmodSync(scriptPath, 0o755);
+      spawn(scriptPath, [], { detached: true, stdio: 'ignore' });
+    }
+    setImmediate(() => app.quit());
+    return { ok: true };
   });
 
   if (!isDev) {

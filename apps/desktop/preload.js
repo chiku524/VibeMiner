@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getUpdateDownloaded: () => ipcRenderer.invoke('getUpdateDownloaded'),
   getUpdateAvailableInfo: () => ipcRenderer.invoke('getUpdateAvailableInfo'),
   openExternal: (url) => ipcRenderer.invoke('openExternal', url),
+  quitAndInstall: () => ipcRenderer.invoke('quitAndInstall'),
+  installUpdateNow: () => ipcRenderer.invoke('installUpdateNow'),
   onUpdateDownloaded: (callback) => {
     ipcRenderer.on('update-downloaded', () => callback());
   },
