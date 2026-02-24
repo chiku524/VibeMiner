@@ -1,6 +1,6 @@
 {
   "name": "vibeminer-desktop",
-  "version": "1.0.31",
+  "version": "1.0.32",
   "private": true,
   "description": "VibeMiner desktop app — mine for networks that need you. No terminal required.",
   "author": "nico.builds",
@@ -60,7 +60,7 @@
       ],
       "icon": "build/icon.ico",
       "publisherName": "nico.builds",
-      "signAndEditExecutable": true
+      "signAndEditExecutable": false
     },
     "nsis": {
       "installerIcon": "build/icon.ico",

@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useEffect, useState } from 'react';
@@ -41,7 +42,8 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
   const [showRecovery, setShowRecovery] = useState(false);
-  const hasContent = children != null;
+  const hasContent =
+    children != null && React.Children.count(children) > 0;
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

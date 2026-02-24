@@ -136,8 +136,13 @@ function setupUpdaterEvents() {
   });
   autoUpdater.on('update-available', (info) => {
     const v = info?.version || 'unknown';
-    console.info('[VibeMiner] Update available:', v, '- downloading…');
-    if (v && v !== 'unknown') notifyUpdateAvailable(v);
+    const current = app.getVersion();
+    if (v && v !== 'unknown' && isNewerVersion(current, v)) {
+      console.info('[VibeMiner] Update available:', v, '- downloading…');
+      notifyUpdateAvailable(v);
+    } else {
+      console.info('[VibeMiner] Update event ignored (not newer): current', current, ', reported', v);
+    }
   });
   autoUpdater.on('update-not-available', (info) => {
     console.info('[VibeMiner] No update (current:', app.getVersion(), ', latest:', info?.version || 'unknown', ')');
@@ -312,26 +317,27 @@ app.whenReady().then(() => {
     const currentVersion = app.getVersion();
     try {
       let result = await autoUpdater.checkForUpdatesAndNotify();
-      let updateAvailable = !!(result && result.updateInfo);
       let latestVersion = result?.updateInfo?.version || null;
+      let updateAvailable = !!(result && result.updateInfo && latestVersion && isNewerVersion(currentVersion, latestVersion));
 
       // If electron-updater didn't find an update, try GitHub API and optionally retry the updater once.
-      if (!updateAvailable && !latestVersion) {
+      if (!updateAvailable) {
         const fromApi = await fetchLatestReleaseFromGitHub();
         if (fromApi && isNewerVersion(currentVersion, fromApi)) {
           console.info('[VibeMiner] GitHub API reports newer version:', fromApi, '- retrying updater once');
           result = await autoUpdater.checkForUpdatesAndNotify();
-          updateAvailable = !!(result && result.updateInfo);
-          latestVersion = result?.updateInfo?.version || fromApi;
-          if (!updateAvailable) {
+          const retryVersion = result?.updateInfo?.version || fromApi;
+          if (isNewerVersion(currentVersion, retryVersion)) {
             updateAvailable = true;
-            latestVersion = fromApi;
-            console.info('[VibeMiner] Update available (from GitHub API; use Download installer):', latestVersion);
+            latestVersion = retryVersion;
+            if (!result?.updateInfo) {
+              console.info('[VibeMiner] Update available (from GitHub API; use Download installer):', latestVersion);
+            }
           }
         }
       }
 
-      if (updateAvailable) {
+      if (updateAvailable && latestVersion) {
         console.info('[VibeMiner] Update available:', latestVersion);
         notifyUpdateAvailable(latestVersion);
       } else {
@@ -366,7 +372,11 @@ app.whenReady().then(() => {
     }
   });
   ipcMain.handle('getUpdateDownloaded', () => updateDownloaded);
-  ipcMain.handle('getUpdateAvailableInfo', () => latestUpdateAvailable);
+  ipcMain.handle('getUpdateAvailableInfo', () => {
+    if (!latestUpdateAvailable?.latestVersion) return null;
+    if (!isNewerVersion(app.getVersion(), latestUpdateAvailable.latestVersion)) return null;
+    return latestUpdateAvailable;
+  });
   ipcMain.handle('openExternal', (_, url) => {
     if (url && typeof url === 'string') shell.openExternal(url);
   });
@@ -384,6 +394,9 @@ app.whenReady().then(() => {
       return { ok: false, error: 'No update URL' };
     }
     const version = app.getVersion();
+    if (latestUpdateAvailable.latestVersion && !isNewerVersion(version, latestUpdateAvailable.latestVersion)) {
+      return { ok: false, error: 'Already up to date' };
+    }
     const url = latestUpdateAvailable.directDownloadUrl;
     const headers = {
       'User-Agent': `VibeMiner-updater/${version} (${process.platform}; ${process.arch})`,
@@ -440,8 +453,8 @@ app.whenReady().then(() => {
   }
 
   createWindow();
-  // After a short delay, check for updates via GitHub API so the UI can show "Download" even if electron-updater didn't find one.
-  setTimeout(() => runStartupUpdateCheck(), 5000);
+  // Run startup update check soon so the UI can show "Download" if a newer version exists (electron-updater also runs at 2s and 8s).
+  setTimeout(() => runStartupUpdateCheck(), 1500);
 });
 
 app.on('window-all-closed', () => {

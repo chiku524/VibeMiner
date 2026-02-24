@@ -116,6 +116,7 @@ export function DesktopAppSettings() {
 
   const handleUpdateNow = async () => {
     if (!window.electronAPI?.installUpdateNow || installing) return;
+    if (updateInfo?.latestVersion && version && updateInfo.latestVersion === version) return;
     setInstalling(true);
     addToast('Downloading update…', 'info');
     try {
@@ -150,7 +151,7 @@ export function DesktopAppSettings() {
           </button>
         </div>
       )}
-      {updateInfo && !updateDownloaded && (
+      {updateInfo && !updateDownloaded && updateInfo.latestVersion !== version && (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2">
           <p className="text-sm text-amber-200">Update available (v{updateInfo.latestVersion}).</p>
           <div className="flex flex-wrap items-center gap-2">
