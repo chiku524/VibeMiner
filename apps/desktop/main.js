@@ -80,6 +80,7 @@ function saveSettings(settings) {
 
 let updateCheckInterval = null;
 let updateDownloaded = false;
+let inAppUpdateInProgress = false;
 /** When we detect a newer version (from API or updater), store so the UI can show a download link. */
 let latestUpdateAvailable = null;
 
@@ -111,7 +112,7 @@ function scheduleAutoUpdateChecks() {
   updateCheckInterval = setInterval(runUpdateCheck, 4 * 60 * 60 * 1000);
 }
 
-// Run once after startup: if GitHub API shows a newer version, notify UI so the download link appears even without clicking "Check for updates".
+// Run once after startup: if GitHub API shows a newer version, notify UI and optionally run in-app update flow.
 function runStartupUpdateCheck() {
   if (!app.isPackaged) return;
   const currentVersion = app.getVersion();
@@ -120,6 +121,10 @@ function runStartupUpdateCheck() {
       if (fromApi && isNewerVersion(currentVersion, fromApi)) {
         console.info('[VibeMiner] Update available (startup check):', fromApi);
         notifyUpdateAvailable(fromApi);
+        if (loadSettings().autoUpdate && !inAppUpdateInProgress) {
+          inAppUpdateInProgress = true;
+          setTimeout(() => runInAppUpdateFlow(fromApi), 800);
+        }
       }
     })
     .catch((err) => console.error('[VibeMiner] Startup update check failed:', err?.message || err));
@@ -134,8 +139,12 @@ function setupUpdaterEvents() {
     const v = info?.version || 'unknown';
     const current = app.getVersion();
     if (v && v !== 'unknown' && isNewerVersion(current, v)) {
-      console.info('[VibeMiner] Update available:', v, '- downloading…');
+      console.info('[VibeMiner] Update available:', v);
       notifyUpdateAvailable(v);
+      if (loadSettings().autoUpdate && !inAppUpdateInProgress) {
+        inAppUpdateInProgress = true;
+        runInAppUpdateFlow(v);
+      }
     } else {
       console.info('[VibeMiner] Update event ignored (not newer): current', current, ', reported', v);
     }
@@ -168,6 +177,72 @@ function runAutoInstallIfReady() {
       console.error('[VibeMiner] quitAndInstall failed:', e?.message || e);
     }
   }, AUTO_INSTALL_DELAY_MS);
+}
+
+/** Run the full in-app update flow: themed window, download installer, run it, quit. Keeps flow inside desktop UI. */
+async function runInAppUpdateFlow(latestVersion) {
+  if (!latestVersion || !isNewerVersion(app.getVersion(), latestVersion)) return;
+  notifyUpdateAvailable(latestVersion);
+  const url = getDirectDownloadUrl(process.platform);
+  const version = app.getVersion();
+  const headers = {
+    'User-Agent': `VibeMiner-updater/${version} (${process.platform}; ${process.arch})`,
+    Accept: 'application/octet-stream',
+  };
+  const ext = path.extname(new URL(url).pathname) || (process.platform === 'win32' ? '.exe' : process.platform === 'darwin' ? '.dmg' : '');
+  const tempDir = app.getPath('temp');
+  const tempFile = path.join(tempDir, `VibeMiner-Update${ext}`);
+  const updateWin = createUpdateWindow(getIconPath());
+
+  try {
+    const res = await net.fetch(url, { headers });
+    if (!res.ok) {
+      if (updateWin && !updateWin.isDestroyed()) updateWin.close();
+      inAppUpdateInProgress = false;
+      return;
+    }
+    const buf = await res.arrayBuffer();
+    fs.writeFileSync(tempFile, new Uint8Array(buf), { flag: 'w' });
+  } catch (err) {
+    console.error('[VibeMiner] Update download failed:', err?.message || err);
+    if (updateWin && !updateWin.isDestroyed()) updateWin.close();
+    inAppUpdateInProgress = false;
+    return;
+  }
+
+  try {
+    await updateWin.webContents.executeJavaScript(
+      "document.getElementById('update-status').textContent = 'Closing app… Installer will run in a moment.';"
+    );
+  } catch (_) {}
+  await new Promise((r) => setTimeout(r, 2000));
+
+  const platform = process.platform;
+  const launchDelaySeconds = 4;
+  if (platform === 'win32') {
+    const exeArg = tempFile.replace(/'/g, "''");
+    const ps = `Start-Sleep -Seconds ${launchDelaySeconds}; Start-Process -FilePath '${exeArg}' -ArgumentList '/S'`;
+    const child = spawn('powershell.exe', ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', ps], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+    child.unref();
+  } else if (platform === 'darwin') {
+    const scriptPath = path.join(tempDir, 'VibeMiner-Update-Launcher.sh');
+    fs.writeFileSync(scriptPath, `#!/bin/sh\nsleep ${launchDelaySeconds}\nopen "${tempFile.replace(/"/g, '\\"')}"\n`, 'utf8');
+    fs.chmodSync(scriptPath, 0o755);
+    const child = spawn(scriptPath, [], { detached: true, stdio: 'ignore' });
+    child.unref();
+  } else {
+    const scriptPath = path.join(tempDir, 'VibeMiner-Update-Launcher.sh');
+    fs.writeFileSync(scriptPath, `#!/bin/sh\nsleep ${launchDelaySeconds}\nchmod +x "${tempFile.replace(/"/g, '\\"')}"\nexec "${tempFile.replace(/"/g, '\\"')}"\n`, 'utf8');
+    fs.chmodSync(scriptPath, 0o755);
+    const child = spawn(scriptPath, [], { detached: true, stdio: 'ignore' });
+    child.unref();
+  }
+  await new Promise((r) => setTimeout(r, 1500));
+  app.quit();
 }
 
 const FAILED_LOAD_HTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VibeMiner</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0c0e12;color:#e5e7eb;font-family:system-ui,sans-serif;text-align:center;padding:1.5rem;}h1{font-size:1.25rem;margin-bottom:0.5rem;}p{color:#9ca3af;margin-bottom:1.5rem;}button{background:#22d3ee;color:#0c0e12;border:none;padding:0.75rem 1.5rem;border-radius:0.75rem;font-weight:600;cursor:pointer;}button:hover{filter:brightness(1.1);}</style></head><body><div><h1>Can&rsquo;t connect</h1><p>Check your internet connection, then try again.</p><button type="button" id="retry">Retry</button></div><script>document.getElementById("retry").onclick=function(){if(typeof window.electronAPI!=="undefined"&&window.electronAPI.reload){window.electronAPI.reload();}else{location.reload();}}</script></body></html>`;
@@ -504,32 +579,37 @@ app.whenReady().then(() => {
 
     try {
       await updateWin.webContents.executeJavaScript(
-        "document.getElementById('update-status').textContent = 'Installing update… Closing app.';"
+        "document.getElementById('update-status').textContent = 'Closing app… Installer will run in a moment.';"
       );
     } catch (_) {}
-    await new Promise((r) => setTimeout(r, 1600));
+    await new Promise((r) => setTimeout(r, 2000));
 
     const platform = process.platform;
+    const launchDelaySeconds = 4;
     if (platform === 'win32') {
       const exeArg = tempFile.replace(/'/g, "''");
-      const ps = `Start-Sleep -Seconds 2; Start-Process -FilePath '${exeArg}' -ArgumentList '/S'`;
-      spawn('powershell.exe', ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', ps], {
+      const ps = `Start-Sleep -Seconds ${launchDelaySeconds}; Start-Process -FilePath '${exeArg}' -ArgumentList '/S'`;
+      const child = spawn('powershell.exe', ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', ps], {
         detached: true,
         stdio: 'ignore',
         windowsHide: true,
       });
+      child.unref();
     } else if (platform === 'darwin') {
       const scriptPath = path.join(tempDir, 'VibeMiner-Update-Launcher.sh');
-      fs.writeFileSync(scriptPath, `#!/bin/sh\nsleep 2\nopen "${tempFile.replace(/"/g, '\\"')}"\n`, 'utf8');
+      fs.writeFileSync(scriptPath, `#!/bin/sh\nsleep ${launchDelaySeconds}\nopen "${tempFile.replace(/"/g, '\\"')}"\n`, 'utf8');
       fs.chmodSync(scriptPath, 0o755);
-      spawn(scriptPath, [], { detached: true, stdio: 'ignore' });
+      const child = spawn(scriptPath, [], { detached: true, stdio: 'ignore' });
+      child.unref();
     } else {
       const scriptPath = path.join(tempDir, 'VibeMiner-Update-Launcher.sh');
-      fs.writeFileSync(scriptPath, `#!/bin/sh\nsleep 2\nchmod +x "${tempFile.replace(/"/g, '\\"')}"\nexec "${tempFile.replace(/"/g, '\\"')}"\n`, 'utf8');
+      fs.writeFileSync(scriptPath, `#!/bin/sh\nsleep ${launchDelaySeconds}\nchmod +x "${tempFile.replace(/"/g, '\\"')}"\nexec "${tempFile.replace(/"/g, '\\"')}"\n`, 'utf8');
       fs.chmodSync(scriptPath, 0o755);
-      spawn(scriptPath, [], { detached: true, stdio: 'ignore' });
+      const child = spawn(scriptPath, [], { detached: true, stdio: 'ignore' });
+      child.unref();
     }
-    setImmediate(() => app.quit());
+    await new Promise((r) => setTimeout(r, 1500));
+    app.quit();
     return { ok: true };
   });
 
