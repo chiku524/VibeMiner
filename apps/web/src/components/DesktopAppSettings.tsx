@@ -34,7 +34,7 @@ declare global {
       installUpdateNow?: () => Promise<{ ok: boolean; error?: string }>;
       onUpdateDownloaded?: (callback: () => void) => void;
       onUpdateAvailable?: (callback: (info: UpdateAvailableInfo) => void) => void;
-      onUpdateProgress?: (callback: (payload: { phase: UpdatePhase }) => void) => void;
+      onUpdateProgress?: (callback: (payload: { phase: UpdatePhase }) => void) => void | (() => void);
     };
   }
 }
