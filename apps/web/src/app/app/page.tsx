@@ -10,6 +10,7 @@ import { DesktopNav } from '@/components/DesktopNav';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Mining dashboard', description: 'Choose a network and start mining', icon: '◇' },
+  { href: '/dashboard/sessions', label: 'Mining sessions', description: 'View and manage active mining sessions', icon: '◉' },
   { href: '/networks', label: 'Networks', description: 'Browse mainnet and devnet networks', icon: '⛓' },
   { href: '/pools', label: 'Pools', description: 'How mining pools work', icon: '◈' },
   { href: '/dashboard/settings', label: 'Settings', description: 'Desktop app and preferences', icon: '⚙' },

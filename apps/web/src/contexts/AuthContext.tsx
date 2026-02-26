@@ -23,9 +23,10 @@ const defaultState: AuthState = {
   configured: true,
 };
 
-const AuthContext = createContext<AuthState & { logout: () => Promise<void> }>({
+const AuthContext = createContext<AuthState & { logout: () => Promise<void>; refreshSession: () => Promise<void> }>({
   ...defaultState,
   logout: async () => {},
+  refreshSession: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -86,8 +87,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const refreshSession = useCallback(async () => {
+    setState((prev) => ({ ...prev, loading: true }));
+    await loadSession();
+  }, [loadSession]);
+
   return (
-    <AuthContext.Provider value={{ ...state, logout }}>
+    <AuthContext.Provider value={{ ...state, logout, refreshSession }}>
       {children}
     </AuthContext.Provider>
   );

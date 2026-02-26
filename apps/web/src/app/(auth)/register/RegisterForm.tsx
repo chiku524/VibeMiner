@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useAuth } from '@/contexts/AuthContext';
 import { register, type AccountType } from '@/lib/auth';
 
 type Step = 'choose' | 'miner' | 'network';
@@ -30,6 +31,7 @@ export function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isDesktop = useIsDesktop();
+  const { refreshSession } = useAuth();
   const returnTo = useMemo(() => getReturnTo(searchParams), [searchParams]);
   const homeHref = isDesktop ? '/app' : '/';
 
@@ -75,6 +77,7 @@ export function RegisterForm() {
       setError(result.error);
       return;
     }
+    await refreshSession();
     router.push(returnTo);
     router.refresh();
   }

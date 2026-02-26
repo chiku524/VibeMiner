@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useAuth } from '@/contexts/AuthContext';
 import { login } from '@/lib/auth';
 
 function getReturnTo(searchParams: ReturnType<typeof useSearchParams>): string {
@@ -23,6 +24,7 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isDesktop = useIsDesktop();
+  const { refreshSession } = useAuth();
   const returnTo = useMemo(() => getReturnTo(searchParams), [searchParams]);
   const homeHref = isDesktop ? '/app' : '/';
 
@@ -49,6 +51,7 @@ export function LoginForm() {
       setError(result.error);
       return;
     }
+    await refreshSession();
     router.push(returnTo);
     router.refresh();
   }

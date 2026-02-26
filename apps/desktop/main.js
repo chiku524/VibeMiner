@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, net } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, net, Tray, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
@@ -300,6 +300,8 @@ const SPLASH_HTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name
 let mainWindow = null;
 let splashWindow = null;
 let updateOnlyWindow = null;
+let tray = null;
+let isQuitting = false;
 let mainReady = false;
 let splashMinElapsed = false;
 
@@ -393,6 +395,14 @@ function createWindow() {
 
   mainWindow = win;
 
+  // Minimize to tray on close so mining can continue in background; quit only via tray menu
+  win.on('close', (e) => {
+    if (!isQuitting && tray) {
+      e.preventDefault();
+      win.hide();
+    }
+  });
+
   // Open external links (target="_blank" to other origins) in the system browser
   const appOrigin = isDev ? 'http://localhost:3000' : (process.env.APP_URL || 'https://vibeminer.tech');
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -466,7 +476,32 @@ function createWindow() {
   }
   win.loadURL(appUrl);
 
-  win.on('closed', () => { mainWindow = null; clearTimeout(loadTimeout); });
+  win.on('closed', () => {
+    mainWindow = null;
+    clearTimeout(loadTimeout);
+    if (tray) {
+      tray.destroy();
+      tray = null;
+    }
+  });
+
+  // Create system tray so app keeps running when window is closed (mining continues)
+  if (iconPath) {
+    tray = new Tray(iconPath);
+    tray.setToolTip('VibeMiner — mining continues in background');
+    tray.on('click', () => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    });
+    const contextMenu = Menu.buildFromTemplate([
+      { label: 'Show VibeMiner', click: () => { if (mainWindow && !mainWindow.isDestroyed()) { mainWindow.show(); mainWindow.focus(); } } },
+      { type: 'separator' },
+      { label: 'Quit', click: () => { isQuitting = true; app.quit(); } },
+    ]);
+    tray.setContextMenu(contextMenu);
+  }
 }
 
 app.whenReady().then(async () => {
@@ -710,7 +745,12 @@ app.whenReady().then(async () => {
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  // With tray: main window hides instead of closing, so app stays running. Quit only via tray > Quit.
+  if (!tray && process.platform !== 'darwin') app.quit();
+});
+
+app.on('before-quit', () => {
+  isQuitting = true;
 });
 
 app.on('activate', () => {

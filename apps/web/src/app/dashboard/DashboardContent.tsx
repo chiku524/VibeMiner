@@ -13,7 +13,7 @@ import {
   INCENTIVIZED_TESTNET_IDS,
 } from '@vibeminer/shared';
 import { MiningPanel } from '@/components/dashboard/MiningPanel';
-import { useMiningSession } from '@/hooks/useMiningSession';
+import { useMining } from '@/contexts/MiningContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { NetworkModal } from '@/components/ui/NetworkModal';
@@ -207,51 +207,60 @@ export function DashboardContent() {
     return getNetworkById(preselectedId);
   }, [preselectedId, fetchedMainnet, fetchedDevnet]);
 
-  const { session, startMining, stopMining } = useMiningSession();
+  const { sessions, startMining, stopMining, isMining } = useMining();
 
   const handleStart = useCallback(
     (network: BlockchainNetwork) => {
-      if (network.status === 'live') {
+      if (network.status === 'live' && !isMining(network.id, network.environment)) {
         setStartingId(network.id);
         startMining(network.id, network.environment);
         addToast(`Mining ${network.name} started`);
       }
     },
-    [startMining, addToast]
+    [startMining, isMining, addToast]
   );
 
   useEffect(() => {
-    if (session) setStartingId(null);
-  }, [session]);
+    if (sessions.length > 0) setStartingId(null);
+  }, [sessions.length]);
 
-  const handleStop = useCallback(() => {
-    addToast('Mining stopped');
-    stopMining();
-  }, [stopMining, addToast]);
+  const handleStop = useCallback(
+    (networkId: string) => {
+      addToast('Mining stopped');
+      stopMining(networkId);
+    },
+    [stopMining, addToast]
+  );
 
-  const currentNetwork = useMemo(() => {
-    if (!session) return null;
-    const main = fetchedMainnet ?? getMainnetNetworksListed() as NetworkWithMeta[];
-    const dev = fetchedDevnet ?? getDevnetNetworks() as NetworkWithMeta[];
-    const found = findInLists(main, dev, session.networkId, session.environment);
-    if (found) return found;
-    return getNetworkById(session.networkId, session.environment);
-  }, [session, fetchedMainnet, fetchedDevnet]);
+  const sessionsWithNetworks = useMemo(() => {
+    const main = fetchedMainnet ?? (getMainnetNetworksListed() as NetworkWithMeta[]);
+    const dev = fetchedDevnet ?? (getDevnetNetworks() as NetworkWithMeta[]);
+    return sessions
+      .map((session) => {
+        const network =
+          findInLists(main, dev, session.networkId, session.environment) ??
+          getNetworkById(session.networkId, session.environment);
+        return { session, network };
+      })
+      .filter((item): item is typeof item & { network: NonNullable<typeof item.network> } => item.network != null);
+  }, [sessions, fetchedMainnet, fetchedDevnet]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         if (modalNetwork) setModalNetwork(null);
-        else if (session) handleStop();
+        else if (sessions.length > 0) {
+          handleStop(sessions[0].networkId);
+        }
       }
-      if (e.key === 's' && !e.ctrlKey && !e.metaKey && !session && !modalNetwork) {
+      if (e.key === 's' && !e.ctrlKey && !e.metaKey && sessions.length === 0 && !modalNetwork) {
         const first = filteredNetworks.find((n) => n.status === 'live');
         if (first) handleStart(first);
       }
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [session, modalNetwork, filteredNetworks, handleStart, handleStop]);
+  }, [sessions, modalNetwork, filteredNetworks, handleStart, handleStop]);
 
   if (!authLoading && accountType === 'network') {
     return (
@@ -423,8 +432,7 @@ export function DashboardContent() {
             >
               {filteredNetworks.map((network) => {
                 const isLive = network.status === 'live';
-                const isActive =
-                  session?.networkId === network.id && session?.environment === network.environment;
+                const isActive = isMining(network.id, network.environment);
                 const isStarting = startingId === network.id;
                 const nWithMeta = network as NetworkWithMeta;
                 const isNewlyListed =
@@ -443,7 +451,7 @@ export function DashboardContent() {
                     <div className="flex items-stretch gap-1 rounded-xl border border-transparent">
                       <motion.button
                         onClick={() => handleStart(network)}
-                        disabled={!isLive || !!isActive || !!isStarting}
+                        disabled={!isLive || isActive || !!isStarting}
                         whileHover={isLive && !isActive && !isStarting ? { scale: 1.01 } : undefined}
                         whileTap={isLive && !isActive && !isStarting ? { scale: 0.99 } : undefined}
                         transition={{ duration: 0.15 }}
@@ -531,13 +539,17 @@ export function DashboardContent() {
 
           <div className="lg:col-span-2">
             <AnimatePresence mode="wait">
-              {session && currentNetwork ? (
-                <MiningPanel
-                  key={`${session.environment}-${session.networkId}`}
-                  session={session}
-                  network={currentNetwork}
-                  onStop={handleStop}
-                />
+              {sessionsWithNetworks.length > 0 ? (
+                <div className="space-y-6">
+                  {sessionsWithNetworks.map(({ session, network }) => (
+                    <MiningPanel
+                      key={`${session.environment}-${session.networkId}`}
+                      session={session}
+                      network={network}
+                      onStop={() => handleStop(session.networkId)}
+                    />
+                  ))}
+                </div>
               ) : (
                 <motion.div
                   key="idle"
@@ -550,7 +562,7 @@ export function DashboardContent() {
                   <span className="text-5xl opacity-50" aria-hidden="true">◇</span>
                   <p className="mt-4 font-medium text-gray-400">No active mining session</p>
                   <p className="mt-2 max-w-sm text-sm text-gray-500">
-                    Select Mainnet or Devnet above, then pick a network to start mining. Or press <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs">S</kbd> to quick-start the first available network.
+                    Select Mainnet or Devnet above, then pick a network to start mining. You can mine multiple networks at once. Press <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs">S</kbd> to quick-start the first available network.
                   </p>
                   <div className="mt-6 flex flex-wrap justify-center gap-3">
                     {selectedEnv === 'devnet' && (() => {

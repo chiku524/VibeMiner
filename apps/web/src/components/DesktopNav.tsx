@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 /**
@@ -11,18 +11,11 @@ import { useAuth } from '@/contexts/AuthContext';
 export function DesktopNav() {
   const { user, isAdmin, loading, logout } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   async function handleSignOut() {
     await logout();
     router.push('/login');
     router.refresh();
-  }
-
-  function handleOpenInBrowser() {
-    if (typeof window === 'undefined' || !window.electronAPI?.openExternal) return;
-    const url = window.location.origin + (pathname || '') + window.location.search;
-    window.electronAPI.openExternal(url);
   }
 
   return (
@@ -42,6 +35,9 @@ export function DesktopNav() {
           <Link href="/dashboard" className="rounded px-2.5 py-1.5 text-sm text-gray-400 transition hover:bg-white/5 hover:text-white">
             Dashboard
           </Link>
+          <Link href="/dashboard/sessions" className="rounded px-2.5 py-1.5 text-sm text-gray-400 transition hover:bg-white/5 hover:text-white">
+            Sessions
+          </Link>
           <Link href="/networks" className="rounded px-2.5 py-1.5 text-sm text-gray-400 transition hover:bg-white/5 hover:text-white">
             Networks
           </Link>
@@ -57,14 +53,6 @@ export function DesktopNav() {
           <Link href="/dashboard/settings" className="rounded px-2.5 py-1.5 text-sm text-gray-400 transition hover:bg-white/5 hover:text-white">
             Settings
           </Link>
-          <button
-            type="button"
-            onClick={handleOpenInBrowser}
-            className="rounded px-2.5 py-1.5 text-sm text-gray-500 transition hover:bg-white/5 hover:text-gray-300"
-            title="Open this page in your default browser"
-          >
-            Open in browser
-          </button>
           {!loading && user && isAdmin && (
             <Link href="/dashboard/admin" className="rounded px-2.5 py-1.5 text-sm text-amber-400/90 transition hover:bg-amber-500/10 hover:text-amber-300">
               Admin
