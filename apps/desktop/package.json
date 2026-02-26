@@ -1,16 +1,18 @@
 {
   "name": "vibeminer-desktop",
-  "version": "1.0.39",
+  "version": "1.0.40",
   "private": true,
   "description": "VibeMiner desktop app — mine for networks that need you. No terminal required.",
   "author": "nico.builds",
   "main": "main.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:web\" \"wait-on http://localhost:3000 && electron .\"",
+    "dev:simulate-update": "concurrently \"npm run dev:web\" \"wait-on http://localhost:3000 && electron . --simulate-update\"",
     "dev:web": "npm run dev -w vibeminer-web",
     "build": "electron-builder",
     "build:web": "npm run build -w vibeminer-web",
     "start": "electron .",
+    "start:simulate-update": "electron . --simulate-update",
     "generate-icons": "node scripts/generate-icons.js"
   },
   "dependencies": {

@@ -19,6 +19,10 @@ function getDirectDownloadUrl(platform) {
 // Packaged app = production (no dev tools, load vibeminer.tech). Unpackaged = dev (localhost + dev tools).
 const isDev = !app.isPackaged;
 
+// Test the "update available at launch" path without publishing a release. No download or install; after showing the update window we continue to the main app.
+// Usage: VIBEMINER_SIMULATE_UPDATE=1 npm run electron   or   npm run electron -- --simulate-update
+const simulateUpdateAtLaunch = process.env.VIBEMINER_SIMULATE_UPDATE === '1' || process.argv.includes('--simulate-update');
+
 // GitHub API and release asset downloads require a valid User-Agent (403 otherwise).
 // Accept: application/octet-stream can help when downloading installer assets from GitHub's CDN.
 function configureUpdater() {
@@ -95,8 +99,16 @@ function notifyUpdateAvailable(latestVersion) {
   }
 }
 
-/** Send update phase to main window so the in-app overlay can show progress (no popup window). */
-function sendUpdateProgress(phase) {
+/** Send update phase to main window so the in-app overlay can show progress (no popup window).
+ * When updateOnlyWindow is set (startup update flow), updates that window's DOM instead of IPC.
+ * Optional second arg: suffix (e.g. " (test)" for simulated flow). */
+function sendUpdateProgress(phase, messageSuffix) {
+  const suffix = messageSuffix || '';
+  if (updateOnlyWindow && !updateOnlyWindow.isDestroyed()) {
+    const msg = (phase === 'downloading' ? 'Downloading update…' : 'Installing… The app will close in a moment.') + suffix;
+    updateOnlyWindow.webContents.executeJavaScript(`(function(){ var el = document.getElementById('update-msg'); if(el) el.textContent = '${msg.replace(/'/g, "\\'")}'; })();`).catch(() => {});
+    return;
+  }
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('update-progress', { phase });
   }
@@ -168,9 +180,14 @@ function setupUpdaterEvents() {
 
 const AUTO_INSTALL_DELAY_MS = 2500;
 
-/** If auto-update is on and an update is already downloaded, show in-app overlay and quit-and-install (no popup). */
+/** If auto-update is on and an update is already downloaded, show update-only window and quit-and-install (no popup). */
 function runAutoInstallIfReady() {
   if (!loadSettings().autoUpdate || !updateDownloaded) return;
+  // Show only the update window; hide main if it's visible
+  if (mainWindow && !mainWindow.isDestroyed() && (!updateOnlyWindow || updateOnlyWindow.isDestroyed())) {
+    updateOnlyWindow = createUpdateOnlyWindow(getIconPath());
+    mainWindow.hide();
+  }
   sendUpdateProgress('installing');
   setTimeout(() => {
     try {
@@ -181,9 +198,14 @@ function runAutoInstallIfReady() {
   }, AUTO_INSTALL_DELAY_MS);
 }
 
-/** Run the full in-app update flow: show progress in main window, download installer, run it, quit. No popup window. */
+/** Run the full in-app update flow: show progress in update-only window, download installer, run it, quit. No popup window. */
 async function runInAppUpdateFlow(latestVersion) {
   if (!latestVersion || !isNewerVersion(app.getVersion(), latestVersion)) return;
+  // If main window is visible but update-only window isn't, create it and hide main so only the update window shows
+  if (mainWindow && !mainWindow.isDestroyed() && (!updateOnlyWindow || updateOnlyWindow.isDestroyed())) {
+    updateOnlyWindow = createUpdateOnlyWindow(getIconPath());
+    mainWindow.hide();
+  }
   notifyUpdateAvailable(latestVersion);
   sendUpdateProgress('downloading');
   const url = getDirectDownloadUrl(process.platform);
@@ -214,11 +236,18 @@ async function runInAppUpdateFlow(latestVersion) {
   await new Promise((r) => setTimeout(r, 2000));
 
   const platform = process.platform;
-  const launchDelaySeconds = 4;
+  const launchDelaySeconds = 8;
+  const preQuitDelayMs = 4000;
+
   if (platform === 'win32') {
-    const exeArg = tempFile.replace(/'/g, "''");
-    const ps = `Start-Sleep -Seconds ${launchDelaySeconds}; Start-Process -FilePath '${exeArg}' -ArgumentList '/S'`;
-    const child = spawn('powershell.exe', ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', ps], {
+    // Use a VBS launcher so the installer runs fully detached and survives app.quit() (PowerShell/child can be torn down with the app on Windows).
+    // /S = silent install, --force-run = relaunch app after install (NSIS default skips this for silent mode).
+    const vbsPath = path.join(tempDir, 'VibeMiner-Update-Launcher.vbs');
+    const vbsContent =
+      'WScript.Sleep ' + (launchDelaySeconds * 1000) + '\n' +
+      'CreateObject("WScript.Shell").Run Chr(34) & "' + tempFile.replace(/"/g, '""') + '" & Chr(34) & " /S --force-run", 0, False\n';
+    fs.writeFileSync(vbsPath, vbsContent, 'utf8');
+    const child = spawn('wscript.exe', ['//B', vbsPath], {
       detached: true,
       stdio: 'ignore',
       windowsHide: true,
@@ -237,11 +266,27 @@ async function runInAppUpdateFlow(latestVersion) {
     const child = spawn(scriptPath, [], { detached: true, stdio: 'ignore' });
     child.unref();
   }
-  await new Promise((r) => setTimeout(r, 1500));
+  await new Promise((r) => setTimeout(r, preQuitDelayMs));
   app.quit();
 }
 
+/** Simulated update-at-launch flow for testing: show update-only window and progress, then continue to main app (no download/install). */
+async function runSimulatedUpdateFlow(onDone) {
+  sendUpdateProgress('downloading', ' (test)');
+  await new Promise((r) => setTimeout(r, 2000));
+  sendUpdateProgress('installing', ' (test)');
+  await new Promise((r) => setTimeout(r, 2500));
+  if (updateOnlyWindow && !updateOnlyWindow.isDestroyed()) {
+    updateOnlyWindow.close();
+    updateOnlyWindow = null;
+  }
+  inAppUpdateInProgress = false;
+  if (typeof onDone === 'function') onDone();
+}
+
 const FAILED_LOAD_HTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VibeMiner</title><style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0c0e12;color:#e5e7eb;font-family:system-ui,sans-serif;text-align:center;padding:1.5rem;}h1{font-size:1.25rem;margin-bottom:0.5rem;}p{color:#9ca3af;margin-bottom:1.5rem;}button{background:#22d3ee;color:#0c0e12;border:none;padding:0.75rem 1.5rem;border-radius:0.75rem;font-weight:600;cursor:pointer;}button:hover{filter:brightness(1.1);}</style></head><body><div><h1>Can&rsquo;t connect</h1><p>Check your internet connection, then try again.</p><button type="button" id="retry">Retry</button></div><script>document.getElementById("retry").onclick=function(){if(typeof window.electronAPI!=="undefined"&&window.electronAPI.reload){window.electronAPI.reload();}else{location.reload();}}</script></body></html>`;
+
+const UPDATE_ONLY_HTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VibeMiner Update</title><style>*{box-sizing:border-box;}body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0c0e12;color:#e5e7eb;font-family:system-ui,sans-serif;text-align:center;padding:2rem;}.sym{width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:1.75rem;background:linear-gradient(135deg,rgba(34,211,238,0.25),rgba(52,211,153,0.2));border-radius:1rem;}.name{font-size:1.25rem;font-weight:700;margin-top:0.75rem;background:linear-gradient(90deg,#22d3ee,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent;}#update-msg{margin-top:1rem;font-size:0.9rem;color:#9ca3af;}.sp{width:28px;height:28px;margin-top:1rem;border:2px solid #22d3ee;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;}@keyframes spin{to{transform:rotate(360deg);}}</style></head><body><div class="sym" aria-hidden="true">◇</div><div class="name">VibeMiner</div><p id="update-msg">Preparing update…</p><div class="sp" aria-hidden="true"></div></body></html>`;
 
 const SPLASH_MIN_MS = 1800;
 const SPLASH_HTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VibeMiner</title><style>
@@ -254,6 +299,7 @@ const SPLASH_HTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name
 
 let mainWindow = null;
 let splashWindow = null;
+let updateOnlyWindow = null;
 let mainReady = false;
 let splashMinElapsed = false;
 
@@ -298,6 +344,25 @@ function createSplashWindow(iconPath) {
   splash.once('ready-to-show', () => splash.show());
   splash.on('closed', () => { splashWindow = null; });
   return splash;
+}
+
+/** Small window shown only when an update is running at startup (main app never opens). */
+function createUpdateOnlyWindow(iconPath) {
+  const win = new BrowserWindow({
+    width: 400,
+    height: 260,
+    frame: false,
+    transparent: false,
+    backgroundColor: '#0c0e12',
+    icon: iconPath || undefined,
+    show: false,
+    webPreferences: { nodeIntegration: false, contextIsolation: true },
+  });
+  win.setMenu(null);
+  win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(UPDATE_ONLY_HTML));
+  win.once('ready-to-show', () => win.show());
+  win.on('closed', () => { updateOnlyWindow = null; });
+  return win;
 }
 
 function createWindow() {
@@ -404,7 +469,7 @@ function createWindow() {
   win.on('closed', () => { mainWindow = null; clearTimeout(loadTimeout); });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   if (!isDev) {
     configureUpdater();
     setupUpdaterEvents();
@@ -534,6 +599,11 @@ app.whenReady().then(() => {
       return { ok: false, error: 'Already up to date' };
     }
 
+    // Show only the update window; hide main so the small update window is the only one visible
+    if (mainWindow && !mainWindow.isDestroyed() && (!updateOnlyWindow || updateOnlyWindow.isDestroyed())) {
+      updateOnlyWindow = createUpdateOnlyWindow(getIconPath());
+      mainWindow.hide();
+    }
     sendUpdateProgress('downloading');
 
     const url = latestUpdateAvailable.directDownloadUrl;
@@ -561,11 +631,15 @@ app.whenReady().then(() => {
     await new Promise((r) => setTimeout(r, 2000));
 
     const platform = process.platform;
-    const launchDelaySeconds = 4;
+    const launchDelaySeconds = 8;
+    const preQuitDelayMs = 4000;
     if (platform === 'win32') {
-      const exeArg = tempFile.replace(/'/g, "''");
-      const ps = `Start-Sleep -Seconds ${launchDelaySeconds}; Start-Process -FilePath '${exeArg}' -ArgumentList '/S'`;
-      const child = spawn('powershell.exe', ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', ps], {
+      const vbsPath = path.join(tempDir, 'VibeMiner-Update-Launcher.vbs');
+      const vbsContent =
+        'WScript.Sleep ' + (launchDelaySeconds * 1000) + '\n' +
+        'CreateObject("WScript.Shell").Run Chr(34) & "' + tempFile.replace(/"/g, '""') + '" & Chr(34) & " /S --force-run", 0, False\n';
+      fs.writeFileSync(vbsPath, vbsContent, 'utf8');
+      const child = spawn('wscript.exe', ['//B', vbsPath], {
         detached: true,
         stdio: 'ignore',
         windowsHide: true,
@@ -584,10 +658,45 @@ app.whenReady().then(() => {
       const child = spawn(scriptPath, [], { detached: true, stdio: 'ignore' });
       child.unref();
     }
-    await new Promise((r) => setTimeout(r, 1500));
+    await new Promise((r) => setTimeout(r, preQuitDelayMs));
     app.quit();
     return { ok: true };
   });
+
+  // Production (or simulate): if a newer version is available and auto-update is on, show only the update window and run the update (do not open the main app).
+  // With --simulate-update or VIBEMINER_SIMULATE_UPDATE=1, we simulate this path without downloading/installing, then continue to the main app.
+  if (simulateUpdateAtLaunch) {
+    inAppUpdateInProgress = true;
+    updateOnlyWindow = createUpdateOnlyWindow(getIconPath());
+    setTimeout(async () => {
+      await runSimulatedUpdateFlow(() => {
+        if (!isDev) {
+          splashWindow = createSplashWindow(getIconPath());
+          setTimeout(() => {
+            splashMinElapsed = true;
+            maybeShowMainAndCloseSplash();
+          }, SPLASH_MIN_MS);
+        }
+        createWindow();
+      });
+    }, 600);
+    return;
+  }
+
+  if (!isDev && app.isPackaged) {
+    try {
+      const fromApi = await fetchLatestReleaseFromGitHub();
+      const currentVersion = app.getVersion();
+      if (fromApi && isNewerVersion(currentVersion, fromApi) && loadSettings().autoUpdate && !inAppUpdateInProgress) {
+        inAppUpdateInProgress = true;
+        updateOnlyWindow = createUpdateOnlyWindow(getIconPath());
+        setTimeout(() => runInAppUpdateFlow(fromApi), 600);
+        return;
+      }
+    } catch (err) {
+      console.error('[VibeMiner] Startup update check failed:', err?.message || err);
+    }
+  }
 
   if (!isDev) {
     splashWindow = createSplashWindow(getIconPath());
