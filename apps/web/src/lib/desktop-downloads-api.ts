@@ -101,7 +101,19 @@ export async function getLatestDesktopDownloadUrls(): Promise<{
       }
     }
   } catch {
-    // ignore: fall back to static URLs
+    // ignore: fall back to env or static URLs
+  }
+
+  // Tertiary fallback: env vars (wrangler [vars]) when API fails
+  const cf = getCloudflareEnv();
+  const envWin = envStr(cf, 'NEXT_PUBLIC_DESKTOP_DOWNLOAD_WIN') ?? process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_WIN;
+  const envMac = envStr(cf, 'NEXT_PUBLIC_DESKTOP_DOWNLOAD_MAC') ?? process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_MAC;
+  const envLinux = envStr(cf, 'NEXT_PUBLIC_DESKTOP_DOWNLOAD_LINUX') ?? process.env.NEXT_PUBLIC_DESKTOP_DOWNLOAD_LINUX;
+  if (envWin || envMac || envLinux) {
+    return {
+      urls: { win: envWin ?? null, mac: envMac ?? null, linux: envLinux ?? null },
+      source: 'fallback',
+    };
   }
 
   // Fallback: redirect URLs (work when release workflow uploads -latest assets)

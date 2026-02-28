@@ -15,7 +15,7 @@ export function Footer() {
         </div>
         <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500 sm:justify-end">
           <Link href="/networks" className="transition hover:text-white">Networks</Link>
-          <Link href={isDesktop ? '/how-mining-works' : '/#how-it-works'} className="transition hover:text-white">How it works</Link>
+          <Link href="/how-mining-works" className="transition hover:text-white">How it works</Link>
           {!isDesktop && <Link href="/download" className="transition hover:text-white">Download</Link>}
           <Link href="/fees" className="transition hover:text-white">Fees</Link>
           <Link href="/licenses" className="transition hover:text-white">Licenses</Link>

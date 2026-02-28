@@ -17,12 +17,15 @@ export function Nav() {
     return <DesktopNav />;
   }
   const [open, setOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
     }
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
@@ -57,17 +60,11 @@ export function Nav() {
             VibeMiner
           </span>
         </Link>
-        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <Link href="/networks" className="text-sm font-medium text-gray-400 transition hover:text-white">
             Networks
           </Link>
-          <Link href="/pools" className="text-sm font-medium text-gray-400 transition hover:text-white">
-            Pools
-          </Link>
           <Link href="/how-mining-works" className="text-sm font-medium text-gray-400 transition hover:text-white">
-            How it works
-          </Link>
-          <Link href="/#how-it-works" className="text-sm font-medium text-gray-400 transition hover:text-white" title="Scrolls to section on home">
             How it works
           </Link>
           {!isDesktop && (
@@ -78,9 +75,47 @@ export function Nav() {
           {isDesktop && (
             <span className="text-sm font-medium text-accent-cyan/90" aria-hidden="true">Desktop app</span>
           )}
-          <Link href="/fees" className="text-sm font-medium text-gray-400 transition hover:text-white">
-            Fees
-          </Link>
+          <div className="relative" ref={moreRef}>
+            <button
+              type="button"
+              onClick={() => setMoreOpen((o) => !o)}
+              className="text-sm font-medium text-gray-400 transition hover:text-white"
+              aria-expanded={moreOpen}
+              aria-haspopup="true"
+            >
+              More
+              <span className="ml-0.5 text-xs" aria-hidden>▾</span>
+            </button>
+            {moreOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute right-0 top-full mt-1 w-40 rounded-xl border border-white/10 bg-surface-900 py-1 shadow-xl"
+              >
+                <Link
+                  href="/pools"
+                  onClick={() => setMoreOpen(false)}
+                  className="block px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white"
+                >
+                  Pools
+                </Link>
+                <Link
+                  href="/fees"
+                  onClick={() => setMoreOpen(false)}
+                  className="block px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white"
+                >
+                  Fees
+                </Link>
+                <Link
+                  href="/licenses"
+                  onClick={() => setMoreOpen(false)}
+                  className="block px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white"
+                >
+                  Licenses
+                </Link>
+              </motion.div>
+            )}
+          </div>
           {!loading && (
             user ? (
               <div className="relative" ref={menuRef}>
