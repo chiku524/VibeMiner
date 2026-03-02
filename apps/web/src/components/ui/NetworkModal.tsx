@@ -195,7 +195,7 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
           {network.status === 'live' && (
             <div className="mt-4 flex flex-wrap items-center gap-3 pt-4 border-t border-white/5">
               <Link
-                href={`/dashboard?env=${network.environment}&network=${network.id}`}
+                href={`/dashboard/mining?env=${network.environment}&network=${network.id}`}
                 className="inline-block rounded-xl bg-accent-cyan/20 px-4 py-2 text-sm font-medium text-accent-cyan transition hover:bg-accent-cyan/30"
               >
                 Start mining →

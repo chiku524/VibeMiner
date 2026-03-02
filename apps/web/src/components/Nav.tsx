@@ -18,14 +18,17 @@ export function Nav() {
   }
   const [open, setOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
+  const workspaceRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
       if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
+      if (workspaceRef.current && !workspaceRef.current.contains(e.target as Node)) setWorkspaceOpen(false);
     }
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
@@ -61,6 +64,32 @@ export function Nav() {
           </span>
         </Link>
         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          <div className="relative" ref={workspaceRef}>
+            <button
+              type="button"
+              onClick={() => setWorkspaceOpen((o) => !o)}
+              className="text-sm font-medium text-gray-400 transition hover:text-white"
+              aria-expanded={workspaceOpen}
+              aria-haspopup="true"
+            >
+              Workspace
+              <span className="ml-0.5 text-xs" aria-hidden>▾</span>
+            </button>
+            {workspaceOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute left-0 top-full mt-1 w-40 rounded-xl border border-white/10 bg-surface-900 py-1 shadow-xl"
+              >
+                <Link href="/dashboard/mining" onClick={() => setWorkspaceOpen(false)} className="block px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white">
+                  Mining
+                </Link>
+                <Link href="/dashboard/nodes" onClick={() => setWorkspaceOpen(false)} className="block px-4 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white">
+                  Run nodes
+                </Link>
+              </motion.div>
+            )}
+          </div>
           <Link href="/networks" className="text-sm font-medium text-gray-400 transition hover:text-white">
             Networks
           </Link>

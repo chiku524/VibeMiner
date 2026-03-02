@@ -10,7 +10,7 @@ function MiniNetworkCard({ network, env }: { network: BlockchainNetwork; env: 'm
   const isLive = network.status === 'live';
   return (
     <Link
-      href={`/dashboard?env=${env}&network=${network.id}`}
+      href={`/dashboard/mining?env=${env}&network=${network.id}`}
       className="block rounded-xl border border-white/5 bg-surface-900/50 p-4 transition hover:border-accent-cyan/20 hover:bg-surface-850/80"
     >
       <div className="flex items-center gap-3">
@@ -49,7 +49,7 @@ export function LandingNetworksPreview() {
             <p className="text-sm text-amber-200 font-medium">Incentivized testnet</p>
             <p className="mt-0.5 text-xs text-gray-400">Try Boing: run a validator or full node with one click.</p>
             <Link
-              href="/dashboard?env=devnet&network=boing-devnet"
+              href="/dashboard/nodes?env=devnet&network=boing-devnet"
               className="mt-3 inline-block rounded-xl bg-amber-500/20 px-4 py-2 text-sm font-medium text-amber-300 transition hover:bg-amber-500/30"
             >
               Start Boing testnet →

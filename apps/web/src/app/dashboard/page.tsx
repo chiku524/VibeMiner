@@ -1,11 +1,5 @@
-import { Suspense } from 'react';
-import { DashboardContent } from './DashboardContent';
-import { DashboardFallback } from './DashboardFallback';
+import { redirect } from 'next/navigation';
 
 export default function DashboardPage() {
-  return (
-    <Suspense fallback={<DashboardFallback />}>
-      <DashboardContent />
-    </Suspense>
-  );
+  redirect('/dashboard/mining');
 }

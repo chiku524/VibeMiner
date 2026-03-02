@@ -5,11 +5,12 @@
       <stop offset="100%" stop-color="#34d399" />
     </linearGradient>
   </defs>
+  <!-- Diamond icon: thicker stroke for taskbar/small-size legibility -->
   <path
     d="M24 2 L46 24 L24 46 L2 24 Z"
     fill="url(#icon-gradient)"
-    stroke="rgba(34,211,238,0.5)"
-    stroke-width="1"
+    stroke="rgba(34,211,238,0.6)"
+    stroke-width="2"
     stroke-linejoin="round"
   />
 </svg>

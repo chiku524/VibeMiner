@@ -507,6 +507,10 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  // Windows: associate app with icon for correct taskbar/alt-tab display
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('com.nicobuilds.vibeminer');
+  }
   if (!isDev) {
     configureUpdater();
     setupUpdaterEvents();

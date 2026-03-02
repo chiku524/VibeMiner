@@ -58,7 +58,7 @@ export default function MiningSessionsPage() {
         <Breadcrumbs
           crumbs={[
             { label: 'Home', href: isDesktop ? '/app' : '/' },
-            { label: 'Dashboard', href: '/dashboard' },
+            { label: 'Mining', href: '/dashboard/mining' },
             { label: 'Sessions' },
           ]}
         />
@@ -72,8 +72,8 @@ export default function MiningSessionsPage() {
             Active mining and node sessions. Multiple networks at once.
           </p>
           <p className="mt-2 text-sm text-gray-500">
-            <Link href="/dashboard" className="text-accent-cyan hover:underline">
-              Go to dashboard
+            <Link href="/dashboard/mining" className="text-accent-cyan hover:underline">
+              Go to Mining
             </Link>{' '}
             to start mining or running nodes.
           </p>
@@ -111,14 +111,18 @@ export default function MiningSessionsPage() {
               </span>
               <p className="mt-4 font-medium text-gray-400">No active sessions</p>
               <p className="mt-2 max-w-sm text-sm text-gray-500">
-                Start mining or running nodes from the{' '}
-                <Link href="/dashboard" className="text-accent-cyan hover:underline">
-                  dashboard
+                Start mining or running nodes from{' '}
+                <Link href="/dashboard/mining" className="text-accent-cyan hover:underline">
+                  Mining
+                </Link>
+                {' or '}
+                <Link href="/dashboard/nodes" className="text-accent-cyan hover:underline">
+                  Run nodes
                 </Link>
                 . Sessions will appear here.
               </p>
               <Link
-                href="/dashboard"
+                href="/dashboard/mining"
                 className="mt-6 rounded-xl bg-accent-cyan/20 px-6 py-2.5 text-sm font-medium text-accent-cyan transition hover:bg-accent-cyan/30"
               >
                 Go to dashboard

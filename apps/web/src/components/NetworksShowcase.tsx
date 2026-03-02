@@ -108,7 +108,7 @@ function NetworkCard({ network, isNew, requestServiceHref = '/#request-service' 
       <div className="mt-4 flex flex-wrap gap-2">
         {isLive && (
           <Link
-            href={`/dashboard?env=${network.environment}&network=${network.id}`}
+            href={`/dashboard/mining?env=${network.environment}&network=${network.id}`}
             className="rounded-lg bg-accent-cyan/20 px-3 py-1.5 text-sm font-medium text-accent-cyan transition hover:bg-accent-cyan/30"
           >
             Mine
@@ -337,7 +337,7 @@ export function NetworksShowcase() {
                   Try the Boing testnet—run a validator or full node with one click. Testnet faucet available.
                 </p>
                 <Link
-                  href="/dashboard?env=devnet&network=boing-devnet"
+                  href="/dashboard/nodes?env=devnet&network=boing-devnet"
                   className="mt-4 inline-block rounded-xl bg-amber-500/20 px-5 py-2.5 text-sm font-medium text-amber-300 transition hover:bg-amber-500/30"
                 >
                   Start Boing testnet →

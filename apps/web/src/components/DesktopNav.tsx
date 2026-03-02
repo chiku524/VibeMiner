@@ -2,22 +2,26 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 /**
- * Desktop app navigation: primary actions (Dashboard, Sessions, Networks, Settings),
- * More dropdown (How mining works, Pools, Fees, Licenses), Admin, Sign out.
+ * Desktop app navigation: Workspace dropdown (Mining, Run nodes), Sessions, Networks,
+ * Settings, More dropdown, Admin, Sign out.
  */
 export function DesktopNav() {
   const { user, isAdmin, loading, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+  const workspaceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
+      if (workspaceRef.current && !workspaceRef.current.contains(e.target as Node)) setWorkspaceOpen(false);
     }
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
@@ -36,6 +40,8 @@ export function DesktopNav() {
     { href: '/licenses', label: 'Licenses' },
   ];
 
+  const isWorkspace = pathname?.startsWith('/dashboard/mining') || pathname?.startsWith('/dashboard/nodes');
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-surface-950/95 backdrop-blur-md">
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
@@ -50,9 +56,24 @@ export function DesktopNav() {
           </span>
         </Link>
         <div className="flex items-center gap-1 sm:gap-2">
-          <Link href="/dashboard" className="rounded px-2.5 py-1.5 text-sm text-gray-400 transition hover:bg-white/5 hover:text-white">
-            Dashboard
-          </Link>
+          <div className="relative" ref={workspaceRef}>
+            <button
+              type="button"
+              onClick={() => setWorkspaceOpen((o) => !o)}
+              className={`flex items-center gap-1 rounded px-2.5 py-1.5 text-sm transition hover:bg-white/5 hover:text-white ${isWorkspace ? 'text-white' : 'text-gray-400'}`}
+              aria-expanded={workspaceOpen}
+              aria-haspopup="true"
+            >
+              Workspace
+              <span className="text-xs" aria-hidden>▾</span>
+            </button>
+            {workspaceOpen && (
+              <div className="absolute left-0 top-full mt-1 w-40 rounded-xl border border-white/10 bg-surface-900 py-1 shadow-xl">
+                <Link href="/dashboard/mining" onClick={() => setWorkspaceOpen(false)} className="block px-4 py-2 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">Mining</Link>
+                <Link href="/dashboard/nodes" onClick={() => setWorkspaceOpen(false)} className="block px-4 py-2 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white">Run nodes</Link>
+              </div>
+            )}
+          </div>
           <Link href="/dashboard/sessions" className="rounded px-2.5 py-1.5 text-sm text-gray-400 transition hover:bg-white/5 hover:text-white">
             Sessions
           </Link>
