@@ -52,7 +52,8 @@ export function LoginForm() {
       return;
     }
     await refreshSession();
-    router.push(returnTo);
+    const dest = result.user.account_type === 'network' ? '/dashboard/network' : returnTo;
+    router.push(dest);
     router.refresh();
   }
 
