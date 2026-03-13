@@ -82,8 +82,8 @@ function isUrlHostAllowed(urlStr: string): boolean {
   }
 }
 
-/** Command template placeholders we allow. No shell metacharacters. */
-const ALLOWED_PLACEHOLDERS = ['{dataDir}', '{dataDirPath}'];
+/** Command template placeholders we allow (desktop node-service substitutes these). No shell metacharacters. */
+const ALLOWED_PLACEHOLDERS = ['{dataDir}', '{dataDirPath}', '{data_dir}', '{data_dir_path}'];
 
 function sanitizeCommandTemplate(template: string): { valid: boolean; sanitized?: string; error?: string } {
   // Reject shell metacharacters

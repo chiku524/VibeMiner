@@ -222,7 +222,7 @@ export function RequestListingForm() {
             type="text"
             value={algorithm}
             onChange={(e) => setAlgorithm(e.target.value)}
-            placeholder="e.g. SHA256, Scrypt"
+            placeholder="e.g. PoS + HotStuff BFT, or describe your consensus"
             required
             className="mt-2 w-full rounded-lg border border-white/10 bg-surface-850 px-4 py-2.5 text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none"
           />
@@ -320,7 +320,7 @@ export function RequestListingForm() {
               />
             </div>
             <div>
-              <label htmlFor="req-node-cmd" className="block text-xs font-medium text-gray-500">Command template (use {`{dataDir}`} for data path)</label>
+              <label htmlFor="req-node-cmd" className="block text-xs font-medium text-gray-500">Command template (use {`{dataDir}`} or {`{data_dir}`} for data path)</label>
               <input
                 id="req-node-cmd"
                 type="text"

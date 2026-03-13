@@ -33,7 +33,7 @@ Use this checklist to onboard Boing Network via VibeMiner's Request listing form
 | Field | Value |
 |-------|-------|
 | **Node download URL** | `https://github.com/boing-network/boing-network/releases/download/vX.Y.Z/boing-node-<platform>-<arch>.zip` (use actual release URL for your OS) |
-| **Command template** | `boing-node --p2p_listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --validator --rpc-port 8545 --data-dir {dataDir}` |
+| **Command template** | `boing-node --p2p_listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --validator --rpc-port 8545 --data-dir {dataDir}` (or use `{data_dir}`; both are supported) |
 | **Disk (GB)** | e.g. 5 |
 | **RAM (MB)** | e.g. 2048 |
 | **Binary SHA256** | (optional) paste the SHA256 of the release asset for integrity verification |
@@ -69,7 +69,7 @@ Use this checklist to onboard Boing Network via VibeMiner's Request listing form
 |-------|-----|
 | "Pool URL is required" | Expand "Node support" and fill in Node download URL + Command template |
 | "Node config validation failed" | Ensure download URL is from github.com (or another allowed host) |
-| "Command contains disallowed characters" | Avoid `;&|$\`<>()` in the command template |
+| "Command contains disallowed characters" | Avoid `;&|$\`<>()` in the command template. Use `{dataDir}` or `{data_dir}` for the data path. |
 | Duplicate / conflict | If Boing is already in the static list, the registered version overrides it |
 
 ## URL Allowlist

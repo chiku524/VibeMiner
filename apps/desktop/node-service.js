@@ -124,6 +124,8 @@ function startNode(network, userDataPath) {
   const cmd = template
     .replace(/\{dataDir\}/g, dataDir)
     .replace(/\{dataDirPath\}/g, dataDir)
+    .replace(/\{data_dir\}/g, dataDir)
+    .replace(/\{data_dir_path\}/g, dataDir)
     .replace(/\{nodeDir\}/g, path.join(nodeDir, 'bin'))
     .trim();
 

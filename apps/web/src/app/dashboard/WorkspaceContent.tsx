@@ -466,6 +466,15 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                               </p>
                               <p className="text-xs text-gray-500">
                                 {network.symbol} · {network.algorithm}
+                                {isNetworkMineable(network) && (
+                                  <span className="ml-1.5 rounded bg-emerald-500/20 px-1 py-0.5 text-emerald-300">Mineable</span>
+                                )}
+                                {hasNodeConfig(network) && !isNetworkMineable(network) && (
+                                  <span className="ml-1.5 rounded bg-sky-500/20 px-1 py-0.5 text-sky-300">Node only</span>
+                                )}
+                                {isNetworkMineable(network) && hasNodeConfig(network) && (
+                                  <span className="ml-1.5 rounded bg-amber-500/20 px-1 py-0.5 text-amber-300">Node</span>
+                                )}
                                 {(network.nodeDiskGb || network.nodeRamMb) && (
                                   <span className="ml-1.5 rounded bg-sky-500/20 px-1 py-0.5 text-sky-300">
                                     {RESOURCE_TIER_LABELS[getResourceTier(network.nodeDiskGb, network.nodeRamMb)]}
