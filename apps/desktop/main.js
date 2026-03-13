@@ -180,7 +180,12 @@ function setupUpdaterEvents() {
   });
 }
 
-const AUTO_INSTALL_DELAY_MS = 2500;
+/** Stop all miner and node processes so the NSIS installer can replace app files (avoids "Failed to uninstall old application files" on Windows). */
+function stopAllChildProcessesForUpdate() {
+  miningService.stopAllMiners();
+  nodeService.stopAllNodes();
+  return new Promise((r) => setTimeout(r, 3000));
+}
 
 /** If auto-update is on and an update is already downloaded, show update-only window and quit-and-install (no popup). */
 function runAutoInstallIfReady() {
@@ -191,13 +196,13 @@ function runAutoInstallIfReady() {
     mainWindow.hide();
   }
   sendUpdateProgress('installing');
-  setTimeout(() => {
+  stopAllChildProcessesForUpdate().then(() => {
     try {
       autoUpdater.quitAndInstall(false, true);
     } catch (e) {
       console.error('[VibeMiner] quitAndInstall failed:', e?.message || e);
     }
-  }, AUTO_INSTALL_DELAY_MS);
+  });
 }
 
 /** Run the full in-app update flow: show progress in update-only window, download installer, run it, quit. No popup window. */
@@ -235,10 +240,10 @@ async function runInAppUpdateFlow(latestVersion) {
   }
 
   sendUpdateProgress('installing');
-  await new Promise((r) => setTimeout(r, 2000));
+  await stopAllChildProcessesForUpdate();
 
   const platform = process.platform;
-  const launchDelaySeconds = 8;
+  const launchDelaySeconds = process.platform === 'win32' ? 10 : 8;
   const preQuitDelayMs = 4000;
 
   if (platform === 'win32') {
@@ -507,6 +512,18 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  const gotTheLock = app.requestSingleInstanceLock();
+  if (!gotTheLock) {
+    app.quit();
+    return;
+  }
+  app.on('second-instance', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+
   // Windows: associate app with icon for correct taskbar/alt-tab display
   if (process.platform === 'win32') {
     app.setAppUserModelId('com.nicobuilds.vibeminer');
@@ -675,10 +692,10 @@ app.whenReady().then(async () => {
   });
 
   // Install update that electron-updater already downloaded (quit and run installer).
-  ipcMain.handle('quitAndInstall', () => {
-    if (updateDownloaded) {
-      autoUpdater.quitAndInstall(false, true);
-    }
+  ipcMain.handle('quitAndInstall', async () => {
+    if (!updateDownloaded) return;
+    await stopAllChildProcessesForUpdate();
+    autoUpdater.quitAndInstall(false, true);
   });
 
   // Download installer in-app and run it after quit (progress in main window, no popup).
@@ -720,10 +737,10 @@ app.whenReady().then(async () => {
     }
 
     sendUpdateProgress('installing');
-    await new Promise((r) => setTimeout(r, 2000));
+    await stopAllChildProcessesForUpdate();
 
     const platform = process.platform;
-    const launchDelaySeconds = 8;
+    const launchDelaySeconds = platform === 'win32' ? 10 : 8;
     const preQuitDelayMs = 4000;
     if (platform === 'win32') {
       const vbsPath = path.join(tempDir, 'VibeMiner-Update-Launcher.vbs');

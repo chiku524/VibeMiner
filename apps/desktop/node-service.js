@@ -186,6 +186,18 @@ function stopNode(networkId, environment) {
   if (stats) stats.isActive = false;
 }
 
+/** Stop all active node processes (e.g. before app update so installer can replace files). */
+function stopAllNodes() {
+  for (const [key, entry] of activeNodes) {
+    try {
+      entry.child.kill('SIGTERM');
+    } catch (_) {}
+    activeNodes.delete(key);
+    const stats = nodeStats.get(key);
+    if (stats) stats.isActive = false;
+  }
+}
+
 function getNodeStatus(networkId, environment) {
   const key = getNetworkKey(networkId, environment || 'mainnet');
   return nodeStats.get(key) || null;
@@ -200,6 +212,7 @@ module.exports = {
   ensureNodeReady,
   startNode,
   stopNode,
+  stopAllNodes,
   getNodeStatus,
   isNodeRunning,
 };

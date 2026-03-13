@@ -289,6 +289,17 @@ function stopMining(networkId, environment) {
   minerStats.delete(key);
 }
 
+/** Stop all active miner processes (e.g. before app update so installer can replace files). */
+function stopAllMiners() {
+  for (const [key, entry] of activeMiners) {
+    try {
+      entry.child.kill('SIGTERM');
+    } catch (_) {}
+    activeMiners.delete(key);
+    minerStats.delete(key);
+  }
+}
+
 /**
  * Get current mining stats for a network or all.
  * @param {string} [networkId]
@@ -310,6 +321,7 @@ function isMining(networkId, environment) {
 module.exports = {
   startMining,
   stopMining,
+  stopAllMiners,
   getStats,
   isMining,
   getMinerPath,
