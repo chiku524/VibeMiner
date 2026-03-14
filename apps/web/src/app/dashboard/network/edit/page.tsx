@@ -43,9 +43,10 @@ export default function EditNetworkPage() {
     let cancelled = false;
     fetch('/api/networks/my', { credentials: 'include' })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Failed to load'))))
-      .then((data: { networks?: NetworkFromApi[] }) => {
+      .then((data: unknown) => {
         if (cancelled) return;
-        const list = data.networks ?? [];
+        const { networks = [] } = (data as { networks?: NetworkFromApi[] }) ?? {};
+        const list = networks;
         const net = list.find((n) => n.id === id);
         if (!net) {
           setInitialData(null);
