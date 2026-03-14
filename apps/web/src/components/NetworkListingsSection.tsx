@@ -24,9 +24,10 @@ export function NetworkListingsSection() {
     let cancelled = false;
     fetch('/api/networks/my', { credentials: 'include' })
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Failed to load'))))
-      .then((data: { networks?: NetworkSummary[] }) => {
-        if (!cancelled && Array.isArray(data.networks)) {
-          setNetworks(data.networks);
+      .then((data: unknown) => {
+        const list = (data as { networks?: NetworkSummary[] })?.networks;
+        if (!cancelled && Array.isArray(list)) {
+          setNetworks(list);
         }
       })
       .catch(() => {
