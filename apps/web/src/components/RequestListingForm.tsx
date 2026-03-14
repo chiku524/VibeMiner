@@ -170,6 +170,7 @@ export function RequestListingForm() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
+            maxLength={128}
             placeholder="e.g. My Chain"
             className="mt-1 w-full rounded-lg border border-white/10 bg-surface-850 px-4 py-2.5 text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none"
           />
@@ -182,6 +183,7 @@ export function RequestListingForm() {
             value={symbol}
             onChange={(e) => setSymbol(e.target.value)}
             required
+            maxLength={16}
             placeholder="e.g. MYC"
             className="mt-1 w-full rounded-lg border border-white/10 bg-surface-850 px-4 py-2.5 text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none"
           />
@@ -224,6 +226,7 @@ export function RequestListingForm() {
             onChange={(e) => setAlgorithm(e.target.value)}
             placeholder="e.g. PoS + HotStuff BFT, or describe your consensus"
             required
+            maxLength={256}
             className="mt-2 w-full rounded-lg border border-white/10 bg-surface-850 px-4 py-2.5 text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none"
           />
         )}
@@ -241,6 +244,7 @@ export function RequestListingForm() {
               value={poolUrl}
               onChange={(e) => setPoolUrl(e.target.value)}
               placeholder="pool.example.com"
+              maxLength={256}
               className="mt-1 w-full rounded-lg border border-white/10 bg-surface-900 px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none"
             />
           </div>
@@ -268,6 +272,7 @@ export function RequestListingForm() {
             value={website}
             onChange={(e) => setWebsite(e.target.value)}
             placeholder="https://..."
+            maxLength={256}
             className="mt-1 w-full rounded-lg border border-white/10 bg-surface-850 px-4 py-2.5 text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none"
           />
         </div>
@@ -279,6 +284,7 @@ export function RequestListingForm() {
             value={rewardRate}
             onChange={(e) => setRewardRate(e.target.value)}
             placeholder="e.g. Variable, ~0.001/day"
+            maxLength={128}
             className="mt-1 w-full rounded-lg border border-white/10 bg-surface-850 px-4 py-2.5 text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none"
           />
         </div>
@@ -291,6 +297,7 @@ export function RequestListingForm() {
           value={minPayout}
           onChange={(e) => setMinPayout(e.target.value)}
           placeholder="e.g. 0.01 XMR, N/A"
+          maxLength={64}
           className="mt-1 w-full rounded-lg border border-white/10 bg-surface-850 px-4 py-2.5 text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none"
         />
       </div>
@@ -316,6 +323,7 @@ export function RequestListingForm() {
                 value={nodeDownloadUrl}
                 onChange={(e) => setNodeDownloadUrl(e.target.value)}
                 placeholder="https://github.com/.../releases/..."
+                maxLength={512}
                 className="mt-1 w-full rounded-lg border border-white/10 bg-surface-900 px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none"
               />
             </div>
@@ -327,6 +335,7 @@ export function RequestListingForm() {
                 value={nodeCommandTemplate}
                 onChange={(e) => setNodeCommandTemplate(e.target.value)}
                 placeholder="monerod --data-dir {dataDir} --non-interactive"
+                maxLength={1024}
                 className="mt-1 w-full rounded-lg border border-white/10 bg-surface-900 px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none"
               />
             </div>
@@ -381,11 +390,12 @@ export function RequestListingForm() {
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
           minLength={20}
+          maxLength={1024}
           placeholder="Describe your network and why miners would contribute (e.g. use case, rewards, testnet goals). Min. 20 characters."
           required
           className="mt-1 w-full resize-none rounded-lg border border-white/10 bg-surface-850 px-4 py-2.5 text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none"
         />
-        <p className="mt-1 text-xs text-gray-500">Helps miners discover and choose your network. At least 20 characters.</p>
+        <p className="mt-1 text-xs text-gray-500">Helps miners discover and choose your network. 20–1024 characters.</p>
       </div>
 
       {requiresFee && (

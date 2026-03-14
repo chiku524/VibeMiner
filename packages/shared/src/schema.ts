@@ -9,7 +9,7 @@ const MAX_STRING_LENGTHS = {
   id: 64,
   name: 128,
   symbol: 16,
-  description: 512,
+  description: 1024,
   icon: 500,
   algorithm: 256,
   poolUrl: 256,
