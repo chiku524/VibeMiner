@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useToast } from '@/contexts/ToastContext';
@@ -9,6 +9,26 @@ import type { NetworkEnvironment } from '@vibeminer/shared';
 
 type RequestStatus = 'idle' | 'pending' | 'listed' | 'error';
 
+export type NetworkListingInitialData = {
+  id: string;
+  name: string;
+  symbol: string;
+  icon?: string;
+  algorithm: string;
+  environment: NetworkEnvironment;
+  description: string;
+  poolUrl?: string;
+  poolPort?: number;
+  website?: string;
+  rewardRate?: string;
+  minPayout?: string;
+  nodeDownloadUrl?: string;
+  nodeCommandTemplate?: string;
+  nodeDiskGb?: number;
+  nodeRamMb?: number;
+  nodeBinarySha256?: string;
+};
+
 function toNetworkId(name: string): string {
   return name
     .toLowerCase()
@@ -16,9 +36,15 @@ function toNetworkId(name: string): string {
     .replace(/^-|-$/g, '') || 'network';
 }
 
-export function RequestListingForm() {
+type RequestListingFormProps = {
+  editId?: string;
+  initialData?: NetworkListingInitialData | null;
+};
+
+export function RequestListingForm({ editId, initialData }: RequestListingFormProps = {}) {
   const [name, setName] = useState('');
   const [symbol, setSymbol] = useState('');
+  const [icon, setIcon] = useState('⛓');
   const [algorithm, setAlgorithm] = useState('');
   const [environment, setEnvironment] = useState<NetworkEnvironment>('devnet');
   const [poolUrl, setPoolUrl] = useState('');
@@ -38,6 +64,27 @@ export function RequestListingForm() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { addToast } = useToast();
 
+  useEffect(() => {
+    if (!initialData) return;
+    setName(initialData.name);
+    setSymbol(initialData.symbol);
+    setIcon(initialData.icon ?? '⛓');
+    setAlgorithm(initialData.algorithm);
+    setEnvironment(initialData.environment);
+    setDescription(initialData.description);
+    setPoolUrl(initialData.poolUrl ?? '');
+    setPoolPort(initialData.poolPort != null ? String(initialData.poolPort) : '');
+    setWebsite(initialData.website ?? '');
+    setRewardRate(initialData.rewardRate ?? '');
+    setMinPayout(initialData.minPayout ?? '');
+    setNodeDownloadUrl(initialData.nodeDownloadUrl ?? '');
+    setNodeCommandTemplate(initialData.nodeCommandTemplate ?? '');
+    setNodeDiskGb(initialData.nodeDiskGb != null ? String(initialData.nodeDiskGb) : '');
+    setNodeRamMb(initialData.nodeRamMb != null ? String(initialData.nodeRamMb) : '');
+    setNodeBinarySha256(initialData.nodeBinarySha256 ?? '');
+    setShowNodeSection(!!(initialData.nodeDownloadUrl || initialData.nodeCommandTemplate));
+  }, [initialData]);
+
   const isMainnet = environment === 'mainnet';
   const requiresFee = isMainnet && FEE_CONFIG.NETWORK_LISTING.devnetFree;
 
@@ -49,6 +96,12 @@ export function RequestListingForm() {
     const baseId = toNetworkId(name);
     const desc = description.trim();
     const portNum = poolPort ? Number(poolPort) : undefined;
+    const iconTrim = icon.trim();
+    if (!iconTrim) {
+      setStatus('error');
+      setErrorMsg('Please enter a network logo (emoji or icon character).');
+      return;
+    }
     if (!algorithm.trim()) {
       setStatus('error');
       setErrorMsg('Please select or enter an algorithm (e.g. RandomX for mining, PoS for proof-of-stake).');
@@ -73,20 +126,20 @@ export function RequestListingForm() {
     }
 
     const payload: Record<string, unknown> = {
-      id: baseId,
+      id: editId ?? baseId,
       name,
       symbol,
       algorithm: algorithm.trim(),
       environment,
       description: desc,
-      icon: '⛓',
+      icon: iconTrim,
       poolUrl: poolUrl.trim() || undefined,
       poolPort: hasPool ? portNum : undefined,
       website: website || undefined,
       rewardRate: rewardRate.trim() || undefined,
       minPayout: minPayout.trim() || undefined,
       status: 'live',
-      ...(requiresFee && { feeConfirmed }),
+      ...(!editId && requiresFee && { feeConfirmed }),
     };
     if (nodeDownloadUrl.trim() && nodeCommandTemplate.trim()) {
       payload.nodeDownloadUrl = nodeDownloadUrl.trim();
@@ -100,9 +153,12 @@ export function RequestListingForm() {
       }
     }
 
+    const url = editId ? `/api/networks/${encodeURIComponent(editId)}` : '/api/networks/register';
+    const method = editId ? 'PATCH' : 'POST';
+
     try {
-      const res = await fetch('/api/networks/register', {
-        method: 'POST',
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(payload),
@@ -120,7 +176,7 @@ export function RequestListingForm() {
       }
 
       setStatus('listed');
-      addToast('Network listed automatically. No admin approval required.');
+      addToast(editId ? 'Network updated.' : 'Network listed automatically. No admin approval required.');
     } catch {
       setStatus('error');
       setErrorMsg('Network unreachable. Try again.');
@@ -152,9 +208,9 @@ export function RequestListingForm() {
       onSubmit={handleSubmit}
       className="space-y-4 rounded-2xl border border-white/5 bg-surface-900/30 p-6"
     >
-      <h3 className="font-display font-semibold text-white">Request listing</h3>
+      <h3 className="font-display font-semibold text-white">{editId ? 'Edit listing' : 'Request listing'}</h3>
       <p className="text-sm text-gray-400">
-        Automated onboarding—no admin approval. Submit valid chain details; your network is listed immediately after validation.
+        {editId ? 'Update your network details below.' : 'Automated onboarding—no admin approval. Submit valid chain details; your network is listed immediately after validation.'}
       </p>
 
       {status === 'error' && errorMsg && (
@@ -188,6 +244,21 @@ export function RequestListingForm() {
             className="mt-1 w-full rounded-lg border border-white/10 bg-surface-850 px-4 py-2.5 text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none"
           />
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="req-icon" className="block text-sm font-medium text-gray-400">Network logo (required)</label>
+        <input
+          id="req-icon"
+          type="text"
+          value={icon}
+          onChange={(e) => setIcon(e.target.value)}
+          required
+          maxLength={10}
+          placeholder="e.g. ⛓ ◇ 🔷"
+          className="mt-1 w-full max-w-[8rem] rounded-lg border border-white/10 bg-surface-850 px-4 py-2.5 text-2xl text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none"
+        />
+        <p className="mt-1 text-xs text-gray-500">Single emoji or icon character shown on your network card.</p>
       </div>
 
       <div>
@@ -398,7 +469,7 @@ export function RequestListingForm() {
         <p className="mt-1 text-xs text-gray-500">Helps miners discover and choose your network. 20–1024 characters.</p>
       </div>
 
-      {requiresFee && (
+      {!editId && requiresFee && (
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
           <p className="text-sm text-amber-200">
             Mainnet listing fee: <strong>{FEE_CONFIG.NETWORK_LISTING.amount}</strong>.{' '}
@@ -418,10 +489,10 @@ export function RequestListingForm() {
 
       <button
         type="submit"
-        disabled={status === 'pending' || (requiresFee && !feeConfirmed)}
+        disabled={status === 'pending' || (!editId && requiresFee && !feeConfirmed)}
         className="rounded-xl bg-accent-cyan/20 px-6 py-2.5 text-sm font-medium text-accent-cyan transition hover:bg-accent-cyan/30 disabled:opacity-50"
       >
-        {status === 'pending' ? 'Submitting…' : 'Submit (automated listing)'}
+        {status === 'pending' ? (editId ? 'Saving…' : 'Submitting…') : (editId ? 'Save changes' : 'Submit (automated listing)')}
       </button>
     </motion.form>
   );

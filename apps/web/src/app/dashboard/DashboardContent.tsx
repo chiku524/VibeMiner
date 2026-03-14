@@ -544,7 +544,7 @@ export function DashboardContent() {
                                   </span>
                                 )}
                               </p>
-                              <p className="text-xs text-gray-500">
+                              <p className="truncate text-xs text-gray-500">
                                 {network.symbol} · {network.algorithm}
                                 {isNetworkMineable(network) && (
                                   <span className="ml-1.5 rounded bg-emerald-500/20 px-1 py-0.5 text-emerald-300">Mineable</span>

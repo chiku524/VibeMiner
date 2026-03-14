@@ -143,8 +143,8 @@ export async function POST(request: Request) {
       `insert into network_listings (
         id, name, symbol, algorithm, environment, description, icon,
         pool_url, pool_port, website, reward_rate, min_payout, status,
-        listing_fee_paid, node_download_url, node_command_template, node_disk_gb, node_ram_mb, node_binary_sha256
-      ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        requested_by_user_id, listing_fee_paid, node_download_url, node_command_template, node_disk_gb, node_ram_mb, node_binary_sha256
+      ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
       .bind(
         id,
@@ -160,6 +160,7 @@ export async function POST(request: Request) {
         network.rewardRate ?? null,
         network.minPayout ?? null,
         network.status ?? 'live',
+        userId,
         isMainnet ? 1 : 0,
         nodeConfig?.nodeDownloadUrl ?? null,
         nodeConfig?.nodeCommandTemplate ?? null,

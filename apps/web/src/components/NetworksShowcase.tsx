@@ -52,23 +52,23 @@ function NetworkCard({ network, isNew, requestServiceHref = '/#request-service' 
   return (
     <motion.article
       variants={item}
-      className="group relative overflow-hidden rounded-2xl border border-white/5 bg-surface-900/50 p-6 transition hover:border-accent-cyan/20 hover:bg-surface-850/80"
+      className="group relative flex min-h-[200px] flex-col overflow-hidden rounded-2xl border border-white/5 bg-surface-900/50 p-6 transition hover:border-accent-cyan/20 hover:bg-surface-850/80"
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/5 text-2xl">
+        <div className="flex min-w-0 flex-1 items-center gap-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/5 text-2xl">
             {network.icon}
           </span>
-          <div>
-            <h3 className="font-display font-semibold text-white flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-display font-semibold text-white flex items-center gap-2 truncate">
               {network.name}
               {isNew && (
-                <span className="rounded bg-accent-cyan/20 px-1.5 py-0.5 text-xs font-medium text-accent-cyan">
+                <span className="shrink-0 rounded bg-accent-cyan/20 px-1.5 py-0.5 text-xs font-medium text-accent-cyan">
                   New
                 </span>
               )}
             </h3>
-            <p className="text-sm text-gray-500">
+            <p className="truncate text-sm text-gray-500">
               {network.symbol} · {network.algorithm}
             </p>
           </div>
@@ -101,7 +101,7 @@ function NetworkCard({ network, isNew, requestServiceHref = '/#request-service' 
           </span>
         </div>
       </div>
-      <p className="mt-4 text-sm leading-relaxed text-gray-400">{network.description}</p>
+      <p className="mt-4 line-clamp-3 flex-1 text-sm leading-relaxed text-gray-400">{network.description}</p>
       {network.rewardRate && (
         <p className="mt-2 font-mono text-xs text-accent-cyan">{network.rewardRate}</p>
       )}

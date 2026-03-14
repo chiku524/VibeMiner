@@ -10,6 +10,7 @@ import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { DesktopAppSettings } from '@/components/DesktopAppSettings';
 import { MiningWalletSettings } from '@/components/MiningWalletSettings';
 import { DesktopNav } from '@/components/DesktopNav';
+import { NetworkListingsSection } from '@/components/NetworkListingsSection';
 
 const AUTH_LOAD_TIMEOUT_MS = 6000;
 
@@ -24,10 +25,7 @@ export default function SettingsPage() {
       router.replace('/login');
       return;
     }
-    if (!loading && user && accountType === 'network') {
-      router.replace('/dashboard/network');
-    }
-  }, [loading, user, accountType, router]);
+  }, [loading, user, router]);
 
   useEffect(() => {
     const t = setTimeout(() => setAuthTimedOut(true), AUTH_LOAD_TIMEOUT_MS);
@@ -35,7 +33,8 @@ export default function SettingsPage() {
   }, []);
 
   const showNav = !hasChecked || isDesktop;
-  const loadingOrRedirect = loading || !user || accountType === 'network';
+  const loadingOrRedirect = loading || !user;
+  const isNetworkAccount = accountType === 'network';
 
   if (loadingOrRedirect) {
     return (
@@ -44,7 +43,7 @@ export default function SettingsPage() {
         <div className={`flex flex-1 flex-col items-center justify-center px-4 ${showNav ? 'pt-14' : ''}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
           <p className="mt-4 text-sm text-gray-400">
-            {accountType === 'network' ? 'Redirecting…' : 'Loading…'}
+            Loading…
           </p>
           {authTimedOut && !user && (
             <p className="mt-6 max-w-sm text-center text-sm text-gray-500">
@@ -111,17 +110,27 @@ export default function SettingsPage() {
           </p>
 
           <div className="mt-10 space-y-8">
-            <section>
-              <h2 className="font-display text-lg font-semibold text-white mb-3">Desktop app</h2>
-              <DesktopAppSettings />
+            {isNetworkAccount && (
+              <section>
+                <h2 className="font-display text-lg font-semibold text-white mb-3">Your listed networks</h2>
+                <NetworkListingsSection />
+              </section>
+            )}
+            {!isNetworkAccount && (
+              <>
+                <section>
+                  <h2 className="font-display text-lg font-semibold text-white mb-3">Desktop app</h2>
+                  <DesktopAppSettings />
               <p className="mt-2 text-xs text-gray-500">
                 These options only apply when you’re using the VibeMiner desktop app. In the browser they are hidden.
               </p>
             </section>
-            <section>
-              <h2 className="font-display text-lg font-semibold text-white mb-3">Mining</h2>
-              <MiningWalletSettings />
-            </section>
+                <section>
+                  <h2 className="font-display text-lg font-semibold text-white mb-3">Mining</h2>
+                  <MiningWalletSettings />
+                </section>
+              </>
+            )}
           </div>
         </motion.div>
       </div>
