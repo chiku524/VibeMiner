@@ -38,8 +38,14 @@ export async function POST(request: Request) {
 
     const result = parseNetwork(networkPayload);
     if (!result.success) {
+      const flat = result.error.flatten();
+      const firstField = flat.fieldErrors && Object.keys(flat.fieldErrors).length > 0
+        ? Object.entries(flat.fieldErrors)[0]
+        : null;
+      const detailMsg = firstField?.[1]?.[0];
+      const errorMessage = detailMsg ? `Validation failed: ${detailMsg}` : 'Validation failed';
       return NextResponse.json(
-        { error: 'Validation failed', details: result.error.flatten() },
+        { error: errorMessage, details: flat },
         { status: 400 }
       );
     }

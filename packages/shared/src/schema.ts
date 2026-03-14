@@ -11,7 +11,7 @@ const MAX_STRING_LENGTHS = {
   symbol: 16,
   description: 512,
   icon: 500,
-  algorithm: 64,
+  algorithm: 256,
   poolUrl: 256,
   website: 256,
   rewardRate: 128,
