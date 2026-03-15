@@ -11,6 +11,7 @@ import { DesktopAppSettings } from '@/components/DesktopAppSettings';
 import { MiningWalletSettings } from '@/components/MiningWalletSettings';
 import { DesktopNav } from '@/components/DesktopNav';
 import { NetworkListingsSection } from '@/components/NetworkListingsSection';
+import { ProfileSettings } from '@/components/ProfileSettings';
 
 const AUTH_LOAD_TIMEOUT_MS = 6000;
 
@@ -104,12 +105,16 @@ export default function SettingsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mt-6"
         >
-          <h1 className="font-display text-2xl font-bold sm:text-3xl">User settings</h1>
+          <h1 className="font-display text-2xl font-bold sm:text-3xl">Settings</h1>
           <p className="mt-1 text-gray-400">
-            Manage desktop app and other preferences.
+            Manage your profile, desktop app, and preferences.
           </p>
 
           <div className="mt-10 space-y-8">
+            <section>
+              <h2 className="font-display text-lg font-semibold text-white mb-3">Profile</h2>
+              <ProfileSettings />
+            </section>
             {isNetworkAccount && (
               <section>
                 <h2 className="font-display text-lg font-semibold text-white mb-3">Your listed networks</h2>

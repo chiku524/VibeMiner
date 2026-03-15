@@ -28,8 +28,16 @@ import { NetworkListSkeleton, DashboardSkeleton } from '@/components/ui/Skeleton
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { DesktopNav } from '@/components/DesktopNav';
+import { Radio, Zap, Coins, BarChart3 } from 'lucide-react';
 
 export type WorkspaceMode = 'mining' | 'nodes';
+
+function formatDuration(ms: number): string {
+  const s = Math.floor(ms / 1000) % 60;
+  const m = Math.floor(ms / 60000) % 60;
+  const h = Math.floor(ms / 3600000);
+  return [h, m, s].map((n) => n.toString().padStart(2, '0')).join(':');
+}
 
 type NetworkWithMeta = BlockchainNetwork & { listedAt?: string };
 
@@ -506,11 +514,86 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
 
           <div className="lg:col-span-2">
             <AnimatePresence mode="wait">
-              {mode === 'mining' && sessionsWithNetworks.length > 0 ? (
-                <div className="space-y-3">
-                  {sessionsWithNetworks.map(({ session, network }) => (
-                    <MiningPanel key={`${session.environment}-${session.networkId}`} session={session} network={network} onStop={() => handleStop(session.networkId, session.environment)} compact={sessionsWithNetworks.length > 1} />
-                  ))}
+              {sessionsWithNetworks.length > 0 ? (
+                <div className="space-y-4">
+                  <motion.section
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-2xl border border-white/5 bg-surface-900/30 p-5"
+                  >
+                    <h2 className="font-display text-sm font-semibold uppercase tracking-wider text-gray-500 flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4" />
+                      {mode === 'mining' ? 'Current mining statistics' : 'Current node running'}
+                    </h2>
+                    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-surface-900/50 px-4 py-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-cyan/20 text-accent-cyan">
+                          <Radio className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-gray-500">Active {mode === 'mining' ? 'sessions' : 'nodes'}</p>
+                          <p className="font-mono text-lg font-semibold text-white">{sessionsWithNetworks.length}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-surface-900/50 px-4 py-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
+                          <Zap className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-gray-500">Total hashrate</p>
+                          <p className="font-mono text-lg font-semibold text-white">
+                            {sessionsWithNetworks.reduce((sum, { session }) => sum + session.hashrate, 0)} H/s
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-surface-900/50 px-4 py-3 sm:col-span-2 sm:col-span-1">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-400">
+                          <Coins className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-gray-500">Est. earnings</p>
+                          <p className="font-mono text-lg font-semibold text-white truncate">
+                            {sessionsWithNetworks
+                              .reduce((acc, { session, network }) => acc + parseFloat(session.estimatedEarnings || '0'), 0)
+                              .toFixed(6)}{' '}
+                            {sessionsWithNetworks.length === 1 ? sessionsWithNetworks[0].network.symbol : '—'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-4 overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-white/10 text-left text-xs text-gray-500">
+                            <th className="pb-2 pr-3 font-medium">Network</th>
+                            <th className="pb-2 pr-3 font-medium">Hashrate</th>
+                            <th className="pb-2 pr-3 font-medium">Shares</th>
+                            <th className="pb-2 pr-3 font-medium">Est. earnings</th>
+                            <th className="pb-2 font-medium">Uptime</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sessionsWithNetworks.map(({ session, network }) => {
+                            const elapsed = session.startedAt ? Date.now() - session.startedAt : 0;
+                            return (
+                              <tr key={`${session.environment}-${session.networkId}`} className="border-b border-white/5">
+                                <td className="py-2.5 pr-3 font-medium text-white">{network.name}</td>
+                                <td className="py-2.5 pr-3 font-mono text-accent-cyan">{session.hashrate} H/s</td>
+                                <td className="py-2.5 pr-3 font-mono text-gray-300">{session.shares}</td>
+                                <td className="py-2.5 pr-3 font-mono text-accent-emerald">{session.estimatedEarnings} {network.symbol}</td>
+                                <td className="py-2.5 font-mono text-gray-400">{formatDuration(elapsed)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </motion.section>
+                  <div className="space-y-3">
+                    {sessionsWithNetworks.map(({ session, network }) => (
+                      <MiningPanel key={`${session.environment}-${session.networkId}`} session={session} network={network} onStop={() => handleStop(session.networkId, session.environment)} compact={sessionsWithNetworks.length > 1} />
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <motion.div key="idle" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.25, ease: 'easeOut' }} className="flex flex-col items-center justify-center rounded-2xl border border-white/5 bg-surface-900/30 py-20 text-center">

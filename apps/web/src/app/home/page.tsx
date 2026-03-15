@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   List,
   Shield,
+  FilePlus,
 } from 'lucide-react';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { DesktopNav } from '@/components/DesktopNav';
@@ -30,7 +31,8 @@ const MINER_NAV_ITEMS = [
 ];
 
 const NETWORK_NAV_ITEMS = [
-  { href: '/dashboard/network', label: 'Network dashboard', description: 'Manage your blockchain’s presence and mining service', Icon: LayoutDashboard },
+  { href: '/dashboard/network', label: 'Network dashboard', description: 'Statistics and metrics for your listings', Icon: LayoutDashboard },
+  { href: '/dashboard/network/request', label: 'Request listing', description: 'Submit a new network for mainnet or devnet', Icon: FilePlus },
   { href: '/dashboard/settings', label: 'Your listed networks', description: 'View and edit your network listings', Icon: List },
 ];
 

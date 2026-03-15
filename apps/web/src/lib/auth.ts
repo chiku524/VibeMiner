@@ -79,3 +79,23 @@ export async function logout(): Promise<void> {
     credentials: 'include',
   });
 }
+
+export async function updateProfile(params: {
+  displayName?: string | null;
+  networkName?: string | null;
+  networkWebsite?: string | null;
+}): Promise<{ user: User } | { error: string }> {
+  const res = await fetch(`${getBaseUrl()}${API}/profile`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      display_name: params.displayName ?? null,
+      network_name: params.networkName ?? null,
+      network_website: params.networkWebsite ?? null,
+    }),
+  });
+  const data = (await res.json()) as { error?: string; user?: User };
+  if (!res.ok) return { error: data.error ?? 'Update failed' };
+  return { user: data.user! };
+}

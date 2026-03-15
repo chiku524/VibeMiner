@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getEnv, getSessionCookie, getUserIdFromSession } from '@/lib/auth-server';
 
-function rowToNetwork(row: Record<string, unknown>) {
+function rowToNetwork(row: Record<string, unknown>, stats?: { minerCount: number; totalBalanceRaw: string; currency: string } | null) {
   const env = (row.environment as string) === 'mainnet' ? 'mainnet' : 'devnet';
   return {
     id: row.id,
@@ -23,6 +23,7 @@ function rowToNetwork(row: Record<string, unknown>) {
     nodeRamMb: typeof row.node_ram_mb === 'number' ? row.node_ram_mb : undefined,
     nodeBinarySha256: row.node_binary_sha256 ?? undefined,
     listedAt: typeof row.created_at === 'string' ? row.created_at : undefined,
+    ...(stats && { minerCount: stats.minerCount, totalBalanceRaw: stats.totalBalanceRaw, currency: stats.currency }),
   };
 }
 
@@ -56,8 +57,37 @@ export async function GET(request: Request) {
           .bind(userId)
           .all();
     const { results } = rows;
+    const listingRows = (results ?? []) as Record<string, unknown>[];
 
-    const networks = (results ?? []).map((r: Record<string, unknown>) => rowToNetwork(r));
+    const networks = await Promise.all(
+      listingRows.map(async (r) => {
+        const id = r.id as string;
+        const env = (r.environment as string) === 'mainnet' ? 'mainnet' : 'devnet';
+        let minerCount = 0;
+        let totalBalanceRaw = '0';
+        let currency = (r.symbol as string) || '—';
+        try {
+          const countRow = await DB.prepare(
+            'select count(*) as c from miner_balances where network_id = ? and environment = ?'
+          )
+            .bind(id, env)
+            .first();
+          minerCount = Number((countRow as { c?: number })?.c ?? 0);
+          const sumRow = await DB.prepare(
+            'select sum(cast(balance_raw as real)) as total, max(currency) as currency from miner_balances where network_id = ? and environment = ?'
+          )
+            .bind(id, env)
+            .first();
+          if (sumRow && (sumRow as { total?: number | null }).total != null) {
+            totalBalanceRaw = String((sumRow as { total: number }).total);
+            currency = (sumRow as { currency?: string }).currency ?? currency;
+          }
+        } catch {
+          // D1 or table might not exist; keep defaults
+        }
+        return rowToNetwork(r, { minerCount, totalBalanceRaw, currency });
+      })
+    );
     return NextResponse.json({ networks });
   } catch (err) {
     console.error('Networks my fetch error:', err);
