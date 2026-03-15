@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import type { MiningSession as SessionType } from '@vibeminer/shared';
 import type { BlockchainNetwork } from '@vibeminer/shared';
 import { FEE_CONFIG } from '@vibeminer/shared';
+import { Sparkline } from '@/components/ui/Sparkline';
 
 interface MiningPanelProps {
   session: SessionType;
@@ -22,11 +23,15 @@ function formatDuration(ms: number) {
   return [h, m, s].map((n) => n.toString().padStart(2, '0')).join(':');
 }
 
+const HASHRATE_HISTORY_LENGTH = 24;
+
 export function MiningPanel({ session, network, onStop, compact = false }: MiningPanelProps) {
   const [confirming, setConfirming] = useState(false);
   const [elapsed, setElapsed] = useState(() =>
     session.startedAt ? Date.now() - session.startedAt : 0
   );
+  const [hashrateHistory, setHashrateHistory] = useState<number[]>([]);
+  const lastPushRef = useRef<number>(0);
 
   useEffect(() => {
     if (!session.startedAt) return;
@@ -34,6 +39,17 @@ export function MiningPanel({ session, network, onStop, compact = false }: Minin
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [session.startedAt]);
+
+  useEffect(() => {
+    const now = Date.now();
+    const isFirst = lastPushRef.current === 0;
+    if (!isFirst && now - lastPushRef.current < 1800) return;
+    lastPushRef.current = now;
+    setHashrateHistory((prev) => {
+      const next = [...prev, session.hashrate].slice(-HASHRATE_HISTORY_LENGTH);
+      return next;
+    });
+  }, [session.hashrate]);
 
   function handleStopClick() {
     if (confirming) {
@@ -142,6 +158,11 @@ export function MiningPanel({ session, network, onStop, compact = false }: Minin
         <div className="rounded-lg bg-surface-850/80 p-3">
           <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Hash rate</p>
           <p className="mt-0.5 font-mono text-lg text-accent-cyan">{session.hashrate} <span className="text-xs text-gray-400">H/s</span></p>
+          {hashrateHistory.length >= 2 && (
+            <div className="mt-2 text-accent-cyan/70">
+              <Sparkline data={hashrateHistory} width={88} height={32} strokeWidth={1.5} />
+            </div>
+          )}
         </div>
         <div className="rounded-lg bg-surface-850/80 p-3">
           <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Uptime</p>

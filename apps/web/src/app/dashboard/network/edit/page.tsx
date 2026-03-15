@@ -134,7 +134,7 @@ export default function EditNetworkPage() {
       <div className={`mx-auto max-w-3xl px-4 sm:px-6 ${isDesktop ? 'pt-14 pb-8' : 'py-8'}`}>
         <Breadcrumbs
           crumbs={[
-            { label: 'Home', href: isDesktop ? '/app' : '/' },
+            { label: 'Home', href: '/home' },
             { label: 'Network dashboard', href: '/dashboard/network' },
             { label: 'Edit listing' },
           ]}

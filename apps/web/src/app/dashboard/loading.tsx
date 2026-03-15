@@ -11,7 +11,7 @@ import { DesktopNav } from '@/components/DesktopNav';
  */
 export default function DashboardLoading() {
   const isDesktop = useIsDesktop();
-  const homeHref = isDesktop ? '/app' : '/';
+  const homeHref = '/home';
 
   if (isDesktop) {
     return (

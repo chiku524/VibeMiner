@@ -13,14 +13,6 @@ import type { BlockchainNetwork, NetworkEnvironment } from '@vibeminer/shared';
 import { isNetworkMineable } from '@vibeminer/shared';
 import { useToast } from '@/contexts/ToastContext';
 
-const SIMULATED_BASE_HASHRATE = 500;
-const SIMULATED_HASHRATE_VARIANCE = 0.15;
-
-function randomHashrate() {
-  const variance = (Math.random() - 0.5) * 2 * SIMULATED_HASHRATE_VARIANCE;
-  return Math.round(SIMULATED_BASE_HASHRATE * (1 + variance));
-}
-
 function networkKey(networkId: string, environment: NetworkEnvironment): string {
   return `${networkId}:${environment}`;
 }
@@ -86,9 +78,9 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Simulated mining (web or no wallet or not mineable)
+      // Demo mode (web or no wallet or not mineable): show zeros until real stats from desktop + wallet
       if (isDesktop && mineable && wallet.length < 10) {
-        addToast('Add mining wallet in Settings for real payouts. Using simulated mode.', 'info');
+        addToast('Add mining wallet in Settings for real payouts. Stats will show once you mine from the desktop app.', 'info');
       }
       setSessions((prev) => {
         const exists = prev.some((s) => s.networkId === network.id && s.environment === env);
@@ -99,7 +91,7 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
             networkId: network.id,
             environment: env,
             startedAt: Date.now(),
-            hashrate: randomHashrate(),
+            hashrate: 0,
             shares: 0,
             estimatedEarnings: '0.00',
             isActive: true,
@@ -184,21 +176,6 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
           );
         }
       }
-      // Simulated updates for non-real sessions
-      setSessions((prev) =>
-        prev.map((s) => {
-          const key = networkKey(s.networkId, s.environment);
-          if (realKeysRef.current.has(key)) return s;
-          const elapsed = (Date.now() - s.startedAt) / 1000 / 3600;
-          const estimated = (s.hashrate * elapsed * 0.000001).toFixed(6);
-          return {
-            ...s,
-            hashrate: randomHashrate(),
-            shares: s.shares + (Math.random() > 0.6 ? 1 : 0),
-            estimatedEarnings: estimated,
-          };
-        })
-      );
     }, 2000);
     return () => {
       if (intervalRef.current) {

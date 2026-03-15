@@ -39,15 +39,23 @@ export async function GET(request: Request) {
     }
 
     const { DB } = await getEnv();
-    const userRow = await DB.prepare('select account_type from users where id = ?').bind(userId).first();
+    const userRow = await DB.prepare('select account_type, network_name from users where id = ?').bind(userId).first();
     if (!userRow || (userRow.account_type as string) !== 'network') {
       return NextResponse.json({ error: 'Only network accounts can list their networks' }, { status: 403 });
     }
-    const { results } = await DB.prepare(
-      'select * from network_listings where requested_by_user_id = ? order by created_at desc'
-    )
-      .bind(userId)
-      .all();
+    const networkName = (userRow.network_name as string)?.trim() || null;
+    const rows = networkName
+      ? await DB.prepare(
+          `select * from network_listings where requested_by_user_id = ? or (requested_by_user_id is null and name = ?) order by created_at desc`
+        )
+          .bind(userId, networkName)
+          .all()
+      : await DB.prepare(
+          'select * from network_listings where requested_by_user_id = ? order by created_at desc'
+        )
+          .bind(userId)
+          .all();
+    const { results } = rows;
 
     const networks = (results ?? []).map((r: Record<string, unknown>) => rowToNetwork(r));
     return NextResponse.json({ networks });

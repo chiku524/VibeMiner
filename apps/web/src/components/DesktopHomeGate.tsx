@@ -7,12 +7,12 @@ import { DesktopNav } from '@/components/DesktopNav';
 
 /**
  * Renders only in the desktop app on "/".
- * Redirects to /login if not authenticated, or /app (launcher) for miners / /dashboard/network for network accounts.
+ * Redirects to /login if not authenticated, or /home (dedicated home for both account types).
  * Shows DesktopNav + loading until redirect so the user never sees a blank screen.
  */
 export function DesktopHomeGate() {
   const router = useRouter();
-  const { user, accountType, loading } = useAuth();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     if (loading) return;
@@ -20,12 +20,8 @@ export function DesktopHomeGate() {
       router.replace('/login');
       return;
     }
-    if (accountType === 'network') {
-      router.replace('/dashboard/network');
-      return;
-    }
-    router.replace('/app');
-  }, [loading, user, accountType, router]);
+    router.replace('/home');
+  }, [loading, user, router]);
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">

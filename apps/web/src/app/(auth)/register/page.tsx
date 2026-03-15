@@ -22,7 +22,7 @@ function RegisterFallback() {
 
 export default function RegisterPage() {
   const isDesktop = useIsDesktop();
-  const homeHref = isDesktop ? '/app' : '/';
+  const homeHref = '/home';
   return (
     <main className="flex min-h-screen flex-col bg-surface-950 bg-grid">
       {isDesktop && <DesktopNav />}

@@ -54,14 +54,14 @@ export default function NetworkDashboardPage() {
             </Link>
             <div className="flex items-center gap-4">
               <Link href="/networks" className="text-sm text-gray-400 transition hover:text-white">Networks</Link>
-              <Link href="/" className="text-sm text-gray-400 transition hover:text-white">← Back home</Link>
+              <Link href="/home" className="text-sm text-gray-400 transition hover:text-white">← Back home</Link>
             </div>
           </div>
         </header>
       )}
 
       <div className={`mx-auto max-w-6xl px-4 sm:px-6 ${isDesktop ? 'pt-14 pb-8' : 'py-8'}`}>
-        <Breadcrumbs crumbs={[{ label: 'Home', href: isDesktop ? '/app' : '/' }, { label: 'Network dashboard' }]} />
+        <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: 'Network dashboard' }]} />
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}

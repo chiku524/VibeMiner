@@ -14,7 +14,7 @@ export function NetworksPageContent() {
   const isDesktop = useIsDesktop();
   return (
     <>
-      <Breadcrumbs crumbs={[{ label: 'Home', href: isDesktop ? '/app' : '/' }, { label: 'Networks' }]} />
+      <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: 'Networks' }]} />
       <Suspense
         fallback={
           <div className="py-24 flex flex-col items-center justify-center text-gray-400">

@@ -69,7 +69,7 @@ const feesJsonLd = {
 
 export default function FeesPage() {
   const isDesktop = useIsDesktop();
-  const homeHref = isDesktop ? '/app' : '/';
+  const homeHref = '/home';
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">

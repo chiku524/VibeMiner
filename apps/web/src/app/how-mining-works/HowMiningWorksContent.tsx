@@ -37,7 +37,7 @@ const steps = [
 
 export function HowMiningWorksContent() {
   const isDesktop = useIsDesktop();
-  const homeHref = isDesktop ? '/app' : '/';
+  const homeHref = '/home';
 
   const reduced = useReducedMotion() ?? false;
 

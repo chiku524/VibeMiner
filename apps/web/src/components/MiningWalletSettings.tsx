@@ -58,7 +58,7 @@ export function MiningWalletSettings() {
           value={wallet}
           onChange={(e) => setWallet(e.target.value)}
           onBlur={handleSave}
-          placeholder="e.g. 48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD"
+          placeholder="Your mining wallet address"
           className="flex-1 rounded-lg border border-white/10 bg-surface-850/50 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none focus:ring-1 focus:ring-accent-cyan/50"
           aria-label="Mining payout wallet address"
         />

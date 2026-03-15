@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Radio, Zap, Coins } from 'lucide-react';
 import {
   getMainnetNetworksListed,
   getDevnetNetworks,
@@ -57,7 +58,7 @@ export default function MiningSessionsPage() {
       <div className={`mx-auto max-w-4xl px-4 sm:px-6 ${isDesktop ? 'pt-14 pb-8' : 'py-8'}`}>
         <Breadcrumbs
           crumbs={[
-            { label: 'Home', href: isDesktop ? '/app' : '/' },
+            { label: 'Home', href: '/home' },
             { label: 'Mining', href: '/dashboard/mining' },
             { label: 'Sessions' },
           ]}
@@ -86,8 +87,49 @@ export default function MiningSessionsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="space-y-3"
+              className="space-y-4"
             >
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+              >
+                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-surface-900/50 px-4 py-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-cyan/20 text-accent-cyan">
+                    <Radio className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500">Active sessions</p>
+                    <p className="font-mono text-lg font-semibold text-white">{sessionsWithNetworks.length}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-surface-900/50 px-4 py-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
+                    <Zap className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500">Total hashrate</p>
+                    <p className="font-mono text-lg font-semibold text-white">
+                      {sessionsWithNetworks.reduce((sum, { session }) => sum + session.hashrate, 0)} H/s
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-surface-900/50 px-4 py-3 sm:col-span-2 sm:col-span-1">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-400">
+                    <Coins className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500">Est. earnings</p>
+                    <p className="font-mono text-lg font-semibold text-white truncate">
+                      {sessionsWithNetworks
+                        .reduce((acc, { session, network }) => acc + parseFloat(session.estimatedEarnings || '0'), 0)
+                        .toFixed(6)}{' '}
+                      {sessionsWithNetworks.length === 1 ? sessionsWithNetworks[0].network.symbol : '—'}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+              <div className="space-y-3">
               {sessionsWithNetworks.map(({ session, network }) => (
                 <MiningPanel
                   key={`${session.environment}-${session.networkId}`}
@@ -97,6 +139,7 @@ export default function MiningSessionsPage() {
                   compact={sessionsWithNetworks.length > 1}
                 />
               ))}
+              </div>
             </motion.div>
           ) : (
             <motion.div

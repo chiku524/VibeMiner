@@ -314,7 +314,7 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
               type="text"
               value={poolUrl}
               onChange={(e) => setPoolUrl(e.target.value)}
-              placeholder="pool.example.com"
+              placeholder="Pool hostname"
               maxLength={256}
               className="mt-1 w-full rounded-lg border border-white/10 bg-surface-900 px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none"
             />

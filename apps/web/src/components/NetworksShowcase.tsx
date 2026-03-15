@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
+import { Layers } from 'lucide-react';
 import { getMainnetNetworksListed, getDevnetNetworks, INCENTIVIZED_TESTNET_IDS } from '@vibeminer/shared';
 import type { BlockchainNetwork } from '@vibeminer/shared';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
@@ -269,6 +270,23 @@ export function NetworksShowcase() {
     [devnetNetworks, searchQuery]
   );
 
+  const allNetworks = useMemo(
+    () => [...filteredMainnet, ...filteredDevnet],
+    [filteredMainnet, filteredDevnet]
+  );
+  const algorithmCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const n of allNetworks) {
+      const alg = n.algorithm || 'Other';
+      map.set(alg, (map.get(alg) ?? 0) + 1);
+    }
+    return Array.from(map.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+  }, [allNetworks]);
+  const maxAlgCount = algorithmCounts[0]?.count ?? 1;
+
   return (
     <section id="networks" className="relative border-t border-white/5 py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -314,6 +332,39 @@ export function NetworksShowcase() {
             </p>
           )}
         </motion.div>
+
+        {algorithmCounts.length > 0 && (
+          <motion.div
+            initial={reduced ? false : { opacity: 0, y: 8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: reduced ? 0 : 0.25 }}
+            className="mb-10 rounded-xl border border-white/5 bg-surface-900/30 px-4 py-3"
+          >
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gray-500">
+              <Layers className="h-3.5 w-3.5" />
+              By algorithm
+            </div>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+              {algorithmCounts.map(({ name, count }) => (
+                <div
+                  key={name}
+                  className="flex items-center gap-2"
+                  title={`${name}: ${count} network${count !== 1 ? 's' : ''}`}
+                >
+                  <span className="min-w-[60px] truncate text-xs text-gray-400">{name}</span>
+                  <div className="h-2 w-16 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-accent-cyan/60 transition-all"
+                      style={{ width: `${(count / maxAlgCount) * 100}%` }}
+                    />
+                  </div>
+                  <span className="font-mono text-xs text-gray-500 w-4 text-right">{count}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         <NetworkGrid
           id="mainnet"

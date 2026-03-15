@@ -313,16 +313,16 @@ export function DashboardContent() {
         ) : (
           <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
             <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-              <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold">
+              <Link href="/home" className="flex items-center gap-2 font-display text-lg font-semibold">
                 <span className="text-xl" aria-hidden="true">◇</span>
                 <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">VibeMiner</span>
               </Link>
-              <Link href="/" className="text-sm text-gray-400 transition hover:text-white">← App home</Link>
+              <Link href="/home" className="text-sm text-gray-400 transition hover:text-white">← Home</Link>
             </div>
           </header>
         )}
         <div className={`mx-auto max-w-6xl px-4 py-8 sm:px-6 ${isDesktop ? 'pt-14' : ''}`}>
-          <Breadcrumbs crumbs={[{ label: 'Home', href: isDesktop ? '/app' : '/' }, { label: 'Dashboard' }]} />
+          <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: 'Dashboard' }]} />
           <div className="mb-8 mt-4 h-16 w-64 rounded-lg bg-white/5 animate-pulse" aria-hidden />
           <div className="grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-1 space-y-4">
@@ -348,7 +348,7 @@ export function DashboardContent() {
       ) : (
         <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-            <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold">
+            <Link href="/home" className="flex items-center gap-2 font-display text-lg font-semibold">
               <span className="text-xl" aria-hidden="true">◇</span>
               <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
                 VibeMiner
@@ -364,7 +364,7 @@ export function DashboardContent() {
               <Link href="/dashboard/settings" className="text-sm text-gray-400 transition hover:text-white">
                 Settings
               </Link>
-              <Link href="/" className="text-sm text-gray-400 transition hover:text-white">
+              <Link href="/home" className="text-sm text-gray-400 transition hover:text-white">
                 ← Home
               </Link>
             </div>
@@ -373,7 +373,7 @@ export function DashboardContent() {
       )}
 
       <div className={`mx-auto max-w-6xl px-4 sm:px-6 ${isDesktop ? 'pt-14 pb-8' : 'py-8'}`}>
-        <Breadcrumbs crumbs={[{ label: 'Home', href: isDesktop ? '/app' : '/' }, { label: 'Dashboard' }]} />
+        <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: 'Dashboard' }]} />
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}

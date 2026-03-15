@@ -8,7 +8,7 @@ import { useIsDesktop } from '@/hooks/useIsDesktop';
 
 export default function PoolsPage() {
   const isDesktop = useIsDesktop();
-  const homeHref = isDesktop ? '/app' : '/';
+  const homeHref = '/home';
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">

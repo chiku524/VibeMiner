@@ -47,7 +47,7 @@ export function DesktopNav() {
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-surface-950/95 backdrop-blur-md">
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link
-          href="/app"
+          href="/home"
           className="flex items-center gap-2 font-display text-base font-semibold tracking-tight text-white/95 transition hover:text-white"
         >
           <span className="text-lg" aria-hidden="true">◇</span>

@@ -4,14 +4,13 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useAuth } from '@/contexts/AuthContext';
 import { login } from '@/lib/auth';
 
 function getReturnTo(searchParams: ReturnType<typeof useSearchParams>): string {
   const returnTo = searchParams.get('returnTo');
-  if (!returnTo || typeof returnTo !== 'string') return '/dashboard';
-  if (!returnTo.startsWith('/')) return '/dashboard';
+  if (!returnTo || typeof returnTo !== 'string') return '/home';
+  if (!returnTo.startsWith('/')) return '/home';
   return returnTo;
 }
 
@@ -23,10 +22,9 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isDesktop = useIsDesktop();
   const { refreshSession } = useAuth();
   const returnTo = useMemo(() => getReturnTo(searchParams), [searchParams]);
-  const homeHref = isDesktop ? '/app' : '/';
+  const homeHref = '/home';
 
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -52,7 +50,7 @@ export function LoginForm() {
       return;
     }
     await refreshSession();
-    const dest = result.user.account_type === 'network' ? '/dashboard/network' : returnTo;
+    const dest = result.user.account_type === 'network' ? '/home' : returnTo;
     router.push(dest);
     router.refresh();
   }
@@ -81,7 +79,7 @@ export function LoginForm() {
             className={`mt-1 w-full rounded-lg border bg-surface-850 px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-1 ${
               fieldErrors.email ? 'border-red-500/50 focus:border-red-500/50 focus:ring-red-500/50' : 'border-white/10 focus:border-accent-cyan/50 focus:ring-accent-cyan/50'
             }`}
-            placeholder="you@example.com"
+            placeholder="Email"
             aria-invalid={!!fieldErrors.email}
             aria-describedby={fieldErrors.email ? 'login-email-error' : undefined}
           />
@@ -124,7 +122,7 @@ export function LoginForm() {
       </form>
       <p className="mt-6 text-center text-sm text-gray-400">
         Don&apos;t have an account?{' '}
-        <Link href={`/register${returnTo !== '/dashboard' ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`} className="text-accent-cyan hover:underline">Register</Link>
+        <Link href={`/register${returnTo !== '/home' ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`} className="text-accent-cyan hover:underline">Register</Link>
       </p>
     </motion.div>
   );

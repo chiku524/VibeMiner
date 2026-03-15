@@ -33,7 +33,7 @@ export function RegisterForm() {
   const isDesktop = useIsDesktop();
   const { refreshSession } = useAuth();
   const returnTo = useMemo(() => getReturnTo(searchParams), [searchParams]);
-  const homeHref = isDesktop ? '/app' : '/';
+  const homeHref = '/home';
 
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -200,7 +200,7 @@ export function RegisterForm() {
             className={`mt-1 w-full rounded-lg border bg-surface-850 px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-1 ${
               fieldErrors.email ? 'border-red-500/50 focus:border-red-500/50 focus:ring-red-500/50' : 'border-white/10 focus:border-accent-cyan/50 focus:ring-accent-cyan/50'
             }`}
-            placeholder="you@example.com"
+            placeholder="Email"
             aria-invalid={!!fieldErrors.email}
             aria-describedby={fieldErrors.email ? 'email-error' : undefined}
           />

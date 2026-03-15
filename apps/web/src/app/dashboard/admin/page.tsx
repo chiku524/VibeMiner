@@ -1,14 +1,21 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Users, Network, Wallet } from 'lucide-react';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { DesktopNav } from '@/components/DesktopNav';
 import { PLATFORM_WALLET } from '@/lib/platform-wallet';
+
+const AdminStatsChart = dynamic(
+  () => import('./AdminStatsChart').then((m) => ({ default: m.AdminStatsChart })),
+  { ssr: false, loading: () => <div className="h-[200px] animate-pulse rounded-xl bg-white/5" /> }
+);
 
 type Stats = { users: number; network_listings: number } | null;
 
@@ -93,7 +100,7 @@ export default function AdminDashboardPage() {
       <div className={`mx-auto max-w-4xl px-4 sm:px-6 ${isDesktop ? 'pt-14 pb-8' : 'py-8'}`}>
         <Breadcrumbs
           crumbs={[
-            { label: 'Home', href: isDesktop ? '/app' : '/' },
+            { label: 'Home', href: '/home' },
             { label: 'Dashboard', href: '/dashboard' },
             { label: 'Admin' },
           ]}
@@ -118,19 +125,37 @@ export default function AdminDashboardPage() {
             <section className="rounded-2xl border border-white/5 bg-surface-900/30 p-6">
               <h2 className="font-display text-lg font-semibold text-white">Platform stats</h2>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-xl border border-white/10 bg-surface-900/50 px-4 py-3">
-                  <p className="text-sm text-gray-500">Registered users</p>
-                  <p className="font-mono text-2xl font-semibold text-white">{stats?.users ?? '—'}</p>
+                <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-surface-900/50 px-4 py-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-cyan/20 text-accent-cyan">
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm text-gray-500">Registered users</p>
+                    <p className="font-mono text-2xl font-semibold text-white">{stats?.users ?? '—'}</p>
+                  </div>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-surface-900/50 px-4 py-3">
-                  <p className="text-sm text-gray-500">Network listings</p>
-                  <p className="font-mono text-2xl font-semibold text-white">{stats?.network_listings ?? '—'}</p>
+                <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-surface-900/50 px-4 py-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
+                    <Network className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm text-gray-500">Network listings</p>
+                    <p className="font-mono text-2xl font-semibold text-white">{stats?.network_listings ?? '—'}</p>
+                  </div>
                 </div>
               </div>
+              {stats && (
+                <div className="mt-4 rounded-xl border border-white/10 bg-surface-900/50 p-4">
+                  <AdminStatsChart stats={stats} />
+                </div>
+              )}
             </section>
 
             <section className="rounded-2xl border border-white/5 bg-surface-900/30 p-6">
-              <h2 className="font-display text-lg font-semibold text-white">Platform wallet (fee destination)</h2>
+              <h2 className="font-display text-lg font-semibold text-white flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-gray-400" />
+                Platform wallet (fee destination)
+              </h2>
               <p className="mt-2 text-sm text-gray-400">
                 Listing fees and withdrawal fees are sent to this wallet. To deposit or withdraw funds, use your wallet app or exchange linked to these addresses — the app does not hold private keys.
               </p>

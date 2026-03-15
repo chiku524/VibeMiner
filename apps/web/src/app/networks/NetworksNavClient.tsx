@@ -9,7 +9,7 @@ import Link from 'next/link';
  */
 export function NetworksNavClient() {
   const isDesktop = useIsDesktop();
-  const homeHref = isDesktop ? '/app' : '/';
+  const homeHref = '/home';
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-surface-950/95 backdrop-blur-md">

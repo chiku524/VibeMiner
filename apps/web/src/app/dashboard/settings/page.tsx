@@ -94,8 +94,8 @@ export default function SettingsPage() {
       <div className={`mx-auto max-w-2xl px-4 sm:px-6 ${showNav ? 'pt-14 pb-8' : 'py-8'}`}>
         <Breadcrumbs
           crumbs={[
-            { label: 'Home', href: isDesktop ? '/app' : '/' },
-            { label: 'Dashboard', href: '/dashboard' },
+            { label: 'Home', href: '/home' },
+            { label: 'Dashboard', href: isNetworkAccount ? '/dashboard/network' : '/dashboard' },
             { label: 'Settings' },
           ]}
         />
