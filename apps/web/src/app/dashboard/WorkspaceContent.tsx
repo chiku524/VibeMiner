@@ -27,7 +27,6 @@ import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { NetworkListSkeleton, DashboardSkeleton } from '@/components/ui/Skeleton';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { DesktopNav } from '@/components/DesktopNav';
 import { Radio, Zap, Coins, BarChart3 } from 'lucide-react';
 
 export type WorkspaceMode = 'mining' | 'nodes';
@@ -300,8 +299,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
   if (!authLoading && accountType === 'network') {
     return (
       <>
-        {isDesktop && <DesktopNav />}
-        <main className={`min-h-screen bg-surface-950 bg-grid flex items-center justify-center ${isDesktop ? 'pt-14' : ''}`}>
+        <main className={`min-h-screen bg-surface-950 bg-grid flex items-center justify-center ${!isDesktop ? 'pt-14' : ''}`}>
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
         </main>
       </>
@@ -311,7 +309,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
   if (authLoading) {
     return (
       <>
-        {isDesktop ? <DesktopNav /> : (
+        {!isDesktop && (
           <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
             <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
               <Link href="/home" className="flex items-center gap-2 font-display text-lg font-semibold">
@@ -322,7 +320,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
             </div>
           </header>
         )}
-        <div className={`mx-auto max-w-6xl px-4 py-8 sm:px-6 ${isDesktop ? 'pt-14' : ''}`}>
+        <div className={`mx-auto max-w-6xl px-4 py-8 sm:px-6 ${!isDesktop ? 'pt-14' : ''}`}>
           <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: title }]} />
           <div className="mb-8 mt-4 h-16 w-64 rounded-lg bg-white/5 animate-pulse" aria-hidden />
           <div className="grid gap-8 lg:grid-cols-3">
@@ -344,7 +342,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
 
   return (
     <>
-      {isDesktop ? <DesktopNav /> : (
+      {!isDesktop && (
         <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
             <Link href="/home" className="flex items-center gap-2 font-display text-lg font-semibold">
@@ -363,7 +361,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
         </header>
       )}
 
-      <div className={`mx-auto max-w-6xl px-4 sm:px-6 ${isDesktop ? 'pt-14 pb-8' : 'py-8'}`}>
+      <div className={`mx-auto max-w-6xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pb-8 pt-6'}`}>
         <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: title }]} />
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8 mt-4">
           <h1 className="font-display text-2xl font-bold sm:text-3xl">{title}</h1>

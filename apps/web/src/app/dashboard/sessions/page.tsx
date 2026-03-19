@@ -14,7 +14,6 @@ import { MiningPanel } from '@/components/dashboard/MiningPanel';
 import { useMining } from '@/contexts/MiningContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { DesktopNav } from '@/components/DesktopNav';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 
 function findNetworkForSession(session: { networkId: string; environment: 'mainnet' | 'devnet' }): BlockchainNetwork | undefined {
@@ -43,8 +42,7 @@ export default function MiningSessionsPage() {
   if (authLoading || !user) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        {isDesktop && <DesktopNav />}
-        <div className={`flex flex-col items-center justify-center min-h-[60vh] ${isDesktop ? 'pt-14' : ''}`}>
+        <div className={`flex flex-col items-center justify-center min-h-[60vh] ${!isDesktop ? 'pt-14' : 'pt-6'}`}>
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
           <p className="mt-4 text-sm text-gray-400">Loading…</p>
         </div>
@@ -54,8 +52,7 @@ export default function MiningSessionsPage() {
 
   return (
     <>
-      {isDesktop && <DesktopNav />}
-      <div className={`mx-auto max-w-4xl px-4 sm:px-6 ${isDesktop ? 'pt-14 pb-8' : 'py-8'}`}>
+      <div className={`mx-auto max-w-4xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pt-6 pb-8'}`}>
         <Breadcrumbs
           crumbs={[
             { label: 'Home', href: '/home' },

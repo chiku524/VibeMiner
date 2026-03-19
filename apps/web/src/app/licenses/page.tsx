@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useDesktopCheck } from '@/hooks/useIsDesktop';
-import { DesktopNav } from '@/components/DesktopNav';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 
 export default function LicensesPage() {
@@ -10,7 +9,6 @@ export default function LicensesPage() {
 
   return (
     <>
-      {hasChecked && isDesktop && <DesktopNav />}
       {hasChecked && !isDesktop && (
         <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
@@ -25,7 +23,7 @@ export default function LicensesPage() {
         </header>
       )}
 
-      <main className={`min-h-screen bg-surface-950 bg-grid ${hasChecked && isDesktop ? 'pt-14' : ''}`}>
+      <main className={`min-h-screen bg-surface-950 bg-grid ${hasChecked && !isDesktop ? 'pt-14' : 'pt-6'}`}>
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
           <Breadcrumbs
             crumbs={[

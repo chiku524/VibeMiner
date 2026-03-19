@@ -1,12 +1,11 @@
 'use client';
 
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { DesktopNav } from '@/components/DesktopNav';
 import { NetworkListSkeleton, DashboardSkeleton } from '@/components/ui/Skeleton';
 
 /**
  * Shown while DashboardContent is loading (Suspense fallback).
- * Desktop: show DesktopNav + skeleton so the page never looks blank or web-only.
+ * Desktop: shell provides sidebar; just show skeleton content.
  */
 export function DashboardFallback() {
   const isDesktop = useIsDesktop();
@@ -14,8 +13,7 @@ export function DashboardFallback() {
   if (isDesktop) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        <DesktopNav />
-        <div className="mx-auto max-w-6xl px-4 pt-14 pb-8 sm:px-6">
+        <div className="mx-auto max-w-6xl px-4 pt-6 pb-8 sm:px-6">
           <div className="mb-8 mt-4 h-16 w-64 rounded-lg bg-white/5 animate-pulse" aria-hidden />
           <div className="grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-1 space-y-4">

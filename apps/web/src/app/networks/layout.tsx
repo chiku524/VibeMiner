@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Uses NetworksLayoutClient so desktop app gets DesktopNav + content (no blank). Web gets NetworksNavClient.
+ * Uses NetworksLayoutClient so desktop gets content (shell provides sidebar). Web gets NetworksNavClient.
  */
 export default function NetworksLayout({ children }: { children: React.ReactNode }) {
   return <NetworksLayoutClient>{children}</NetworksLayoutClient>;

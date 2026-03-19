@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { DesktopNav } from '@/components/DesktopNav';
 import { DownloadPageContent } from './DownloadPageContent';
 
 type DownloadUrls = { win: string | null; mac: string | null; linux: string | null };
@@ -30,8 +29,7 @@ export function DownloadPageGate({ initialDownloads, githubReleasesUrl }: Downlo
   if (isDesktop) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        <DesktopNav />
-        <div className="flex flex-1 flex-col items-center justify-center px-4 pt-14" style={{ minHeight: 'calc(100vh - 4rem)' }}>
+        <div className="flex flex-1 flex-col items-center justify-center px-4 pt-6" style={{ minHeight: 'calc(100vh - 4rem)' }}>
           <p className="text-sm text-gray-400">Redirecting…</p>
         </div>
       </main>

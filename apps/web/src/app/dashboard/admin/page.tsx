@@ -9,7 +9,6 @@ import { motion } from 'framer-motion';
 import { Users, Network, Wallet } from 'lucide-react';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
-import { DesktopNav } from '@/components/DesktopNav';
 import { PLATFORM_WALLET } from '@/lib/platform-wallet';
 
 const AdminStatsChart = dynamic(
@@ -51,8 +50,7 @@ export default function AdminDashboardPage() {
   if (loading || !user) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        {isDesktop && <DesktopNav />}
-        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${isDesktop ? 'pt-14' : ''}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
+        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${!isDesktop ? 'pt-14' : 'pt-6'}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
           <p className="mt-4 text-sm text-gray-400">Loading…</p>
         </div>
@@ -63,8 +61,7 @@ export default function AdminDashboardPage() {
   if (!isAdmin) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        {isDesktop && <DesktopNav />}
-        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${isDesktop ? 'pt-14' : ''}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
+        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${!isDesktop ? 'pt-14' : 'pt-6'}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
           <p className="text-sm text-gray-400">Redirecting…</p>
         </div>
       </main>
@@ -73,7 +70,7 @@ export default function AdminDashboardPage() {
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
-      {isDesktop ? <DesktopNav /> : (
+      {!isDesktop && (
         <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
             <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold">
@@ -97,7 +94,7 @@ export default function AdminDashboardPage() {
         </header>
       )}
 
-      <div className={`mx-auto max-w-4xl px-4 sm:px-6 ${isDesktop ? 'pt-14 pb-8' : 'py-8'}`}>
+      <div className={`mx-auto max-w-4xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pt-6 pb-8'}`}>
         <Breadcrumbs
           crumbs={[
             { label: 'Home', href: '/home' },

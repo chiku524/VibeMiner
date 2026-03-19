@@ -1,0 +1,19 @@
+{
+  "name": "vibeminer-tauri",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VibeMiner desktop app (Tauri 2) — mine for networks that need you.",
+  "author": "nico.builds",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:web\" \"wait-on http://localhost:3000 && npm run tauri dev\"",
+    "dev:web": "npm run dev -w vibeminer-web",
+    "tauri": "tauri",
+    "build": "npm run tauri build",
+    "build:web": "npm run build -w vibeminer-web"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.1.0",
+    "concurrently": "^8.2.2",
+    "wait-on": "^7.2.0"
+  }
+}

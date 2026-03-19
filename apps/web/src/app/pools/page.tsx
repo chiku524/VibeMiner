@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { Nav } from '@/components/Nav';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
-import { DesktopNav } from '@/components/DesktopNav';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 
 export default function PoolsPage() {
@@ -12,8 +11,8 @@ export default function PoolsPage() {
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
-      {isDesktop ? <DesktopNav /> : <Nav />}
-      <div className={`mx-auto max-w-3xl px-4 sm:px-6 ${isDesktop ? 'pt-14 py-12' : 'py-12'}`}>
+      <Nav />
+      <div className={`mx-auto max-w-3xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 py-12' : 'py-8'}`}>
         <Breadcrumbs crumbs={[{ label: 'Home', href: homeHref }, { label: 'Mining pools' }]} />
         <h1 className="mt-6 font-display text-3xl font-bold tracking-tight text-white">
           Mining pools

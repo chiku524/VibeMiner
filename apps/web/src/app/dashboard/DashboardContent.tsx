@@ -27,7 +27,6 @@ import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { NetworkListSkeleton, DashboardSkeleton } from '@/components/ui/Skeleton';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { DesktopNav } from '@/components/DesktopNav';
 
 /** Network from API may include listedAt for discovery (newest first). */
 type NetworkWithMeta = BlockchainNetwork & { listedAt?: string };
@@ -297,8 +296,7 @@ export function DashboardContent() {
   if (!authLoading && accountType === 'network') {
     return (
       <>
-        {isDesktop && <DesktopNav />}
-        <main className={`min-h-screen bg-surface-950 bg-grid flex items-center justify-center ${isDesktop ? 'pt-14' : ''}`}>
+        <main className={`min-h-screen bg-surface-950 bg-grid flex items-center justify-center ${!isDesktop ? 'pt-14' : 'pt-6'}`}>
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
         </main>
       </>
@@ -308,9 +306,7 @@ export function DashboardContent() {
   if (authLoading) {
     return (
       <>
-        {isDesktop ? (
-          <DesktopNav />
-        ) : (
+        {!isDesktop && (
           <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
             <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
               <Link href="/home" className="flex items-center gap-2 font-display text-lg font-semibold">
@@ -321,7 +317,7 @@ export function DashboardContent() {
             </div>
           </header>
         )}
-        <div className={`mx-auto max-w-6xl px-4 py-8 sm:px-6 ${isDesktop ? 'pt-14' : ''}`}>
+        <div className={`mx-auto max-w-6xl px-4 py-8 sm:px-6 ${!isDesktop ? 'pt-14' : 'pt-6'}`}>
           <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: 'Dashboard' }]} />
           <div className="mb-8 mt-4 h-16 w-64 rounded-lg bg-white/5 animate-pulse" aria-hidden />
           <div className="grid gap-8 lg:grid-cols-3">
@@ -343,9 +339,7 @@ export function DashboardContent() {
 
   return (
     <>
-      {isDesktop ? (
-        <DesktopNav />
-      ) : (
+      {!isDesktop && (
         <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
             <Link href="/home" className="flex items-center gap-2 font-display text-lg font-semibold">
@@ -372,7 +366,7 @@ export function DashboardContent() {
         </header>
       )}
 
-      <div className={`mx-auto max-w-6xl px-4 sm:px-6 ${isDesktop ? 'pt-14 pb-8' : 'py-8'}`}>
+      <div className={`mx-auto max-w-6xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pt-6 pb-8'}`}>
         <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: 'Dashboard' }]} />
         <motion.div
           initial={{ opacity: 0, y: 12 }}

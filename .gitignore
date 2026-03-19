@@ -21,6 +21,9 @@ Thumbs.db
 *.log
 nul
 
+# Tauri
+apps/tauri/src-tauri/target/
+
 # Electron
 apps/desktop/out/
 apps/desktop/build/

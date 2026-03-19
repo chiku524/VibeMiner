@@ -9,7 +9,6 @@ import { useDesktopCheck } from '@/hooks/useIsDesktop';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { DesktopAppSettings } from '@/components/DesktopAppSettings';
 import { MiningWalletSettings } from '@/components/MiningWalletSettings';
-import { DesktopNav } from '@/components/DesktopNav';
 import { NetworkListingsSection } from '@/components/NetworkListingsSection';
 import { ProfileSettings } from '@/components/ProfileSettings';
 
@@ -33,15 +32,13 @@ export default function SettingsPage() {
     return () => clearTimeout(t);
   }, []);
 
-  const showNav = !hasChecked || isDesktop;
   const loadingOrRedirect = loading || !user;
   const isNetworkAccount = accountType === 'network';
 
   if (loadingOrRedirect) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        {showNav && <DesktopNav />}
-        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${showNav ? 'pt-14' : ''}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
+        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${!isDesktop ? 'pt-14' : 'pt-6'}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
           <p className="mt-4 text-sm text-gray-400">
             Loading…
@@ -70,7 +67,6 @@ export default function SettingsPage() {
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
-      {showNav && <DesktopNav />}
       {hasChecked && !isDesktop && (
         <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
@@ -92,7 +88,7 @@ export default function SettingsPage() {
         </header>
       )}
 
-      <div className={`mx-auto max-w-2xl px-4 sm:px-6 ${showNav ? 'pt-14 pb-8' : 'py-8'}`}>
+      <div className={`mx-auto max-w-2xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pt-6 pb-8'}`}>
         <Breadcrumbs
           crumbs={[
             { label: 'Home', href: '/home' },

@@ -6,15 +6,15 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { DesktopNav } from '@/components/DesktopNav';
 
 export function Nav() {
   const reduced = useReducedMotion() ?? false;
   const isDesktop = useIsDesktop();
   const { user, profile, accountType, isAdmin, loading, logout } = useAuth();
 
+  // Desktop app uses DesktopShell sidebar; no top nav.
   if (isDesktop) {
-    return <DesktopNav />;
+    return null;
   }
   const [open, setOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);

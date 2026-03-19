@@ -3,11 +3,10 @@
 import Link from 'next/link';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { DashboardSkeleton, NetworkListSkeleton } from '@/components/ui/Skeleton';
-import { DesktopNav } from '@/components/DesktopNav';
 
 /**
  * Shown while the dashboard route is loading (e.g. client navigation to /dashboard).
- * Desktop: shows DesktopNav and links to /app for home. Web: shows header with link to /.
+ * Desktop: shell provides sidebar; just show skeleton. Web: header + skeleton.
  */
 export default function DashboardLoading() {
   const isDesktop = useIsDesktop();
@@ -16,8 +15,7 @@ export default function DashboardLoading() {
   if (isDesktop) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        <DesktopNav />
-        <div className="mx-auto max-w-6xl px-4 pt-14 pb-8 sm:px-6">
+        <div className="mx-auto max-w-6xl px-4 pt-6 pb-8 sm:px-6">
           <div className="mb-2 h-4 w-32 rounded bg-white/10" />
           <div className="mb-8 h-8 w-48 animate-pulse rounded bg-white/10" />
           <div className="grid gap-8 lg:grid-cols-3">

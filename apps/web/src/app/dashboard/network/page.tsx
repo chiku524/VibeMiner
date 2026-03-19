@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
-import { DesktopNav } from '@/components/DesktopNav';
 import { Network, Layers, Globe, FilePlus, List, BarChart3, Users, Coins, Calendar } from 'lucide-react';
 
 type ListingSummary = {
@@ -47,8 +46,7 @@ export default function NetworkDashboardPage() {
   if (!loading && !user) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        {isDesktop && <DesktopNav />}
-        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${isDesktop ? 'pt-14' : ''}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
+        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${!isDesktop ? 'pt-14' : 'pt-6'}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
           <div className="text-center">
             <p className="text-gray-400">Sign in to access the network dashboard.</p>
             <Link href="/login" className="mt-4 inline-block text-accent-cyan hover:underline">Sign in</Link>
@@ -61,8 +59,7 @@ export default function NetworkDashboardPage() {
   if (!loading && user && profile?.account_type !== 'network') {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        {isDesktop && <DesktopNav />}
-        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${isDesktop ? 'pt-14' : ''}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
+        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${!isDesktop ? 'pt-14' : 'pt-6'}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
           <div className="text-center">
             <p className="text-gray-400">This dashboard is for network accounts. You’re signed in as a miner.</p>
             <Link href="/dashboard" className="mt-4 inline-block text-accent-cyan hover:underline">Go to miner dashboard</Link>
@@ -80,7 +77,7 @@ export default function NetworkDashboardPage() {
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
-      {isDesktop ? <DesktopNav /> : (
+      {!isDesktop && (
         <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
             <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold">
@@ -98,7 +95,7 @@ export default function NetworkDashboardPage() {
         </header>
       )}
 
-      <div className={`mx-auto max-w-6xl px-4 sm:px-6 ${isDesktop ? 'pt-14 pb-8' : 'py-8'}`}>
+      <div className={`mx-auto max-w-6xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pt-6 pb-8'}`}>
         <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: 'Network dashboard' }]} />
         <motion.div
           initial={{ opacity: 0, y: 12 }}

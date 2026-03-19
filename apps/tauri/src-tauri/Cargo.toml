@@ -1,0 +1,34 @@
+[package]
+name = "vibeminer-tauri"
+version = "1.0.0"
+description = "VibeMiner desktop app"
+authors = ["nico.builds"]
+edition = "2021"
+rust-version = "1.70"
+
+[lib]
+name = "vibeminer_tauri_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+open = "5"
+reqwest = { version = "0.12", features = ["json", "stream"] }
+tokio = { version = "1", features = ["full"] }
+flate2 = "1"
+tar = "0.4"
+zip = "0.6"
+sha2 = "0.10"
+regex = "1"
+chrono = "0.4"
+lazy_static = "1"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Nav } from '@/components/Nav';
-import { DesktopNav } from '@/components/DesktopNav';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 
@@ -43,8 +42,8 @@ export function HowMiningWorksContent() {
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
-      {isDesktop ? <DesktopNav /> : <Nav />}
-      <div className={`mx-auto max-w-3xl px-4 sm:px-6 ${isDesktop ? 'pt-14 py-16' : 'py-16'}`}>
+      <Nav />
+      <div className={`mx-auto max-w-3xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 py-16' : 'py-12'}`}>
         <Breadcrumbs
           crumbs={[
             { label: 'Home', href: homeHref },

@@ -8,6 +8,7 @@ import { PageTransition } from '@/components/PageTransition';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { DesktopUpdateToastListener } from '@/components/DesktopUpdateToastListener';
 import { DesktopUpdateOverlay } from '@/components/DesktopUpdateOverlay';
+import { DesktopShellWrapper } from '@/components/DesktopShellWrapper';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -18,7 +19,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <DesktopUpdateToastListener />
           <DesktopUpdateOverlay />
           <OnboardingProvider>
-            <PageTransition>{children}</PageTransition>
+            <DesktopShellWrapper>
+              <PageTransition>{children}</PageTransition>
+            </DesktopShellWrapper>
           </OnboardingProvider>
           </MiningProvider>
         </ToastProvider>

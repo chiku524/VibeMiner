@@ -18,7 +18,6 @@ import {
   FilePlus,
 } from 'lucide-react';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { DesktopNav } from '@/components/DesktopNav';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 
 const MINER_NAV_ITEMS = [
@@ -52,8 +51,7 @@ export default function HomePage() {
   if (loading || !user) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        {isDesktop && <DesktopNav />}
-        <div className={`flex flex-col items-center justify-center min-h-[60vh] ${isDesktop ? 'pt-14' : ''}`}>
+        <div className={`flex flex-col items-center justify-center min-h-[60vh] ${!isDesktop ? 'pt-14' : ''}`}>
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
           <p className="mt-4 text-sm text-gray-400">Loading…</p>
         </div>
@@ -66,7 +64,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
-      {isDesktop ? <DesktopNav /> : (
+      {!isDesktop && (
         <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
             <Link href="/home" className="flex items-center gap-2 font-display text-lg font-semibold">
@@ -83,7 +81,7 @@ export default function HomePage() {
         </header>
       )}
 
-      <div className={`mx-auto max-w-2xl px-4 py-8 sm:px-6 ${isDesktop ? 'pt-14' : ''}`}>
+      <div className={`mx-auto max-w-2xl px-4 py-8 sm:px-6 ${!isDesktop ? 'pt-14' : 'pt-6'}`}>
         <Breadcrumbs crumbs={[{ label: 'Home' }]} />
         <motion.div
           initial={{ opacity: 0, y: 8 }}
