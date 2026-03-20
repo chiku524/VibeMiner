@@ -167,10 +167,7 @@ function DesktopShellInner({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-surface-950 bg-grid">
       <SidebarContent />
-      <main
-        className="min-h-screen flex-1 overflow-auto"
-        className="ml-[240px]"
-      >
+      <main className="min-h-screen flex-1 overflow-auto ml-[240px]">
         {children}
       </main>
     </div>
