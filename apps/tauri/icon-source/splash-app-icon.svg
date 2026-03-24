@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="vmg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#34d399" />
+    </linearGradient>
+    <linearGradient id="tile" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.22" />
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0.18" />
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" fill="#0c0e12" />
+  <rect x="14" y="14" width="72" height="72" rx="20" fill="url(#tile)" />
+  <g transform="translate(34,30) scale(1.05)">
+    <rect x="4" y="22" width="5" height="5" rx="1" stroke="url(#vmg)" stroke-width="1.2" fill="none" opacity="0.95" />
+    <rect x="11" y="22" width="5" height="5" rx="1" stroke="url(#vmg)" stroke-width="1.2" fill="none" opacity="0.75" />
+    <rect x="18" y="22" width="5" height="5" rx="1" stroke="url(#vmg)" stroke-width="1.2" fill="none" opacity="0.55" />
+    <path d="M9 24.5h2M16 24.5h2" stroke="url(#vmg)" stroke-width="1" stroke-linecap="round" />
+    <circle cx="22" cy="11" r="7" fill="#0c0e12" stroke="url(#vmg)" stroke-width="1.5" />
+    <path
+      d="M22 6.5v9M19.5 7.5h3.25a1.75 1.75 0 0 1 0 3.5H19.5M19.5 14h3.5a1.75 1.75 0 0 1 0 3.5H19.5"
+      stroke="#e5e7eb"
+      stroke-width="1.15"
+      stroke-linecap="round"
+      fill="none"
+    />
+    <line x1="5" y1="6" x2="16" y2="17" stroke="url(#vmg)" stroke-width="2" stroke-linecap="round" />
+    <path d="M16 17l4.2-2.8-1.6 4.6z" fill="url(#vmg)" stroke="url(#vmg)" stroke-width="0.4" stroke-linejoin="round" />
+  </g>
+</svg>

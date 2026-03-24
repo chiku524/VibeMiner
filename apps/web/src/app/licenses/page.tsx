@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useDesktopCheck } from '@/hooks/useIsDesktop';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
+import { BrandMark } from '@/components/BrandMark';
 
 export default function LicensesPage() {
   const { isDesktop, hasChecked } = useDesktopCheck();
@@ -13,7 +14,7 @@ export default function LicensesPage() {
         <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
             <Link href="/home" className="flex items-center gap-2 font-display text-lg font-semibold">
-              <span className="text-xl" aria-hidden="true">◇</span>
+              <BrandMark className="h-6 w-6 shrink-0" />
               <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
                 VibeMiner
               </span>
@@ -79,8 +80,8 @@ export default function LicensesPage() {
                     <li><strong>Copyright:</strong> XMRig project and contributors</li>
                   </ul>
                   <p className="mt-2 text-xs text-gray-500">
-                    VibeMiner distributes the unmodified official XMRig release. The full GPL-3.0 text is included
-                    in the desktop app under <code className="rounded bg-white/10 px-1">resources/licenses/</code>.
+                    VibeMiner distributes the unmodified official XMRig release. The GPL-3.0 text is included with
+                    the desktop distribution alongside third-party miner components.
                   </p>
                 </div>
               </div>

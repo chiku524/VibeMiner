@@ -6,6 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
+import { BrandMark } from '@/components/BrandMark';
+import { MiningLoader } from '@/components/ui/MiningLoader';
 import { RequestListingForm, type NetworkListingInitialData } from '@/components/RequestListingForm';
 import type { NetworkEnvironment } from '@vibeminer/shared';
 
@@ -120,7 +122,7 @@ export default function EditNetworkPage() {
         <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
             <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold">
-              <span className="text-xl" aria-hidden="true">◇</span>
+              <BrandMark className="h-6 w-6 shrink-0" />
               <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">VibeMiner</span>
             </Link>
             <Link href="/dashboard/settings" className="text-sm text-gray-400 transition hover:text-white">← Settings</Link>
@@ -142,7 +144,7 @@ export default function EditNetworkPage() {
           )}
           {initialData === undefined && (
             <div className="mt-8 flex justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
+              <MiningLoader size="sm" />
             </div>
           )}
           {initialData !== undefined && initialData !== null && (

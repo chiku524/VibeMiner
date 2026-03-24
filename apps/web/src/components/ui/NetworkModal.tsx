@@ -32,14 +32,14 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
   const canRunNode = network && hasNodeConfig(network) && isDesktop;
 
   useEffect(() => {
-    if (!network || !isDesktop || !window.electronAPI?.isNodeRunning) return;
-    window.electronAPI.isNodeRunning(network.id, network.environment ?? 'mainnet').then(setNodeRunning);
+    if (!network || !isDesktop || !window.desktopAPI?.isNodeRunning) return;
+    window.desktopAPI.isNodeRunning(network.id, network.environment ?? 'mainnet').then(setNodeRunning);
   }, [network, isDesktop]);
 
   useEffect(() => {
-    if (!network || !isDesktop || !nodeRunning || !window.electronAPI?.getNodeStatus) return;
+    if (!network || !isDesktop || !nodeRunning || !window.desktopAPI?.getNodeStatus) return;
     const interval = setInterval(() => {
-      window.electronAPI?.getNodeStatus?.(network.id, network.environment ?? 'mainnet').then((s) => {
+      window.desktopAPI?.getNodeStatus?.(network.id, network.environment ?? 'mainnet').then((s) => {
         if (s) setNodeStatus(s.status ?? null);
       });
     }, 3000);
@@ -210,7 +210,7 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                       <button
                         type="button"
                         onClick={async () => {
-                          await window.electronAPI?.stopNode?.(network.id, network.environment ?? 'mainnet');
+                          await window.desktopAPI?.stopNode?.(network.id, network.environment ?? 'mainnet');
                           setNodeRunning(false);
                         }}
                         className="rounded-lg border border-red-500/30 px-3 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10"
@@ -223,10 +223,10 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                       type="button"
                       disabled={nodeStarting}
                       onClick={async () => {
-                        if (!window.electronAPI?.startNode) return;
+                        if (!window.desktopAPI?.startNode) return;
                         setNodeStarting(true);
                         try {
-                          const result = await window.electronAPI.startNode({
+                          const result = await window.desktopAPI.startNode({
                             network: {
                               id: network.id,
                               environment: network.environment ?? 'mainnet',

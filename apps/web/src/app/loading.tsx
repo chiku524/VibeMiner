@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { MiningLoader } from '@/components/ui/MiningLoader';
 
 /**
  * Shown during client-side navigation (e.g. dashboard → networks).
@@ -10,7 +11,7 @@ export default function Loading() {
   const [isDesktop, setIsDesktop] = useState(true);
 
   useEffect(() => {
-    setIsDesktop(typeof window !== 'undefined' && window.electronAPI?.isDesktop === true);
+    setIsDesktop(typeof window !== 'undefined' && window.desktopAPI?.isDesktop === true);
   }, []);
 
   return (
@@ -26,11 +27,7 @@ export default function Loading() {
         className={`flex flex-col items-center justify-center px-4 ${!isDesktop ? 'pt-14' : 'pt-6'}`}
         style={{ minHeight: 'calc(100vh - 4rem)' }}
       >
-        <div
-          className="h-10 w-10 shrink-0 rounded-full border-2 border-accent-cyan border-t-transparent animate-spin"
-          aria-hidden
-        />
-        <p className="mt-4 text-sm text-gray-400">Loading…</p>
+        <MiningLoader size="md" label="Loading…" />
       </div>
     </main>
   );

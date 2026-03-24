@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useAuth } from '@/contexts/AuthContext';
 import { register, type AccountType } from '@/lib/auth';
+import { BrandMark } from '@/components/BrandMark';
 
 type Step = 'choose' | 'miner' | 'network';
 
@@ -91,7 +92,7 @@ export function RegisterForm() {
         className="w-full max-w-md rounded-2xl border border-white/10 bg-surface-900/50 p-8"
       >
         <Link href={homeHref} className="mb-6 inline-flex items-center gap-2 font-display text-lg font-semibold text-gray-300 hover:text-white">
-          <span className="text-xl" aria-hidden="true">◇</span>
+          <BrandMark className="h-6 w-6 shrink-0" />
           VibeMiner
         </Link>
         <h1 className="font-display text-2xl font-bold text-white">Create an account</h1>
@@ -111,7 +112,7 @@ export function RegisterForm() {
             onClick={() => chooseType('network')}
             className="rounded-xl border border-white/10 bg-surface-850/80 p-6 text-left transition hover:border-accent-cyan/30 hover:bg-surface-850"
           >
-            <span className="text-3xl" aria-hidden="true">◇</span>
+            <BrandMark className="h-9 w-9 shrink-0" />
             <h2 className="mt-3 font-display font-semibold text-white">Network</h2>
             <p className="mt-1 text-sm text-gray-400">I represent a blockchain. Register to request mining service and get listed.</p>
           </button>

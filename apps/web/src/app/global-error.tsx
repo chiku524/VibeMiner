@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { BrandMark } from '@/components/BrandMark';
 
 /**
  * Catches errors in the root layout so the app never shows a completely blank screen.
@@ -20,9 +21,7 @@ export default function GlobalError({
   return (
     <html lang="en" className="dark">
       <body className="min-h-screen bg-[#0a0f14] text-gray-100 font-sans antialiased flex flex-col items-center justify-center px-4 py-12">
-        <span className="text-5xl opacity-30" aria-hidden="true">
-          ◇
-        </span>
+        <BrandMark className="h-16 w-16 shrink-0 opacity-30" />
         <h1 className="mt-6 text-xl font-bold text-white">Something went wrong</h1>
         <p className="mt-2 max-w-sm text-center text-sm text-gray-400">
           The app ran into an error. Reload the page to continue.

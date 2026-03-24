@@ -1,8 +1,8 @@
-# Build VibeMiner desktop app for Windows, macOS, and Linux on tag push (v*),
-# then create a GitHub Release with the installers attached.
+# Build VibeMiner desktop (Tauri 2) for Windows, macOS, and Linux on tag push (v*),
+# then create a GitHub Release with installers. Asset names match the download API
+# (VibeMiner-Setup-*.exe, *-arm64.dmg, *.AppImage).
 #
-# Optional: Add secrets for code signing (Windows) and notarization (macOS)
-# for a more trustworthy install. See docs/DESKTOP_APP.md.
+# Optional: code signing / notarization — see docs/DESKTOP_APP.md.
 
 name: Release desktop app
 
@@ -32,6 +32,10 @@ jobs:
         with:
           ref: ${{ env.RELEASE_REF }}
 
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -39,47 +43,24 @@ jobs:
           cache: 'npm'
 
       - name: Set version from tag
-        run: node -e "const fs=require('fs'); const p=require('./apps/desktop/package.json'); p.version=process.env.RELEASE_TAG.replace(/^v/i,''); fs.writeFileSync('./apps/desktop/package.json', JSON.stringify(p,null,2));"
+        run: node .github/scripts/set-tauri-release-version.mjs
         env:
           RELEASE_TAG: ${{ env.RELEASE_TAG }}
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Install desktop app dependencies
-        run: npm install
-        working-directory: apps/desktop
-
-      - name: Generate app icons
-        run: npm run generate-icons
-        working-directory: apps/desktop
-
-      # Set repo variable WIN_CODE_SIGNING_ENABLED = true when secrets are configured (secrets can't be used in if)
-      - name: Prepare Windows code signing cert
-        if: ${{ vars.WIN_CODE_SIGNING_ENABLED == 'true' }}
-        run: |
-          $certPath = "$env:GITHUB_WORKSPACE\apps\desktop\cert.pfx"
-          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:WIN_CODE_SIGNING_CERT_BASE64))
-          "CSC_LINK=$certPath" | Out-File -FilePath $env:GITHUB_ENV -Append
-          node -e "const fs=require('fs'); const p=require('./apps/desktop/package.json'); p.build.win.signAndEditExecutable=true; fs.writeFileSync('./apps/desktop/package.json', JSON.stringify(p,null,2));"
+      - name: Build Tauri (Windows)
+        run: npm run build -w vibeminer-tauri
         env:
-          WIN_CODE_SIGNING_CERT_BASE64: ${{ secrets.WIN_CODE_SIGNING_CERT_BASE64 }}
-
-      - name: Build Windows installer
-        run: npx electron-builder --win
-        working-directory: apps/desktop
-        env:
-          CSC_KEY_PASSWORD: ${{ secrets.WIN_CODE_SIGNING_PASSWORD }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: desktop-windows
           path: |
-            apps/desktop/dist/*.exe
-            apps/desktop/dist/*.yml
-            apps/desktop/dist/*.blockmap
+            apps/tauri/src-tauri/target/release/bundle/**/*.exe
 
   build-macos:
     runs-on: macos-latest
@@ -88,10 +69,7 @@ jobs:
         with:
           ref: ${{ env.RELEASE_REF }}
 
-      - name: Set version from tag
-        run: node -e "const fs=require('fs'); const p=require('./apps/desktop/package.json'); p.version=process.env.RELEASE_TAG.replace(/^v/i,''); fs.writeFileSync('./apps/desktop/package.json', JSON.stringify(p,null,2));"
-        env:
-          RELEASE_TAG: ${{ env.RELEASE_TAG }}
+      - uses: dtolnay/rust-toolchain@stable
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -99,46 +77,37 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Set version from tag
+        run: node .github/scripts/set-tauri-release-version.mjs
+        env:
+          RELEASE_TAG: ${{ env.RELEASE_TAG }}
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Install desktop app dependencies
-        run: npm install
-        working-directory: apps/desktop
-
-      - name: Generate app icons
-        run: npm run generate-icons
-        working-directory: apps/desktop
-
-      - name: Build macOS installer
-        run: npx electron-builder --mac
-        working-directory: apps/desktop
+      - name: Build Tauri (macOS)
+        run: npm run build -w vibeminer-tauri
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
           name: desktop-macos
           path: |
-            apps/desktop/dist/*.dmg
-            apps/desktop/dist/*.yml
-            apps/desktop/dist/*.blockmap
+            apps/tauri/src-tauri/target/release/bundle/**/*.dmg
 
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.RELEASE_REF }}
 
-      - name: Set version from tag
-        run: node -e "const fs=require('fs'); const p=require('./apps/desktop/package.json'); p.version=process.env.RELEASE_TAG.replace(/^v/i,''); fs.writeFileSync('./apps/desktop/package.json', JSON.stringify(p,null,2));"
-        env:
-          RELEASE_TAG: ${{ env.RELEASE_TAG }}
+      - uses: dtolnay/rust-toolchain@stable
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -146,30 +115,32 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Install Linux dependencies for Tauri
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
+            patchelf libssl-dev build-essential curl wget file
+
+      - name: Set version from tag
+        run: node .github/scripts/set-tauri-release-version.mjs
+        env:
+          RELEASE_TAG: ${{ env.RELEASE_TAG }}
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Install desktop app dependencies
-        run: npm install
-        working-directory: apps/desktop
-
-      - name: Generate app icons
-        run: npm run generate-icons
-        working-directory: apps/desktop
-
-      - name: Build Linux AppImage
-        run: npx electron-builder --linux
-        working-directory: apps/desktop
+      - name: Build Tauri (Linux)
+        run: npm run build -w vibeminer-tauri
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
           name: desktop-linux
           path: |
-            apps/desktop/dist/*.AppImage
-            apps/desktop/dist/*.yml
+            apps/tauri/src-tauri/target/release/bundle/**/*.AppImage
 
   release:
     needs: [build-windows, build-macos, build-linux]
@@ -184,33 +155,43 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      # Copy versioned assets to fixed "latest" names so the website can use
-      # /releases/latest/download/VibeMiner-Setup-latest.exe (no API or token needed).
-      # Note: This job runs from the tag ref; the tag must point to a commit that has this fix (e.g. create a new tag from main).
-      # electron-builder produces "VibeMiner Setup 1.0.23.exe" (space); we need -latest and versioned (VibeMiner-Setup-1.0.23.exe) for API.
-      - name: Add latest redirect assets
+      # Copy Tauri bundle outputs to fixed names so /releases/latest/download and the GitHub API resolve.
+      - name: Add latest and versioned asset names
         env:
           VERSION: ${{ env.RELEASE_TAG }}
         run: |
+          set -e
           VER="${VERSION#v}"
           cd artifacts
           echo "Artifact layout:"
-          find . -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" \) | head -20
-          win_exe=$(find . -type f \( -name "VibeMiner-Setup-*.exe" -o -name "VibeMiner Setup *.exe" \) | head -1)
-          if [ -z "$win_exe" ]; then
-            win_exe=$(find . -type f -name "*.exe" | head -1)
-          fi
-          if [ -z "$win_exe" ]; then echo "No Windows exe found"; exit 1; fi
-          echo "Using Windows exe: $win_exe"
+          find . -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" \) | head -30
+
+          win_exe=$(find . -type f -name '*-setup.exe' | head -1)
+          if [ -z "$win_exe" ]; then win_exe=$(find . -type f -name "*.exe" ! -iname "*uninstall*" | head -1); fi
+          if [ -z "$win_exe" ]; then echo "No Windows .exe found"; exit 1; fi
+          echo "Windows: $win_exe"
           cp "$win_exe" "VibeMiner-Setup-latest.exe"
           cp "$win_exe" "VibeMiner-Setup-${VER}.exe"
-          for f in $(find . -name "VibeMiner-*-arm64.dmg" -type f); do cp "$f" VibeMiner-latest-arm64.dmg && break; done
-          for f in $(find . -name "VibeMiner-*.AppImage" -type f); do cp "$f" VibeMiner-latest.AppImage && break; done
+
+          dmg=$(find . -type f -name "*.dmg" | head -1)
+          if [ -z "$dmg" ]; then echo "No macOS .dmg found"; exit 1; fi
+          echo "macOS: $dmg"
+          cp "$dmg" "VibeMiner-latest-arm64.dmg"
+          cp "$dmg" "VibeMiner-${VER}-arm64.dmg"
+
+          appimg=$(find . -type f -name "*.AppImage" | head -1)
+          if [ -z "$appimg" ]; then echo "No Linux .AppImage found"; exit 1; fi
+          echo "Linux: $appimg"
+          cp "$appimg" "VibeMiner-latest.AppImage"
+          cp "$appimg" "VibeMiner-${VER}.AppImage"
+
           ls -la
-          test -f VibeMiner-Setup-latest.exe || (echo "Missing VibeMiner-Setup-latest.exe" && exit 1)
-          test -f "VibeMiner-Setup-${VER}.exe" || (echo "Missing VibeMiner-Setup-${VER}.exe" && exit 1)
-          test -f VibeMiner-latest-arm64.dmg || (echo "Missing VibeMiner-latest-arm64.dmg" && exit 1)
-          test -f VibeMiner-latest.AppImage || (echo "Missing VibeMiner-latest.AppImage" && exit 1)
+          test -f "VibeMiner-Setup-latest.exe"
+          test -f "VibeMiner-Setup-${VER}.exe"
+          test -f "VibeMiner-latest-arm64.dmg"
+          test -f "VibeMiner-${VER}-arm64.dmg"
+          test -f "VibeMiner-latest.AppImage"
+          test -f "VibeMiner-${VER}.AppImage"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -219,8 +200,8 @@ jobs:
           name: VibeMiner desktop ${{ env.RELEASE_TAG }}
           body: |
             ## Desktop installers
-            Download the installer for your platform below. Same app as the web—runs in its own window. Built and published by [nico.builds](https://nico.builds).
-            - **Windows**: run the `.exe` installer (publisher: nico.builds)
+            Download the installer for your platform below. Same app as the web—runs in its own window (Tauri). Built and published by [nico.builds](https://nico.builds).
+            - **Windows**: run the `.exe` installer
             - **macOS**: open the `.dmg` and drag VibeMiner to Applications
             - **Linux**: make the `.AppImage` executable and run it
           files: artifacts/*

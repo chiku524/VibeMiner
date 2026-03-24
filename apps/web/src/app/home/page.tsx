@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
+import { BrandMark } from '@/components/BrandMark';
+import { MiningLoader } from '@/components/ui/MiningLoader';
 
 const MINER_NAV_ITEMS = [
   { href: '/dashboard/mining', label: 'Mining', description: 'Mine PoW networks—choose and start', Icon: Pickaxe },
@@ -51,9 +53,8 @@ export default function HomePage() {
   if (loading || !user) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        <div className={`flex flex-col items-center justify-center min-h-[60vh] ${!isDesktop ? 'pt-14' : ''}`}>
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
-          <p className="mt-4 text-sm text-gray-400">Loading…</p>
+        <div className={`flex min-h-[60vh] flex-col items-center justify-center ${!isDesktop ? 'pt-14' : ''}`}>
+          <MiningLoader size="md" label="Loading…" />
         </div>
       </main>
     );
@@ -68,7 +69,7 @@ export default function HomePage() {
         <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
             <Link href="/home" className="flex items-center gap-2 font-display text-lg font-semibold">
-              <span className="text-xl" aria-hidden="true">◇</span>
+              <BrandMark className="h-6 w-6 shrink-0" />
               <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
                 VibeMiner
               </span>
@@ -89,8 +90,8 @@ export default function HomePage() {
           transition={{ duration: 0.3 }}
           className="mt-6 text-center mb-10"
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent-cyan/20 text-3xl mb-4">
-            ◇
+          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-cyan/20">
+            <BrandMark className="h-10 w-10" />
           </div>
           <h1 className="font-display text-2xl font-bold bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
             Home

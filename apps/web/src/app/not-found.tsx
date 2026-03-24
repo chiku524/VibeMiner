@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { BrandMark } from '@/components/BrandMark';
 
 export default function NotFound() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-surface-950 bg-grid px-4">
-      <span className="text-6xl opacity-30" aria-hidden="true">◇</span>
+      <BrandMark className="h-20 w-20 shrink-0 opacity-30" />
       <h1 className="mt-6 font-display text-3xl font-bold text-white">Page not found</h1>
       <p className="mt-2 text-center text-gray-400">
         The page you&apos;re looking for doesn&apos;t exist or has been moved.

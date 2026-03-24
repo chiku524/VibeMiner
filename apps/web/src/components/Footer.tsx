@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { BrandMark } from '@/components/BrandMark';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 
 export function Footer() {
@@ -10,7 +11,7 @@ export function Footer() {
     <footer className="border-t border-white/5 py-12">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6">
         <div className="flex items-center gap-2 font-display text-sm font-medium text-gray-500">
-          <span className="text-lg" aria-hidden="true">◇</span>
+          <BrandMark className="h-5 w-5 shrink-0" />
           VibeMiner <span className="text-gray-600">by nico.builds</span>
         </div>
         <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500 sm:justify-end">

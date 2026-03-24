@@ -15,6 +15,8 @@ import { useMining } from '@/contexts/MiningContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
+import { BrandMark } from '@/components/BrandMark';
+import { MiningLoader } from '@/components/ui/MiningLoader';
 
 function findNetworkForSession(session: { networkId: string; environment: 'mainnet' | 'devnet' }): BlockchainNetwork | undefined {
   const main = getMainnetNetworksListed();
@@ -42,9 +44,8 @@ export default function MiningSessionsPage() {
   if (authLoading || !user) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        <div className={`flex flex-col items-center justify-center min-h-[60vh] ${!isDesktop ? 'pt-14' : 'pt-6'}`}>
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
-          <p className="mt-4 text-sm text-gray-400">Loading…</p>
+        <div className={`flex min-h-[60vh] flex-col items-center justify-center ${!isDesktop ? 'pt-14' : 'pt-6'}`}>
+          <MiningLoader size="md" label="Loading…" />
         </div>
       </main>
     );
@@ -146,9 +147,7 @@ export default function MiningSessionsPage() {
               exit={{ opacity: 0, scale: 0.98 }}
               className="flex flex-col items-center justify-center rounded-2xl border border-white/5 bg-surface-900/30 py-20 text-center"
             >
-              <span className="text-5xl opacity-50" aria-hidden="true">
-                ◇
-              </span>
+              <BrandMark className="h-14 w-14 shrink-0 opacity-50" />
               <p className="mt-4 font-medium text-gray-400">No active sessions</p>
               <p className="mt-2 max-w-sm text-sm text-gray-500">
                 Start mining or running nodes from{' '}

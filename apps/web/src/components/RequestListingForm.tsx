@@ -255,7 +255,7 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
           onChange={(e) => setIcon(e.target.value)}
           required
           maxLength={10}
-          placeholder="e.g. ⛓ ◇ 🔷"
+          placeholder="e.g. ⛓ ⛏ 🔷"
           className="mt-1 w-full max-w-[8rem] rounded-lg border border-white/10 bg-surface-850 px-4 py-2.5 text-2xl text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none"
         />
         <p className="mt-1 text-xs text-gray-500">Single emoji or icon character shown on your network card.</p>

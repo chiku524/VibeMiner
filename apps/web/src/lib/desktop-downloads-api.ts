@@ -56,7 +56,7 @@ export type DesktopDownloadUrls = {
   linux: string | null;
 };
 
-/** Versioned asset names produced by electron-builder; these always exist on each release. */
+/** Versioned asset names produced by the release workflow (Tauri bundles, renamed for stable URLs). */
 const VERSIONED_ASSET_NAMES = {
   win: (v: string) => `VibeMiner-Setup-${v}.exe`,
   mac: (v: string) => `VibeMiner-${v}-arm64.dmg`,

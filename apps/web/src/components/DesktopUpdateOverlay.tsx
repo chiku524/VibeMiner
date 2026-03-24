@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { BrandMark } from '@/components/BrandMark';
+import { MiningLoader } from '@/components/ui/MiningLoader';
 
 type UpdatePhase = 'downloading' | 'installing';
 
@@ -13,8 +15,8 @@ export function DesktopUpdateOverlay() {
   const [phase, setPhase] = useState<UpdatePhase | null>(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.electronAPI?.isDesktop || !window.electronAPI?.onUpdateProgress) return;
-    const cleanup = window.electronAPI.onUpdateProgress((payload) => setPhase(payload.phase));
+    if (typeof window === 'undefined' || !window.desktopAPI?.isDesktop || !window.desktopAPI?.onUpdateProgress) return;
+    const cleanup = window.desktopAPI.onUpdateProgress((payload) => setPhase(payload.phase));
     return () => {
       if (typeof cleanup === 'function') cleanup();
     };
@@ -32,16 +34,15 @@ export function DesktopUpdateOverlay() {
     >
       <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-surface-900/90 px-10 py-8 shadow-xl">
         <div
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent-cyan/25 to-emerald-500/20 text-2xl"
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent-cyan/25 to-emerald-500/20"
           aria-hidden
         >
-          ◇
+          <BrandMark className="h-9 w-9" />
         </div>
         <p className="mt-4 font-display text-lg font-semibold text-white">VibeMiner</p>
-        <div
-          className="mt-4 h-8 w-8 shrink-0 rounded-full border-2 border-accent-cyan border-t-transparent animate-spin"
-          aria-hidden
-        />
+        <div className="mt-4">
+          <MiningLoader size="sm" />
+        </div>
         <p className="mt-4 text-sm text-gray-400">{label}</p>
       </div>
     </div>

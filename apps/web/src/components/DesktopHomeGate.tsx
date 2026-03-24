@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { MiningLoader } from '@/components/ui/MiningLoader';
 
 /**
  * Renders only in the desktop app on "/".
@@ -25,8 +26,7 @@ export function DesktopHomeGate() {
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
       <div className="flex min-h-[60vh] flex-col items-center justify-center pt-6">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
-        <p className="mt-4 text-sm text-gray-400">Loading…</p>
+        <MiningLoader size="md" label="Loading…" />
       </div>
     </main>
   );

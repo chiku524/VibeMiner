@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { login } from '@/lib/auth';
+import { BrandMark } from '@/components/BrandMark';
 
 function getReturnTo(searchParams: ReturnType<typeof useSearchParams>): string {
   const returnTo = searchParams.get('returnTo');
@@ -62,7 +63,7 @@ export function LoginForm() {
       className="w-full max-w-sm rounded-2xl border border-white/10 bg-surface-900/50 p-8"
     >
       <Link href={homeHref} className="mb-6 inline-flex items-center gap-2 font-display text-lg font-semibold text-gray-300 hover:text-white">
-        <span className="text-xl" aria-hidden="true">◇</span>
+        <BrandMark className="h-6 w-6 shrink-0" />
         VibeMiner
       </Link>
       <h1 className="font-display text-2xl font-bold text-white">Sign in</h1>

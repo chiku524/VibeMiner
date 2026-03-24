@@ -23,11 +23,10 @@ nul
 
 # Tauri
 apps/tauri/src-tauri/target/
+apps/tauri/src-tauri/gen/
 
-# Electron
-apps/desktop/out/
-apps/desktop/build/
-# XMRig binaries (downloaded at build time, not committed)
-apps/desktop/resources/miners/
+# Code signing certs (never commit)
 *.pfx
-apps/desktop/cert.pfx
+
+# Tauri production bundle uses a generated redirect in web/out (not OpenNext)
+apps/web/out/

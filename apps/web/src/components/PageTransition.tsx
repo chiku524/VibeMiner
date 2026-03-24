@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { MiningLoader } from '@/components/ui/MiningLoader';
 
 const RECOVERY_DELAY_MS = 6000;
 
@@ -12,11 +13,7 @@ const RECOVERY_DELAY_MS = 6000;
 function LoadingShell({ showRecovery }: { showRecovery: boolean }) {
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-surface-950 px-4">
-      <div
-        className="h-10 w-10 shrink-0 rounded-full border-2 border-accent-cyan border-t-transparent animate-spin"
-        aria-hidden
-      />
-      <p className="mt-4 text-sm text-gray-400">Loading…</p>
+      <MiningLoader size="md" label="Loading…" />
       {showRecovery && (
         <p className="mt-6 text-center text-sm text-gray-500">
           Taking a while?{' '}

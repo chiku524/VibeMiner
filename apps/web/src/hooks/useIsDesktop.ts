@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 function getIsDesktop(): boolean {
   if (typeof window === 'undefined') return false;
-  return window.electronAPI?.isDesktop === true;
+  return window.desktopAPI?.isDesktop === true;
 }
 
 let hasEverBeenDesktop = false;

@@ -27,6 +27,8 @@ import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { NetworkListSkeleton, DashboardSkeleton } from '@/components/ui/Skeleton';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { BrandMark } from '@/components/BrandMark';
+import { MiningLoader } from '@/components/ui/MiningLoader';
 import { Radio, Zap, Coins, BarChart3 } from 'lucide-react';
 
 export type WorkspaceMode = 'mining' | 'nodes';
@@ -300,7 +302,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
     return (
       <>
         <main className={`min-h-screen bg-surface-950 bg-grid flex items-center justify-center ${!isDesktop ? 'pt-14' : ''}`}>
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
+          <MiningLoader size="sm" />
         </main>
       </>
     );
@@ -313,7 +315,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
           <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
             <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
               <Link href="/home" className="flex items-center gap-2 font-display text-lg font-semibold">
-                <span className="text-xl" aria-hidden="true">◇</span>
+                <BrandMark className="h-6 w-6 shrink-0" />
                 <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">VibeMiner</span>
               </Link>
               <Link href="/home" className="text-sm text-gray-400 transition hover:text-white">← Home</Link>
@@ -346,7 +348,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
         <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
             <Link href="/home" className="flex items-center gap-2 font-display text-lg font-semibold">
-              <span className="text-xl" aria-hidden="true">◇</span>
+              <BrandMark className="h-6 w-6 shrink-0" />
               <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">VibeMiner</span>
             </Link>
             <div className="flex items-center gap-4">
@@ -462,7 +464,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                         <div className="min-w-0 flex-1">
                           {isStarting ? (
                             <p className="font-medium text-accent-cyan flex items-center gap-2">
-                              <span className="h-3 w-3 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden /> Starting…
+                              <MiningLoader size="xs" /> Starting…
                             </p>
                           ) : (
                             <>
@@ -595,7 +597,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                 </div>
               ) : (
                 <motion.div key="idle" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.25, ease: 'easeOut' }} className="flex flex-col items-center justify-center rounded-2xl border border-white/5 bg-surface-900/30 py-20 text-center">
-                  <span className="text-5xl opacity-50" aria-hidden="true">◇</span>
+                  <BrandMark className="h-14 w-14 shrink-0 opacity-50" />
                   {mode === 'mining' ? (
                     <>
                       <p className="mt-4 font-medium text-gray-400">No active mining session</p>

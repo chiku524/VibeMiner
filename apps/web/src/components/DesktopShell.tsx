@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { DesktopShellProvider } from '@/contexts/DesktopShellContext';
+import { BrandMark } from '@/components/BrandMark';
 import {
   Pickaxe,
   Server,
@@ -74,7 +75,7 @@ function SidebarContent() {
           href="/home"
           className="flex items-center gap-2 font-display text-base font-semibold tracking-tight text-white transition hover:text-white"
         >
-          <span className="text-lg" aria-hidden="true">◇</span>
+          <BrandMark className="h-5 w-5 shrink-0" />
           <span>VibeMiner</span>
         </Link>
         <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-gray-400">

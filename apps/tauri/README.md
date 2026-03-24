@@ -1,6 +1,6 @@
 # VibeMiner Desktop (Tauri 2)
 
-This is the Tauri 2-based desktop app for VibeMiner. It loads the same web app as the Electron build (dev: `http://localhost:3000`, production: static export or URL).
+This is the Tauri 2-based desktop app for VibeMiner. In **dev** it loads `http://localhost:3000`. In **release** builds it opens the deployed web URL by default (see Production build).
 
 ## Prerequisites
 
@@ -16,31 +16,31 @@ This is the Tauri 2-based desktop app for VibeMiner. It loads the same web app a
    ```
 2. In another terminal, from repo root:
    ```bash
-   npm run desktop:tauri
+   npm run desktop
    ```
    Or from this directory: `npm run dev`
 
-This opens the Tauri window loading `http://localhost:3000`. The web app detects Tauri via `/tauri-bridge.js` and sets `window.electronAPI`, so the same UI (including the desktop sidebar) works.
+This opens the Tauri window loading `http://localhost:3000`. The web app loads `/desktop-bridge.js`, which sets `window.desktopAPI` when `__TAURI__` exists, so the same UI (including the desktop sidebar) works.
 
 ## Icons
 
-Before first build, generate icons:
+Regenerate tray / OS icons from the splash-style source SVG:
 
 ```bash
-cd apps/tauri && npm run tauri icon path/to/1024x1024.png
+cd apps/tauri && npx @tauri-apps/cli icon icon-source/splash-app-icon.svg
 ```
 
-You can use the same icon as the Electron app (e.g. from `apps/desktop/build/` if you have one).
+Or use any square PNG (e.g. 1024×1024) with the same command.
 
 ## Production build
 
-Production build currently requires a static export of the web app (see [Tauri + Next.js](https://v2.tauri.app/start/frontend/nextjs/)). Set `frontendDist` in `src-tauri/tauri.conf.json` to the exported output (e.g. `../../web/out` after `next build` with `output: 'export'`).
+`tauri build` runs `scripts/prepare-frontend-dist.cjs`, which writes `apps/web/out/index.html` that redirects to the live app. Set **`VIBEMINER_APP_URL`** or **`APP_URL`** when building to override the default `https://vibeminer.tech`.
 
-Mining and node-running commands are stubbed in this Tauri build; full implementation would port the Electron mining-service and node-service logic to Rust (or call them as sidecars). Use the Electron desktop app for full mining/node support until then.
+To ship a fully offline Next.js export instead, point `frontendDist` at that folder and adjust `beforeBuildCommand` (see [Tauri + Next.js](https://v2.tauri.app/start/frontend/nextjs/)).
 
 ## Commands implemented
 
 - App: version, platform, reload, open external
-- Settings: get/set auto-update (in-memory; persist can be added)
-- Updates: check/get info (stubs)
-- Mining/Node: stubs that return “not implemented” so the UI doesn’t crash
+- Settings: get/set auto-update (persisted under app data)
+- Updates: GitHub latest check (install flow partially stubbed)
+- Mining / node: Rust-backed commands (see `src-tauri/src/mining.rs`, `node.rs`)

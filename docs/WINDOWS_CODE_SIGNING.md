@@ -35,7 +35,7 @@ Some CAs sell to **individuals** as well as companies. You’ll need to complete
 After the CA issues the cert:
 
 1. **Windows:** Use Certificate Manager or the tool the CA provides to export the cert + private key to a **.pfx** (PKCS#12) file. Set a **strong password**.
-2. **macOS:** Open Keychain Access, find the cert, export as **.p12** and set a password. You can rename to `.pfx` if needed; electron-builder accepts both.
+2. **macOS:** Open Keychain Access, find the cert, export as **.p12** and set a password. You can rename to `.pfx` if needed; many Windows signing tools accept `.pfx`/`.p12`.
 
 **Important:** When exporting, **do not** include the full certificate chain in the file if you can avoid it. That keeps the file smaller and under Windows’ 8,192-character env limit if you ever pass it as base64. For our workflow we decode to a file, so a normal export is fine.
 
@@ -62,31 +62,23 @@ In your repo: **Settings → Secrets and variables → Actions**. Add:
 | **WIN_CODE_SIGNING_CERT_BASE64** | The full base64 string of your `.pfx` file (from the step above). |
 | **WIN_CODE_SIGNING_PASSWORD** | The password you set when exporting the `.pfx`. |
 
-### 2. Workflow and app config (already done in this repo)
+### 2. Wire signing into CI (Tauri)
 
-- The release workflow (`.github/workflows/release-desktop.yml`) is set up to:
-  - Decode the base64 cert to a temporary file on the Windows runner when the secret is present.
-  - Set `CSC_LINK` and `CSC_KEY_PASSWORD` so **electron-builder** signs the Windows installer.
-- In `apps/desktop/package.json`, **`signAndEditExecutable`** is set to **true** under `build.win` so the built `.exe` is signed.
+The release workflow builds **unsigned** Tauri installers by default. To sign Windows bundles in GitHub Actions, add steps that match [Tauri — Windows code signing](https://v2.tauri.app/distribute/sign-windows/) (for example: decode `WIN_CODE_SIGNING_CERT_BASE64` to a `.pfx`, set the env vars Tauri/`signtool` expect, then run `npm run build -w vibeminer-tauri`). The exact variables depend on whether you use Azure Trusted Signing, a local PFX, or another method.
 
-You don’t need to change code; just add the two secrets.
+Store **`WIN_CODE_SIGNING_CERT_BASE64`** and **`WIN_CODE_SIGNING_PASSWORD`** (or your CA’s recommended secrets) in **Settings → Secrets and variables → Actions** until the workflow uses them.
 
 ### 3. Build a new release
 
-After the secrets are set:
-
 1. Create and push a new tag (e.g. `v1.0.4`).
-2. The **Release desktop app** workflow will run. The **Windows** job will:
-   - Decode your cert,
-   - Build the installer,
-   - Sign it with your certificate.
-3. The new `.exe` in the GitHub Release will show your **publisher name** (e.g. nico.builds or the name on the cert) and SmartScreen will treat it as a known publisher (EV immediately; OV after reputation builds).
+2. The **Release desktop app** workflow builds and uploads installers.
+3. After signing is configured in the workflow, the published `.exe` should show your certificate’s publisher and SmartScreen behavior improves (EV immediately; OV after reputation builds).
 
 ---
 
 ## Publisher name users see
 
-The **publisher** shown in Windows (e.g. in “Programs and Features” or the UAC/smart screen dialog) comes from the **subject name** of your code signing certificate (e.g. your name or company name). The **publisherName** in `apps/desktop/package.json` (`"nico.builds"`) is used for the installer metadata; the **signed** identity is what Windows trusts and displays. So when you buy the cert, use the name you want users to see (e.g. “Nico Builds” or “nico.builds” if the CA allows it).
+The **publisher** shown in Windows (e.g. SmartScreen) comes from the **subject name** of your code signing certificate. Match that name to what you want users to see (e.g. “Nico Builds” or “nico.builds” if the CA allows it). Tauri bundle metadata is configured in `apps/tauri/src-tauri/tauri.conf.json`.
 
 ---
 

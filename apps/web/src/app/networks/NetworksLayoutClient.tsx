@@ -7,13 +7,13 @@ import { NetworksPageContent } from './NetworksPageContent';
 /**
  * Networks layout: desktop gets content only (DesktopShell provides sidebar); web gets
  * NetworksNavClient + router children. We default to the desktop branch so the
- * desktop app never shows a blank (avoids timing/hydration issues with electronAPI).
+ * desktop app never shows a blank (avoids timing/hydration issues with desktopAPI).
  */
 export function NetworksLayoutClient({ children }: { children: React.ReactNode }) {
   const [isDesktop, setIsDesktop] = useState(true);
 
   useEffect(() => {
-    setIsDesktop(typeof window !== 'undefined' && window.electronAPI?.isDesktop === true);
+    setIsDesktop(typeof window !== 'undefined' && window.desktopAPI?.isDesktop === true);
   }, []);
 
   if (isDesktop) {

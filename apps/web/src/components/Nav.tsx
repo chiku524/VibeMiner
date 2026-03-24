@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { BrandMark } from '@/components/BrandMark';
 
 export function Nav() {
   const reduced = useReducedMotion() ?? false;
@@ -58,7 +59,7 @@ export function Nav() {
           href={user ? '/home' : '/'}
           className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight"
         >
-          <span className="text-2xl" aria-hidden="true">◇</span>
+          <BrandMark className="h-7 w-7 shrink-0" />
           <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
             VibeMiner
           </span>

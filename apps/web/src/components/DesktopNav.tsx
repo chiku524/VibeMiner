@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { BrandMark } from '@/components/BrandMark';
 
 /**
  * Desktop app navigation: Workspace dropdown (Mining, Run nodes), Sessions, Networks,
@@ -50,7 +51,7 @@ export function DesktopNav() {
           href="/home"
           className="flex items-center gap-2 font-display text-base font-semibold tracking-tight text-white/95 transition hover:text-white"
         >
-          <span className="text-lg" aria-hidden="true">◇</span>
+          <BrandMark className="h-5 w-5 shrink-0" />
           <span>VibeMiner</span>
           <span className="rounded bg-white/10 px-1.5 py-0.5 text-xs font-medium text-gray-400">
             Desktop

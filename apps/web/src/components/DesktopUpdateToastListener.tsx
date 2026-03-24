@@ -13,8 +13,8 @@ export function DesktopUpdateToastListener() {
   const { addToast } = useToast();
 
   useEffect(() => {
-    if (!isDesktop || typeof window === 'undefined' || !window.electronAPI?.onUpdateDownloaded) return;
-    window.electronAPI.onUpdateDownloaded(() => {
+    if (!isDesktop || typeof window === 'undefined' || !window.desktopAPI?.onUpdateDownloaded) return;
+    window.desktopAPI.onUpdateDownloaded(() => {
       addToast('Update ready — quit and reopen the app to install.', 'success');
     });
   }, [isDesktop, addToast]);

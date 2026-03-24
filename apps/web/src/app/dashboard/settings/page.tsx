@@ -11,6 +11,8 @@ import { DesktopAppSettings } from '@/components/DesktopAppSettings';
 import { MiningWalletSettings } from '@/components/MiningWalletSettings';
 import { NetworkListingsSection } from '@/components/NetworkListingsSection';
 import { ProfileSettings } from '@/components/ProfileSettings';
+import { BrandMark } from '@/components/BrandMark';
+import { MiningLoader } from '@/components/ui/MiningLoader';
 
 const AUTH_LOAD_TIMEOUT_MS = 6000;
 
@@ -39,10 +41,7 @@ export default function SettingsPage() {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
         <div className={`flex flex-1 flex-col items-center justify-center px-4 ${!isDesktop ? 'pt-14' : 'pt-6'}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-cyan border-t-transparent" aria-hidden />
-          <p className="mt-4 text-sm text-gray-400">
-            Loading…
-          </p>
+          <MiningLoader size="sm" label="Loading…" />
           {authTimedOut && !user && (
             <p className="mt-6 max-w-sm text-center text-sm text-gray-500">
               Taking a while?{' '}
@@ -71,7 +70,7 @@ export default function SettingsPage() {
         <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
             <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold">
-              <span className="text-xl" aria-hidden="true">◇</span>
+              <BrandMark className="h-6 w-6 shrink-0" />
               <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
                 VibeMiner
               </span>

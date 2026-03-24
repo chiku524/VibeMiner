@@ -25,20 +25,12 @@ No company or license is required for this. Your portfolio and professional work
 | Goal | What you’d need | Effect |
 |------|------------------|--------|
 | **Windows: no “Unknown publisher”** | A **code signing certificate** (e.g. DigiCert, Sectigo). You can get one as an individual; some issuers ask for identity/business details. | SmartScreen shows your name (e.g. “nico.builds” or the cert subject) instead of “Unknown publisher.” |
-| **macOS: no “unidentified developer”** | **Apple Developer account** ($99/year) + **notarization**. The release workflow is already set up for notarization; you only need to add three GitHub secrets (see below). | Gatekeeper allows the app to open without right‑click → Open. |
+| **macOS: no “unidentified developer”** | **Apple Developer account** ($99/year) + **signing + notarization** for the Tauri bundle (see [Tauri macOS signing](https://v2.tauri.app/distribute/sign-macos/)). | Gatekeeper allows the app to open without right‑click → Open. |
 | **Linux** | Optional: GPG-sign the release assets and publish your public key. | Users can verify the download. |
 
-### Apple notarization (already wired in the workflow)
+### Apple notarization (optional; extend the workflow)
 
-The desktop release workflow builds a notarized macOS app when these **GitHub Actions secrets** are set in the repo (Settings → Secrets and variables → Actions):
-
-| Secret | Value |
-|--------|--------|
-| `APPLE_ID` | Your Apple ID email (the one used for the Apple Developer Program). |
-| `APPLE_APP_SPECIFIC_PASSWORD` | [App-specific password](https://support.apple.com/HT204397) (not your normal Apple ID password). Create one at appleid.apple.com. |
-| `APPLE_TEAM_ID` | Your Team ID from the Apple Developer Program (e.g. **DRZ64ZVTV6**). |
-
-Once these are set, the next release you create (e.g. by pushing tag `v1.0.0`) will produce a notarized macOS `.dmg`. No code changes needed.
+The release workflow forwards `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, and `APPLE_TEAM_ID` to the macOS build job so you can add **notarization** steps later. Tauri does not notarize by default—you configure signing/notarization per [Tauri macOS docs](https://v2.tauri.app/distribute/sign-macos/) and wire the secrets into those steps.
 
 ---
 
@@ -57,20 +49,14 @@ You said you haven’t added any env vars to Vercel yet. Do this sequence:
 
 Make sure the repo has:
 
-- The nico.builds branding (Footer, download page, desktop `author` / `publisherName` / `appId`).
+- The nico.builds branding (Footer, download page, Tauri `identifier` / bundle metadata in `apps/tauri/src-tauri/tauri.conf.json`).
 - The release workflow (`.github/workflows/release-desktop.yml`).
 
 Then push to your default branch (e.g. `main`).
 
-### 2. (Optional but recommended) Add Apple notarization secrets
+### 2. (Optional) Apple signing / notarization
 
-If you want the **macOS** build to succeed and produce a notarized `.dmg`, add these in the repo under **Settings → Secrets and variables → Actions** before pushing the tag:
-
-- `APPLE_ID` = your Apple ID email  
-- `APPLE_APP_SPECIFIC_PASSWORD` = app-specific password from appleid.apple.com  
-- `APPLE_TEAM_ID` = **DRZ64ZVTV6** (your Team ID)
-
-If these are missing, the macOS job in the release workflow will fail at the notarization step. Windows and Linux builds will still run; you can re-run the failed job or push a new tag after adding the secrets.
+Add `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, and `APPLE_TEAM_ID` when you implement macOS signing in the workflow. Until then, the macOS job still produces a `.dmg`; Gatekeeper may prompt users until the app is signed and notarized.
 
 ### 3. Create the first desktop release
 

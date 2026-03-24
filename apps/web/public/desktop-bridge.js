@@ -1,6 +1,6 @@
 /**
  * When the app runs inside Tauri 2, __TAURI__ is injected. This script runs early
- * and sets window.electronAPI so the same UI code works for both Electron and Tauri.
+ * and exposes window.desktopAPI — invoke handlers live in apps/tauri/src-tauri.
  */
 (function () {
   if (typeof window === 'undefined' || typeof window.__TAURI__ === 'undefined') return;
@@ -9,7 +9,7 @@
     return core.invoke(cmd, args || {});
   };
 
-  window.electronAPI = {
+  window.desktopAPI = {
     isDesktop: true,
     platform: navigator.platform || '',
     versions: {},

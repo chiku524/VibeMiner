@@ -6,8 +6,8 @@ This document describes how real mining is integrated and how to enable it.
 
 - **Networks** — Static networks (Monero, Kaspa, Ergo, Raptoreum) and devnets now include `poolUrl` and `poolPort` so miners can connect to real pools.
 - **Network registration** — The Request Listing form requires pool URL/port. Dynamically registered networks from `/api/networks/register` are served alongside static networks.
-- **Mining service** — The desktop app includes `mining-service.js`, which can spawn XMRig for RandomX (Monero) and Ghostrider (Raptoreum) mining.
-- **IPC** — The renderer can call `startRealMining`, `stopRealMining`, `getRealMiningStats`, `isRealMining` via `window.electronAPI`.
+- **Mining (desktop)** — The Tauri app implements mining in Rust (`apps/tauri/src-tauri/src/mining.rs`), including downloading and running XMRig where applicable.
+- **IPC** — The web UI calls `startRealMining`, `stopRealMining`, `getRealMiningStats`, `isRealMining` via `window.desktopAPI` (Tauri `invoke` from `desktop-bridge.js`).
 
 ## Enabling Real Mining
 
@@ -58,7 +58,7 @@ The shared package exports `getMinerTypeForNetwork(network)` and `isNetworkMinea
 
 ## Next Steps for Full Integration
 
-1. **UI wiring** — When the user starts mining on desktop with a wallet address, call `electronAPI.startRealMining({ network, walletAddress })` instead of (or in addition to) simulated session.
+1. **UI wiring** — When the user starts mining on desktop with a wallet address, call `window.desktopAPI.startRealMining({ network, walletAddress })` instead of (or in addition to) simulated session.
 2. **Stats polling** — Poll `getRealMiningStats` every 2s and merge into MiningContext sessions.
 3. **Wallet persistence** — Store wallet address in settings or localStorage so it persists across sessions.
 4. **Kaspa/Ergo miners** — Extend mining-service.js to spawn lolminer and kaspaminer with the correct args.

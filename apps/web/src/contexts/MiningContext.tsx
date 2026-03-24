@@ -40,14 +40,14 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
       const alreadyMining = sessions.some((s) => s.networkId === network.id && s.environment === env);
       if (alreadyMining) return { ok: false, error: 'Already mining this network' };
 
-      const isDesktop = typeof window !== 'undefined' && window.electronAPI?.isDesktop === true;
+      const isDesktop = typeof window !== 'undefined' && window.desktopAPI?.isDesktop === true;
       const mineable = isNetworkMineable(network);
       const wallet = (walletAddress ?? '').trim();
 
       // Real mining: desktop + mineable + wallet
-      if (isDesktop && mineable && wallet.length >= 10 && window.electronAPI?.startRealMining) {
+      if (isDesktop && mineable && wallet.length >= 10 && window.desktopAPI?.startRealMining) {
         try {
-          const result = await window.electronAPI.startRealMining({
+          const result = await window.desktopAPI.startRealMining({
             network: {
               id: network.id,
               poolUrl: network.poolUrl!,
@@ -109,8 +109,8 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
         if (s.networkId !== networkId) return true;
         if (environment != null && s.environment !== environment) return true;
         const key = networkKey(s.networkId, s.environment);
-        if (realKeysRef.current.has(key) && window.electronAPI?.stopRealMining) {
-          window.electronAPI.stopRealMining(s.networkId, s.environment);
+        if (realKeysRef.current.has(key) && window.desktopAPI?.stopRealMining) {
+          window.desktopAPI.stopRealMining(s.networkId, s.environment);
           realKeysRef.current.delete(key);
         }
         return false;
@@ -143,12 +143,12 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
       const hasReal = sessions.some((s) =>
         realKeysRef.current.has(networkKey(s.networkId, s.environment))
       );
-      if (hasReal && window.electronAPI?.getRealMiningStats) {
+      if (hasReal && window.desktopAPI?.getRealMiningStats) {
         const updates: Array<{ networkId: string; env: NetworkEnvironment; hashrate: number; shares: number }> = [];
         for (const s of sessions) {
           const key = networkKey(s.networkId, s.environment);
           if (realKeysRef.current.has(key)) {
-            const stats = await window.electronAPI.getRealMiningStats(s.networkId, s.environment);
+            const stats = await window.desktopAPI.getRealMiningStats(s.networkId, s.environment);
             if (stats) {
               updates.push({
                 networkId: s.networkId,

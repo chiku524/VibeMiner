@@ -2,6 +2,7 @@
 
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import Link from 'next/link';
+import { BrandMark } from '@/components/BrandMark';
 
 /**
  * Desktop-aware logo link: /app in desktop, / on web. Used in networks layout so
@@ -18,7 +19,7 @@ export function NetworksNavClient() {
           href={homeHref}
           className="flex items-center gap-2 font-display text-base font-semibold tracking-tight text-white/95 hover:text-white"
         >
-          <span className="text-lg" aria-hidden="true">◇</span>
+          <BrandMark className="h-5 w-5 shrink-0" />
           <span>VibeMiner</span>
         </Link>
         <div className="flex items-center gap-1 sm:gap-3">

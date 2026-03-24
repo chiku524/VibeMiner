@@ -10,8 +10,6 @@
     "build": "npm run build -w @vibeminer/shared && npm run build -w vibeminer-web",
     "desktop": "npm run dev -w vibeminer-tauri",
     "desktop:build": "npm run build -w vibeminer-tauri",
-    "desktop:electron": "npm run dev -w vibeminer-desktop",
-    "desktop:electron:build": "npm run build -w vibeminer-desktop",
     "tauri": "npm run tauri -w vibeminer-tauri",
     "deploy:cloudflare": "npm run build -w @vibeminer/shared && npm run deploy -w vibeminer-web"
   },

@@ -9,45 +9,6 @@ type UpdateAvailableInfo = {
   directDownloadUrl: string;
 };
 
-type UpdatePhase = 'downloading' | 'installing';
-
-declare global {
-  interface Window {
-    electronAPI?: {
-      isDesktop?: boolean;
-      getAutoUpdateEnabled: () => Promise<boolean>;
-      setAutoUpdateEnabled: (enabled: boolean) => Promise<boolean>;
-      getAppVersion: () => Promise<string>;
-      reload?: () => Promise<void>;
-      checkForUpdates?: () => Promise<{
-        updateAvailable: boolean;
-        latestVersion?: string | null;
-        releasePageUrl?: string;
-        directDownloadUrl?: string;
-        error?: boolean;
-        message?: string;
-      }>;
-      getUpdateDownloaded?: () => Promise<boolean>;
-      getUpdateAvailableInfo?: () => Promise<UpdateAvailableInfo | null>;
-      openExternal?: (url: string) => Promise<void>;
-      quitAndInstall?: () => Promise<void>;
-      installUpdateNow?: () => Promise<{ ok: boolean; error?: string }>;
-      onUpdateDownloaded?: (callback: () => void) => void;
-      onUpdateAvailable?: (callback: (info: UpdateAvailableInfo) => void) => void;
-      onUpdateProgress?: (callback: (payload: { phase: UpdatePhase }) => void) => void | (() => void);
-      // Real mining (desktop)
-      startRealMining?: (opts: { network: { id: string; poolUrl: string; poolPort: number; algorithm?: string; environment?: string }; walletAddress: string }) => Promise<{ ok: boolean; error?: string }>;
-      stopRealMining?: (networkId: string, environment: string) => void;
-      getRealMiningStats?: (networkId: string, environment: string) => Promise<{ hashrate: number; shares: number } | null>;
-      isRealMining?: (networkId: string, environment: string) => Promise<boolean>;
-      startNode?: (opts: { network: Record<string, unknown> }) => Promise<{ ok: boolean; error?: string }>;
-      stopNode?: (networkId: string, environment: string) => void;
-      getNodeStatus?: (networkId: string, environment: string) => Promise<{ status?: string; isActive?: boolean } | null>;
-      isNodeRunning?: (networkId: string, environment: string) => Promise<boolean>;
-    };
-  }
-}
-
 export function DesktopAppSettings() {
   const { addToast } = useToast();
   const [mounted, setMounted] = useState(false);
@@ -64,29 +25,29 @@ export function DesktopAppSettings() {
   }, []);
 
   useEffect(() => {
-    if (!mounted || typeof window === 'undefined' || !window.electronAPI?.getAutoUpdateEnabled) return;
-    window.electronAPI.getAutoUpdateEnabled().then(setAutoUpdate).catch(() => {});
-    window.electronAPI.getAppVersion?.().then(setVersion).catch(() => {});
-    window.electronAPI.getUpdateDownloaded?.().then(setUpdateDownloaded).catch(() => {});
-    window.electronAPI.getUpdateAvailableInfo?.().then(setUpdateInfo).catch(() => {});
+    if (!mounted || typeof window === 'undefined' || !window.desktopAPI?.getAutoUpdateEnabled) return;
+    window.desktopAPI.getAutoUpdateEnabled().then(setAutoUpdate).catch(() => {});
+    window.desktopAPI.getAppVersion?.().then(setVersion).catch(() => {});
+    window.desktopAPI.getUpdateDownloaded?.().then(setUpdateDownloaded).catch(() => {});
+    window.desktopAPI.getUpdateAvailableInfo?.().then(setUpdateInfo).catch(() => {});
   }, [mounted]);
 
   useEffect(() => {
-    if (!mounted || typeof window === 'undefined' || !window.electronAPI?.onUpdateDownloaded) return;
-    window.electronAPI.onUpdateDownloaded(() => setUpdateDownloaded(true));
+    if (!mounted || typeof window === 'undefined' || !window.desktopAPI?.onUpdateDownloaded) return;
+    window.desktopAPI.onUpdateDownloaded(() => setUpdateDownloaded(true));
   }, [mounted]);
 
   useEffect(() => {
-    if (!mounted || typeof window === 'undefined' || !window.electronAPI?.onUpdateAvailable) return;
-    window.electronAPI.onUpdateAvailable((info) => setUpdateInfo(info));
+    if (!mounted || typeof window === 'undefined' || !window.desktopAPI?.onUpdateAvailable) return;
+    window.desktopAPI.onUpdateAvailable((info) => setUpdateInfo(info));
   }, [mounted]);
 
   const handleToggle = async () => {
-    if (!window.electronAPI?.setAutoUpdateEnabled || saving) return;
+    if (!window.desktopAPI?.setAutoUpdateEnabled || saving) return;
     setSaving(true);
     try {
       const next = !autoUpdate;
-      await window.electronAPI.setAutoUpdateEnabled(next);
+      await window.desktopAPI.setAutoUpdateEnabled(next);
       setAutoUpdate(next);
     } finally {
       setSaving(false);
@@ -94,11 +55,11 @@ export function DesktopAppSettings() {
   };
 
   const handleCheckNow = async () => {
-    if (!window.electronAPI?.checkForUpdates || checking) return;
+    if (!window.desktopAPI?.checkForUpdates || checking) return;
     setChecking(true);
     addToast('Checking for updates…', 'info');
     try {
-      const result = await window.electronAPI.checkForUpdates();
+      const result = await window.desktopAPI.checkForUpdates();
       if (result?.error) {
         const msg = result.message ? `Could not check: ${result.message}` : 'Could not check for updates';
         addToast(msg, 'error');
@@ -122,17 +83,17 @@ export function DesktopAppSettings() {
     }
   };
 
-  if (!mounted || typeof window === 'undefined' || !window.electronAPI?.getAutoUpdateEnabled) {
+  if (!mounted || typeof window === 'undefined' || !window.desktopAPI?.getAutoUpdateEnabled) {
     return null;
   }
 
   const handleUpdateNow = async () => {
-    if (!window.electronAPI?.installUpdateNow || installing) return;
+    if (!window.desktopAPI?.installUpdateNow || installing) return;
     if (updateInfo?.latestVersion && version && updateInfo.latestVersion === version) return;
     setInstalling(true);
     addToast('Downloading update…', 'info');
     try {
-      const result = await window.electronAPI.installUpdateNow();
+      const result = await window.desktopAPI.installUpdateNow();
       if (result?.ok) {
         addToast('Update downloaded. The app will be restarting in a moment.', 'success');
       } else {
@@ -146,7 +107,7 @@ export function DesktopAppSettings() {
   };
 
   const handleRestartToInstall = () => {
-    window.electronAPI?.quitAndInstall?.();
+    window.desktopAPI?.quitAndInstall?.();
   };
 
   return (
@@ -177,7 +138,7 @@ export function DesktopAppSettings() {
             </button>
             <button
               type="button"
-              onClick={() => window.electronAPI?.openExternal?.(updateInfo.directDownloadUrl)}
+              onClick={() => window.desktopAPI?.openExternal?.(updateInfo.directDownloadUrl)}
               className="shrink-0 text-xs font-medium text-accent-cyan underline hover:no-underline"
             >
               Download installer

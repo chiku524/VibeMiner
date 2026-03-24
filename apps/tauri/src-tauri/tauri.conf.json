@@ -1,12 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "VibeMiner",
-  "version": "1.0.0",
+  "version": "1.0.58",
   "identifier": "com.nicobuilds.vibeminer",
   "build": {
     "beforeDevCommand": "",
     "devUrl": "http://localhost:3000",
-    "beforeBuildCommand": "",
+    "beforeBuildCommand": "node ../scripts/prepare-frontend-dist.cjs",
     "frontendDist": "../../web/out"
   },
   "app": {

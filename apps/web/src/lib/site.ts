@@ -11,4 +11,6 @@ export const site = {
   twitter: '@vibeminer',
   /** Used for Open Graph and Twitter Card images (absolute URL). */
   openGraphImagePath: '/opengraph-image',
+  /** Static PNG derived from logo-icon.svg — Organization.logo in JSON-LD (crawler-friendly). */
+  organizationLogoPngPath: '/seo/logo-512.png',
 } as const;

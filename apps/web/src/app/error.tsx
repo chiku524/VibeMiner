@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { BrandMark } from '@/components/BrandMark';
 
 export default function Error({
   error,
@@ -16,13 +17,11 @@ export default function Error({
 
   const isDesktop =
     typeof window !== 'undefined' &&
-    (window as unknown as { electronAPI?: { isDesktop?: boolean } }).electronAPI?.isDesktop;
+    (window as unknown as { desktopAPI?: { isDesktop?: boolean } }).desktopAPI?.isDesktop;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-surface-950 bg-grid px-4 py-12">
-      <span className="text-5xl opacity-30" aria-hidden="true">
-        ◇
-      </span>
+      <BrandMark className="h-16 w-16 shrink-0 opacity-30" />
       <h1 className="mt-6 font-display text-xl font-bold text-white">Something went wrong</h1>
       <p className="mt-2 max-w-sm text-center text-sm text-gray-400">
         This page ran into an error. Reload or go home to continue.

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { DashboardSkeleton, NetworkListSkeleton } from '@/components/ui/Skeleton';
+import { BrandMark } from '@/components/BrandMark';
 
 /**
  * Shown while the dashboard route is loading (e.g. client navigation to /dashboard).
@@ -40,7 +41,7 @@ export default function DashboardLoading() {
       <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href={homeHref} className="flex items-center gap-2 font-display text-lg font-semibold">
-            <span className="text-xl" aria-hidden="true">◇</span>
+            <BrandMark className="h-6 w-6 shrink-0" />
             <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">VibeMiner</span>
           </Link>
           <Link href={homeHref} className="text-sm text-gray-400 transition hover:text-white">← Back home</Link>

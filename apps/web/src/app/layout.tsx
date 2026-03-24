@@ -18,7 +18,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 const baseUrl = site.baseUrl;
-const ogImageUrl = `${baseUrl.replace(/\/$/, '')}${site.openGraphImagePath}`;
+const base = baseUrl.replace(/\/$/, '');
+const ogImageUrl = `${base}${site.openGraphImagePath}`;
+const organizationLogoUrl = `${base}${site.organizationLogoPngPath}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
@@ -85,6 +87,7 @@ export default function RootLayout({
       applicationSubCategory: 'Cryptocurrency mining',
       description: site.description,
       url: baseUrl,
+      image: ogImageUrl,
       slogan: site.slogan,
       operatingSystem: 'Web browser, Windows, macOS, Linux',
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
@@ -100,7 +103,13 @@ export default function RootLayout({
       '@type': 'Organization',
       name: site.name,
       url: baseUrl,
-      logo: `${baseUrl}/icon`,
+      logo: {
+        '@type': 'ImageObject',
+        url: organizationLogoUrl,
+        contentUrl: organizationLogoUrl,
+        width: 512,
+        height: 512,
+      },
       sameAs: [`https://twitter.com/${site.twitter.replace('@', '')}`],
     },
     {
@@ -123,7 +132,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <head>
         <meta name="theme-color" content="#0a0f14" />
-        <script src="/tauri-bridge.js" />
+        <script src="/desktop-bridge.js" />
         <link rel="preconnect" href={origin} />
         <link rel="dns-prefetch" href={origin} />
         <script
