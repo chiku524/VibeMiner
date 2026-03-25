@@ -1,22 +1,136 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+  <!--
+    Classic scythe read: long snath, deep crescent blade (nib toward gem), tang + ferrule.
+    Swing pivot at grip (18.35, 24.62) — see MiningLoader.
+  -->
   <defs>
-    <linearGradient id="vm-brand" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#22d3ee" />
-      <stop offset="100%" stop-color="#34d399" />
+    <linearGradient id="vm-gem-main" x1="25%" y1="0%" x2="75%" y2="100%">
+      <stop offset="0%" stop-color="#ecfeff" />
+      <stop offset="32%" stop-color="#38bdf8" />
+      <stop offset="58%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="vm-gem-shade" x1="0%" y1="40%" x2="100%" y2="60%">
+      <stop offset="0%" stop-color="#164e63" />
+      <stop offset="50%" stop-color="#5eead4" />
+      <stop offset="100%" stop-color="#14532d" />
+    </linearGradient>
+    <linearGradient id="vm-gem-edge" x1="45%" y1="0%" x2="55%" y2="100%">
+      <stop offset="0%" stop-color="#bae6fd" />
+      <stop offset="100%" stop-color="#0f766e" />
+    </linearGradient>
+    <linearGradient id="vm-base" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#5c5348" />
+      <stop offset="100%" stop-color="#0c0a08" />
+    </linearGradient>
+    <linearGradient id="vm-base-cap" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#d4bc94" />
+      <stop offset="100%" stop-color="#8b6914" />
+    </linearGradient>
+    <linearGradient id="vm-base-mid" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4a4238" />
+      <stop offset="100%" stop-color="#1a1612" />
+    </linearGradient>
+    <linearGradient id="vm-handle" gradientUnits="userSpaceOnUse" x1="18.35" y1="24.62" x2="20.98" y2="15.08">
+      <stop offset="0%" stop-color="#1a100c" />
+      <stop offset="45%" stop-color="#8b5a3c" />
+      <stop offset="100%" stop-color="#3d2818" />
+    </linearGradient>
+    <linearGradient id="vm-steel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e2e8f0" />
+      <stop offset="35%" stop-color="#94a3b8" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="vm-eye-rim" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="50%" stop-color="#64748b" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="vm-wood-socket" x1="40%" y1="0%" x2="60%" y2="100%">
+      <stop offset="0%" stop-color="#e8dcc8" />
+      <stop offset="55%" stop-color="#78716c" />
+      <stop offset="100%" stop-color="#292524" />
     </linearGradient>
   </defs>
-  <rect x="4" y="22" width="5" height="5" rx="1" stroke="url(#vm-brand)" stroke-width="1.2" fill="none" opacity="0.9" />
-  <rect x="11" y="22" width="5" height="5" rx="1" stroke="url(#vm-brand)" stroke-width="1.2" fill="none" opacity="0.7" />
-  <rect x="18" y="22" width="5" height="5" rx="1" stroke="url(#vm-brand)" stroke-width="1.2" fill="none" opacity="0.5" />
-  <path d="M9 24.5h2M16 24.5h2" stroke="url(#vm-brand)" stroke-width="1" stroke-linecap="round" />
-  <circle cx="22" cy="11" r="7" fill="#0c0e12" stroke="url(#vm-brand)" stroke-width="1.5" />
+
+  <path d="M3.85 27.35h14.5v2.25H3.85z" fill="url(#vm-base-mid)" stroke="#2a2520" stroke-width="0.22" />
+  <path d="M4 26.35h13.35v2.35H4z" fill="url(#vm-base)" stroke="#3d3530" stroke-width="0.24" />
+  <path d="M4 26.35l0.5-0.42h12.35l0.5 0.42z" fill="url(#vm-base-cap)" opacity="0.92" />
+  <path d="M7.15 28.05h7.05" stroke="#c4a574" stroke-width="0.38" stroke-linecap="round" opacity="0.35" />
+
   <path
-    d="M22 6.5v9M19.5 7.5h3.25a1.75 1.75 0 0 1 0 3.5H19.5M19.5 14h3.5a1.75 1.75 0 0 1 0 3.5H19.5"
-    stroke="url(#vm-brand)"
-    stroke-width="1.15"
+    d="M9.5 5.45L12.95 7.45L12.95 11.45L9.5 13.45L6.05 11.45L6.05 7.45L9.5 5.45Z"
+    fill="url(#vm-gem-main)"
+    stroke="url(#vm-gem-edge)"
+    stroke-width="0.42"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M9.5 5.45V13.45M6.05 9.45h6.9M7.35 7.1l4.3 4.7M7.35 11.8l4.3-4.7"
+    stroke="url(#vm-gem-shade)"
+    stroke-width="0.2"
     stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.55"
+  />
+  <path d="M9.5 5.45L7.95 7.45L9.5 8.55L11.05 7.45L9.5 5.45Z" fill="#ecfeff" opacity="0.38" />
+
+  <!-- Snath: longer diagonal into tang -->
+  <path d="M18.42 24.72L20.98 15.08" stroke="#1a0f0a" stroke-width="0.64" stroke-linecap="round" opacity="0.45" />
+  <ellipse
+    cx="17.98"
+    cy="24.76"
+    rx="0.37"
+    ry="0.23"
+    transform="rotate(-8 17.98 24.76)"
+    fill="url(#vm-handle)"
+    stroke="#0a0a0a"
+    stroke-width="0.1"
+  />
+  <path d="M18.35 24.62L20.98 15.08" stroke="#0a0a0a" stroke-width="1.54" stroke-linecap="round" />
+  <path d="M18.35 24.62L20.98 15.08" stroke="url(#vm-handle)" stroke-width="1.22" stroke-linecap="round" />
+  <path d="M18.78 22.48L18.98 19.05L19.15 16.65" stroke="#3d2818" stroke-width="0.07" stroke-linecap="round" opacity="0.55" />
+  <path d="M18.58 20.95L18.75 17.45" stroke="#3d2818" stroke-width="0.06" stroke-linecap="round" opacity="0.45" />
+  <path d="M18.48 24.28L20.38 15.22" stroke="#c9a66c" stroke-width="0.12" stroke-linecap="round" opacity="0.38" />
+
+  <!-- Crescent blade: concave cutting edge toward gem, tall convex spine / horn -->
+  <path
+    fill="url(#vm-steel)"
+    stroke="#020617"
+    stroke-width="0.12"
+    stroke-linejoin="round"
+    d="M10.42 8.38C13.55 11.22 16.88 13.38 19.48 14.62C20.22 15.02 20.9 15.26 21.58 15.42C21.88 14.48 22.15 13.52 22.35 12.58C23.72 8.68 25.88 5.18 28.08 2.72C28.48 2.28 28.42 1.68 27.88 1.35C25.32 0.82 22.48 1.95 19.62 3.88C15.82 6.38 12.58 7.96 10.42 8.38Z"
+  />
+  <path
+    d="M11.15 8.85Q15.85 12.35 20.05 14.75"
+    stroke="#f8fafc"
+    stroke-width="0.1"
+    stroke-linecap="round"
+    opacity="0.5"
     fill="none"
   />
-  <line x1="5" y1="6" x2="16" y2="17" stroke="url(#vm-brand)" stroke-width="2" stroke-linecap="round" />
-  <path d="M16 17l4.2-2.8-1.6 4.6z" fill="url(#vm-brand)" stroke="url(#vm-brand)" stroke-width="0.4" stroke-linejoin="round" />
+  <path d="M13.85 6.35Q20.5 3.35 24.85 2.55Q26.95 2.15 28.25 2.65" stroke="#cbd5e1" stroke-width="0.08" stroke-linecap="round" opacity="0.44" fill="none" />
+  <path d="M10.55 8.45L10.75 8.62M26.95 1.55L27.15 1.78" stroke="#f1f5f9" stroke-width="0.06" stroke-linecap="round" opacity="0.52" fill="none" />
+  <path d="M20.15 15.05Q21.25 13.75 22.15 15.1" stroke="#475569" stroke-width="0.07" stroke-linecap="round" opacity="0.72" fill="none" />
+
+  <ellipse
+    cx="20.72"
+    cy="15.02"
+    rx="0.48"
+    ry="0.22"
+    fill="url(#vm-wood-socket)"
+    stroke="#0a0a0a"
+    stroke-width="0.06"
+    transform="rotate(-26 20.72 15.02)"
+  />
+  <ellipse
+    cx="20.72"
+    cy="15.02"
+    rx="0.58"
+    ry="0.28"
+    fill="none"
+    stroke="url(#vm-eye-rim)"
+    stroke-width="0.07"
+    transform="rotate(-26 20.72 15.02)"
+  />
 </svg>
