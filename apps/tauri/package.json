@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:web\" \"wait-on http://localhost:3000 && npm run tauri dev\"",
     "dev:web": "npm run dev -w vibeminer-web",
+    "icons": "tauri icon icon-source/splash-app-icon.svg",
     "tauri": "tauri",
     "build": "npm run tauri build",
     "build:web": "npm run build -w vibeminer-web"
