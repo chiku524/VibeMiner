@@ -6,7 +6,10 @@
   "build": {
     "beforeDevCommand": "",
     "devUrl": "http://localhost:3000",
-    "beforeBuildCommand": "node ../scripts/prepare-frontend-dist.cjs",
+    "beforeBuildCommand": {
+      "script": "node scripts/prepare-frontend-dist.cjs",
+      "cwd": ".."
+    },
     "frontendDist": "../../web/out"
   },
   "app": {
