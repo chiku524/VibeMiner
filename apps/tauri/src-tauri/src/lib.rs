@@ -5,7 +5,7 @@ mod node;
 mod settings;
 
 use serde::Serialize;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 #[derive(Serialize)]
 struct UpdateInfo {
@@ -41,7 +41,12 @@ fn set_auto_update_enabled(app: tauri::AppHandle, enabled: bool) -> Result<bool,
 
 #[tauri::command]
 async fn reload(window: tauri::Window) -> Result<(), String> {
-    window.eval("window.location.reload()").map_err(|e| e.to_string())
+    let wv = window
+        .webviews()
+        .into_iter()
+        .next()
+        .ok_or_else(|| "No webview".to_string())?;
+    wv.eval("window.location.reload()").map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -78,7 +83,7 @@ async fn check_for_updates(app: tauri::AppHandle) -> Result<serde_json::Value, S
         .zip(current.split('.'))
         .find(|(a, b)| a.parse::<u32>().unwrap_or(0) > b.parse::<u32>().unwrap_or(0))
         .is_some();
-    let (os, ext) = if std::env::consts::OS == "windows" {
+    let (_os, ext) = if std::env::consts::OS == "windows" {
         ("win", "VibeMiner-Setup-latest.exe")
     } else if std::env::consts::OS == "macos" {
         ("macos", "VibeMiner-latest-arm64.dmg")
@@ -140,7 +145,6 @@ async fn start_real_mining(
     let user_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let n = &opts.network;
     let env = n.environment.as_deref().unwrap_or("mainnet");
-    let key = format!("{}:{}", env, n.id);
     if mining::is_mining(&n.id, env) {
         return Ok(serde_json::json!({ "ok": false, "error": "Already mining this network" }));
     }
@@ -219,19 +223,24 @@ async fn start_node(
     opts: StartNodeOpts,
 ) -> Result<serde_json::Value, String> {
     let user_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
-    let n = &opts.network;
-    let env = n.environment.as_deref().unwrap_or("mainnet");
+    let StartNodeOpts { network: n } = opts;
+    let env = n
+        .environment
+        .as_deref()
+        .unwrap_or("mainnet")
+        .to_string();
     let url = n
         .node_download_url
         .as_deref()
         .unwrap_or("")
         .to_string();
-    let sha = n.node_binary_sha256.as_deref();
+    let sha = n.node_binary_sha256.clone();
     let template = n
         .node_command_template
         .as_deref()
         .unwrap_or("")
         .to_string();
+    let network_id = n.id.clone();
     if url.is_empty() {
         return Ok(serde_json::json!({ "ok": false, "error": "No node download URL" }));
     }
@@ -239,30 +248,30 @@ async fn start_node(
         return Ok(serde_json::json!({ "ok": false, "error": "No node command template" }));
     }
     let window_emit = window.clone();
-    let (bin_dir, data_dir) = tauri::async_runtime::spawn_blocking({
-        let id = n.id.clone();
-        let env_s = env.to_string();
-        move || {
-            node::ensure_node_ready(
-                &id,
-                &env_s,
-                &url,
-                sha,
-                &user_data,
-                |phase, percent, message| {
-                    let _ = window_emit.emit(
-                        "node-download-progress",
-                        serde_json::json!({ "phase": phase, "percent": percent, "message": message }),
-                    );
-                },
-            )
-        }
+    let user_data_path = user_data.clone();
+    let id_for_ready = network_id.clone();
+    let env_for_ready = env.clone();
+    let url_for_ready = url.clone();
+    let (bin_dir, data_dir) = tauri::async_runtime::spawn_blocking(move || {
+        node::ensure_node_ready(
+            &id_for_ready,
+            &env_for_ready,
+            &url_for_ready,
+            sha.as_deref(),
+            &user_data_path,
+            |phase, percent, message| {
+                let _ = window_emit.emit(
+                    "node-download-progress",
+                    serde_json::json!({ "phase": phase, "percent": percent, "message": message }),
+                );
+            },
+        )
     })
     .await
     .map_err(|e| e.to_string())??;
     node::start_node(
-        n.id.clone(),
-        env.to_string(),
+        network_id,
+        env,
         &template,
         &bin_dir,
         &data_dir,

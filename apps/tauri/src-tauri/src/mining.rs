@@ -19,6 +19,7 @@ pub struct MinerStats {
     pub is_active: bool,
 }
 
+#[allow(dead_code)]
 struct MinerEntry {
     child: Child,
     network_id: String,
@@ -183,7 +184,8 @@ fn download_and_extract(
         .map_err(|e| e.to_string())?
         .filter_map(|e| e.ok())
         .find(|e| {
-            let n = e.file_name().to_string_lossy();
+            let name = e.file_name();
+            let n = name.to_string_lossy();
             n == "xmrig" || n == "xmrig.exe"
         });
     let bin_name = bin_name
@@ -260,7 +262,7 @@ pub fn start_mining(
     }
     let key = network_key(&network_id, &environment);
     {
-        let mut miners = ACTIVE_MINERS.lock().map_err(|e| e.to_string())?;
+        let miners = ACTIVE_MINERS.lock().map_err(|e| e.to_string())?;
         if miners.contains_key(&key) {
             return Err("Already mining this network".into());
         }
@@ -273,7 +275,7 @@ pub fn start_mining(
         wallet_address.trim(),
         algorithm.as_deref(),
     );
-    let child = Command::new(&miner_path)
+    let mut child = Command::new(&miner_path)
         .args(&args)
         .current_dir(cwd)
         .stdout(Stdio::piped())
@@ -305,24 +307,25 @@ pub fn start_mining(
             key.clone(),
             MinerEntry {
                 child,
-                network_id,
-                environment,
+                network_id: network_id.clone(),
+                environment: environment.clone(),
             },
         );
 
-    let key2 = key.clone();
-    let net_id = network_id.clone();
-    let env = environment.clone();
+    let net_id_out = network_id.clone();
+    let env_out = environment.clone();
+    let net_id_err = network_id;
+    let env_err = environment;
     thread::spawn(move || {
         let reader = std::io::BufReader::new(stdout);
         for line in reader.lines().filter_map(|l| l.ok()) {
-            crate::mining::update_stats_from_line(&net_id, &env, &line);
+            crate::mining::update_stats_from_line(&net_id_out, &env_out, &line);
         }
     });
     thread::spawn(move || {
         let reader = std::io::BufReader::new(stderr);
         for line in reader.lines().filter_map(|l| l.ok()) {
-            crate::mining::update_stats_from_line(&net_id, &env, &line);
+            crate::mining::update_stats_from_line(&net_id_err, &env_err, &line);
         }
     });
 
@@ -332,7 +335,7 @@ pub fn start_mining(
 pub fn stop_mining(network_id: &str, environment: &str) {
     let key = network_key(network_id, environment);
     if let Ok(mut miners) = ACTIVE_MINERS.lock() {
-        if let Some(entry) = miners.remove(&key) {
+        if let Some(mut entry) = miners.remove(&key) {
             let _ = entry.child.kill();
         }
     }

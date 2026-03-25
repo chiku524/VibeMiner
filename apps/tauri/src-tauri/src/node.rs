@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::path::Path;
@@ -12,6 +12,7 @@ pub struct NodeStatus {
     pub is_active: bool,
 }
 
+#[allow(dead_code)]
 struct NodeEntry {
     _child: Child,
     network_id: String,
@@ -206,7 +207,7 @@ pub fn start_node(
 pub fn stop_node(network_id: &str, environment: &str) {
     let key = network_key(network_id, environment);
     if let Ok(mut nodes) = ACTIVE_NODES.lock() {
-        if let Some(entry) = nodes.remove(&key) {
+        if let Some(mut entry) = nodes.remove(&key) {
             let _ = entry._child.kill();
         }
     }
