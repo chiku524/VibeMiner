@@ -38,9 +38,11 @@ There is no separate system-tray icon in this app; the same bundle icon set is u
 
 ## Production build
 
-`tauri build` runs `scripts/prepare-frontend-dist.cjs`, which writes `apps/web/out/index.html` that redirects to the live app. Set **`VIBEMINER_APP_URL`** or **`APP_URL`** when building to override the default `https://vibeminer.tech`.
+`npm run build` (from `apps/tauri` or via `-w vibeminer-tauri`) runs **`npm run prepare-frontend`** first, then `tauri build`. That writes `apps/web/out/index.html` that redirects to the live app. Set **`VIBEMINER_APP_URL`** or **`APP_URL`** when building to override the default `https://vibeminer.tech`.
 
-To ship a fully offline Next.js export instead, point `frontendDist` at that folder and adjust `beforeBuildCommand` (see [Tauri + Next.js](https://v2.tauri.app/start/frontend/nextjs/)).
+`beforeBuildCommand` is intentionally unset so CI/npm workspace builds do not depend on Tauri’s hook working-directory behavior. If you invoke **`cargo tauri build`** from `src-tauri` only, run `npm run prepare-frontend` from `apps/tauri` first (or use `npm run build`).
+
+To ship a fully offline Next.js export instead, point `frontendDist` at that folder and wire a prepare step that copies or builds into `apps/web/out` (see [Tauri + Next.js](https://v2.tauri.app/start/frontend/nextjs/)).
 
 ## Commands implemented
 
