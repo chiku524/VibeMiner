@@ -29,7 +29,9 @@ Release builds run `apps/tauri/scripts/prepare-frontend-dist.cjs`, which creates
 
 ### Updates in the app
 
-The UI uses **`window.desktopAPI`**, set by [`apps/web/public/desktop-bridge.js`](../apps/web/public/desktop-bridge.js) when Tauri’s `__TAURI__` runtime is present. Update install flows can be extended in Rust (`apps/tauri/src-tauri`); some helpers are still stubs compared to a full in-app updater.
+The UI uses **`window.desktopAPI`**, set by [`apps/web/public/desktop-bridge.js`](../apps/web/public/desktop-bridge.js) when Tauri’s `__TAURI__` runtime is present. The Tauri **updater** plugin is configured in `apps/tauri/src-tauri/tauri.conf.json` (`plugins.updater`).
+
+**CI signing (`TAURI_SIGNING_PRIVATE_KEY`):** GitHub Actions must receive the **entire** minisign secret key file as the secret value: the first line (`untrusted comment: …`) **and** the second line (base64). Pasting only the second line causes `Missing comment in secret key`. Generate a keypair with `npx @tauri-apps/cli signer generate -w path/to/key --ci`, put the matching **public** line in `tauri.conf.json` `pubkey`, store the **private** file contents in the repo secret, then uncomment `TAURI_SIGNING_PRIVATE_KEY` in [`.github/workflows/release-desktop.yml`](../.github/workflows/release-desktop.yml). Without that, releases still publish installers but skip `latest.json` and in-app verified updates.
 
 ---
 

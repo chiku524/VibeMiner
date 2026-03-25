@@ -65,9 +65,14 @@ if (appimage) {
 const required = ['windows-x86_64', 'darwin-aarch64', 'linux-x86_64'];
 const missing = required.filter((k) => !platforms[k]);
 if (missing.length) {
-  console.error('Missing platform entries (need bundle + .sig for each):', missing.join(', '));
-  console.error('Files in dir:', files.join(', '));
-  process.exit(1);
+  console.warn(
+    'Skipping latest.json: missing signed updater artifacts for:',
+    missing.join(', ')
+  );
+  console.warn(
+    'Enable CI signing: uncomment TAURI_SIGNING_PRIVATE_KEY in release-desktop.yml and set the repo secret to the full minisign .key file (both lines, including untrusted comment).'
+  );
+  process.exit(0);
 }
 
 const manifest = {

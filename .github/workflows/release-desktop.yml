@@ -3,7 +3,7 @@
 # Asset names match the download API (VibeMiner-Setup-*.exe, *-arm64.dmg, *.AppImage).
 #
 # Optional: code signing / notarization — see docs/DESKTOP_APP.md.
-# In-app updates: set repository secret TAURI_SIGNING_PRIVATE_KEY (minisign) to match `plugins.updater.pubkey` in apps/tauri/src-tauri/tauri.conf.json.
+# In-app updates: optional. Add repo secret TAURI_SIGNING_PRIVATE_KEY = full contents of the minisign .key file (must include BOTH lines: `untrusted comment:` and the base64 line). Paste multiline in GitHub; it must match `plugins.updater.pubkey` in tauri.conf.json. If unset or wrong, builds skip signing; release still publishes installers without latest.json.
 
 name: Release desktop app
 
@@ -55,7 +55,8 @@ jobs:
         run: npm run build -w vibeminer-tauri
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          # Uncomment when TAURI_SIGNING_PRIVATE_KEY is the full minisign secret key file (both lines):
+          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -92,7 +93,7 @@ jobs:
         run: npm run build -w vibeminer-tauri
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -140,7 +141,7 @@ jobs:
         run: npm run build -w vibeminer-tauri
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
@@ -189,10 +190,13 @@ jobs:
           cp "$dmg" "VibeMiner-${VER}-arm64.dmg"
 
           app_tgz=$(find . -type f -name "*.app.tar.gz" | head -1)
-          if [ -z "$app_tgz" ]; then echo "No macOS .app.tar.gz (updater bundle) found"; exit 1; fi
-          echo "macOS updater: $app_tgz"
-          cp "$app_tgz" "VibeMiner-latest-aarch64.app.tar.gz"
-          if [ -f "${app_tgz}.sig" ]; then cp "${app_tgz}.sig" "VibeMiner-latest-aarch64.app.tar.gz.sig"; fi
+          if [ -n "$app_tgz" ]; then
+            echo "macOS updater: $app_tgz"
+            cp "$app_tgz" "VibeMiner-latest-aarch64.app.tar.gz"
+            if [ -f "${app_tgz}.sig" ]; then cp "${app_tgz}.sig" "VibeMiner-latest-aarch64.app.tar.gz.sig"; fi
+          else
+            echo "No macOS .app.tar.gz (updater bundle) — OK when updater signing is not configured"
+          fi
 
           appimg=$(find . -type f -name "*.AppImage" | head -1)
           if [ -z "$appimg" ]; then echo "No Linux .AppImage found"; exit 1; fi
@@ -206,7 +210,6 @@ jobs:
           test -f "VibeMiner-Setup-${VER}.exe"
           test -f "VibeMiner-latest-arm64.dmg"
           test -f "VibeMiner-${VER}-arm64.dmg"
-          test -f "VibeMiner-latest-aarch64.app.tar.gz"
           test -f "VibeMiner-latest.AppImage"
           test -f "VibeMiner-${VER}.AppImage"
 
@@ -217,7 +220,6 @@ jobs:
           set -e
           VER="${VERSION#v}"
           node .github/scripts/generate-updater-latest.mjs artifacts "$VER" chiku524/VibeMiner "$VERSION"
-          test -f artifacts/latest.json
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
