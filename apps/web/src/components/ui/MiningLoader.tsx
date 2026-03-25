@@ -19,14 +19,14 @@ type MiningLoaderProps = {
   label?: string;
   labelClassName?: string;
   /**
-   * When set (0–100), draws a determinate ring around the mark.
-   * When omitted, the ring shows an indeterminate sweep (loading without a known percent).
+   * When set (0–100), draws a determinate ring around the scene.
+   * When omitted, the ring shows an indeterminate sweep.
    */
   progress?: number;
 };
 
 /**
- * Loading indicator: scythe pivots at grip toward the hex gem; optional progress ring.
+ * Loading indicator: animated pickaxe striking a pile of coins; optional progress ring.
  */
 export function MiningLoader({
   size = 'md',
@@ -40,25 +40,36 @@ export function MiningLoader({
   const dim = SIZES[size];
   const reduced = useReducedMotion() ?? false;
 
-  /** One shared cycle so scythe, gem, and ring stay in phase */
-  const cycleDurationSec = 1;
-  const syncTimes = [0, 0.34, 0.42, 0.52, 1] as const;
-  const syncEase = [0.38, 0.02, 0.58, 1] as const;
+  const cycleDurationSec = 1.2;
+  const swingTimes = [0, 0.3, 0.42, 1] as const;
+  const swingEase = [0.42, 0, 0.58, 1] as const;
 
-  const syncTransition = reduced
+  const swingTransition = reduced
     ? { duration: 0 }
     : {
         repeat: Infinity,
         duration: cycleDurationSec,
-        ease: syncEase,
-        times: [...syncTimes],
+        ease: swingEase,
+        times: [...swingTimes],
       };
 
-  /** Pivot at grip (18.35, 24.62): scythe arcs toward gem */
-  const pickaxeRotate = reduced ? 0 : [-24, 8, 2, -3, -24];
+  /** Degrees — rest back, strike forward, small follow-through, rest */
+  const pickaxeRotate = reduced ? -34 : [-38, 14, 2, -38];
 
-  /** Pulse peaks when the blade is nearest the gem (same keyframe times as scythe) */
-  const gemScale = reduced ? 1 : [1, 1.02, 1.08, 1.03, 1];
+  const coinsTransition = reduced
+    ? { duration: 0 }
+    : {
+        repeat: Infinity,
+        duration: cycleDurationSec,
+        ease: swingEase,
+        times: [...swingTimes],
+      };
+
+  const coinsY = reduced ? 0 : [0, -5, -1.5, 0];
+  const coinsScale = reduced ? 1 : [1, 1.06, 1.02, 1];
+
+  const sparksOpacity = reduced ? 0 : [0, 0.95, 0, 0];
+  const sparksTransition = reduced ? { duration: 0 } : { repeat: Infinity, duration: cycleDurationSec, times: [...swingTimes] };
 
   const progressClamped = useMemo(() => {
     if (progress === undefined || Number.isNaN(progress)) return undefined;
@@ -80,209 +91,191 @@ export function MiningLoader({
       <span className="sr-only">
         {progressClamped !== undefined ? `Loading ${Math.round(progressClamped)} percent` : 'Loading'}
       </span>
-      <svg
-        width={dim}
-        height={dim}
-        viewBox="0 0 48 48"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="overflow-visible text-teal-200/90"
-        aria-hidden
-      >
-        <defs>
-          <linearGradient id={`${p}-gem-main`} x1="25%" y1="0%" x2="75%" y2="100%">
-            <stop offset="0%" stopColor="#ecfeff" />
-            <stop offset="32%" stopColor="#38bdf8" />
-            <stop offset="58%" stopColor="#2563eb" />
-            <stop offset="100%" stopColor="#047857" />
-          </linearGradient>
-          <linearGradient id={`${p}-gem-shade`} x1="0%" y1="40%" x2="100%" y2="60%">
-            <stop offset="0%" stopColor="#164e63" />
-            <stop offset="50%" stopColor="#5eead4" />
-            <stop offset="100%" stopColor="#14532d" />
-          </linearGradient>
-          <linearGradient id={`${p}-gem-edge`} x1="45%" y1="0%" x2="55%" y2="100%">
-            <stop offset="0%" stopColor="#bae6fd" />
-            <stop offset="100%" stopColor="#0f766e" />
-          </linearGradient>
-          <linearGradient id={`${p}-base`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#5c5348" />
-            <stop offset="100%" stopColor="#0c0a08" />
-          </linearGradient>
-          <linearGradient id={`${p}-base-cap`} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#d4bc94" />
-            <stop offset="100%" stopColor="#8b6914" />
-          </linearGradient>
-          <linearGradient id={`${p}-base-mid`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#4a4238" />
-            <stop offset="100%" stopColor="#1a1612" />
-          </linearGradient>
-          <linearGradient id={`${p}-handle`} gradientUnits="userSpaceOnUse" x1="18.35" y1="24.62" x2="20.98" y2="15.08">
-            <stop offset="0%" stopColor="#1a100c" />
-            <stop offset="45%" stopColor="#8b5a3c" />
-            <stop offset="100%" stopColor="#3d2818" />
-          </linearGradient>
-          <linearGradient id={`${p}-steel`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#e2e8f0" />
-            <stop offset="35%" stopColor="#94a3b8" />
-            <stop offset="100%" stopColor="#0f172a" />
-          </linearGradient>
-          <linearGradient id={`${p}-eye-rim`} x1="20%" y1="0%" x2="80%" y2="100%">
-            <stop offset="0%" stopColor="#f8fafc" />
-            <stop offset="50%" stopColor="#64748b" />
-            <stop offset="100%" stopColor="#020617" />
-          </linearGradient>
-          <linearGradient id={`${p}-wood-socket`} x1="40%" y1="0%" x2="60%" y2="100%">
-            <stop offset="0%" stopColor="#e8dcc8" />
-            <stop offset="55%" stopColor="#78716c" />
-            <stop offset="100%" stopColor="#292524" />
-          </linearGradient>
-        </defs>
-        <circle
-          cx="24"
-          cy="24"
-          r="20.5"
+      <div className="relative" style={{ width: dim, height: dim }}>
+        <svg
+          width={dim}
+          height={dim}
+          viewBox="0 0 48 48"
           fill="none"
-          stroke="currentColor"
-          strokeOpacity={0.24}
-          strokeWidth="2.25"
-          pathLength={100}
-          transform="rotate(-90 24 24)"
-        />
-        {progressClamped !== undefined ? (
+          xmlns="http://www.w3.org/2000/svg"
+          className="overflow-visible text-teal-200/90"
+          aria-hidden
+        >
+          <defs>
+            <linearGradient id={`${p}-wood`} x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#3f2e22" />
+              <stop offset="50%" stopColor="#7c4a2d" />
+              <stop offset="100%" stopColor="#4a3020" />
+            </linearGradient>
+            <linearGradient id={`${p}-steel`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#e2e8f0" />
+              <stop offset="45%" stopColor="#64748b" />
+              <stop offset="100%" stopColor="#1e293b" />
+            </linearGradient>
+            <radialGradient id={`${p}-btc`} cx="35%" cy="35%" r="65%">
+              <stop offset="0%" stopColor="#fbbf24" />
+              <stop offset="55%" stopColor="#ea580c" />
+              <stop offset="100%" stopColor="#9a3412" />
+            </radialGradient>
+            <radialGradient id={`${p}-eth`} cx="35%" cy="35%" r="65%">
+              <stop offset="0%" stopColor="#a5b4fc" />
+              <stop offset="55%" stopColor="#6366f1" />
+              <stop offset="100%" stopColor="#312e81" />
+            </radialGradient>
+            <radialGradient id={`${p}-coin`} cx="35%" cy="35%" r="65%">
+              <stop offset="0%" stopColor="#fde047" />
+              <stop offset="100%" stopColor="#a16207" />
+            </radialGradient>
+            <radialGradient id={`${p}-xmr`} cx="35%" cy="35%" r="65%">
+              <stop offset="0%" stopColor="#fb923c" />
+              <stop offset="100%" stopColor="#9a3412" />
+            </radialGradient>
+            <filter id={`${p}-glow`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="0.8" result="b" />
+              <feMerge>
+                <feMergeNode in="b" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {/* Progress / indeterminate ring */}
           <circle
             cx="24"
             cy="24"
-            r="20.5"
+            r="21.5"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2.25"
-            strokeLinecap="round"
+            strokeOpacity={0.2}
+            strokeWidth="1.75"
             pathLength={100}
-            strokeDasharray="100"
-            strokeDashoffset={ringDashOffset}
             transform="rotate(-90 24 24)"
           />
-        ) : (
-          <motion.circle
-            cx="24"
-            cy="24"
-            r="20.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.25"
-            strokeLinecap="round"
-            pathLength={100}
-            strokeDasharray="22 78"
-            transform="rotate(-90 24 24)"
-            animate={reduced ? { strokeDashoffset: 0 } : { strokeDashoffset: [0, -100] }}
-            transition={
-              reduced ? { duration: 0 } : { repeat: Infinity, duration: cycleDurationSec, ease: 'linear' }
-            }
-          />
-        )}
-        <g transform="translate(2.5, 6.5) scale(1.36)">
-          <path d="M3.85 27.35h14.5v2.25H3.85z" fill={`url(#${p}-base-mid)`} stroke="#2a2520" strokeWidth="0.22" />
-          <path d="M4 26.35h13.35v2.35H4z" fill={`url(#${p}-base)`} stroke="#3d3530" strokeWidth="0.24" />
-          <path d="M4 26.35l0.5-0.42h12.35l0.5 0.42z" fill={`url(#${p}-base-cap)`} opacity={0.92} />
-          <path d="M7.15 28.05h7.05" stroke="#c4a574" strokeWidth="0.38" strokeLinecap="round" opacity={0.35} />
-          <motion.g
-            animate={{ scale: gemScale }}
-            transition={syncTransition}
-          >
-            <path
-              d="M9.5 5.45L12.95 7.45L12.95 11.45L9.5 13.45L6.05 11.45L6.05 7.45L9.5 5.45Z"
-              fill={`url(#${p}-gem-main)`}
-              stroke={`url(#${p}-gem-edge)`}
-              strokeWidth="0.42"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M9.5 5.45V13.45M6.05 9.45h6.9M7.35 7.1l4.3 4.7M7.35 11.8l4.3-4.7"
-              stroke={`url(#${p}-gem-shade)`}
-              strokeWidth="0.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity={0.55}
-            />
-            <path d="M9.5 5.45L7.95 7.45L9.5 8.55L11.05 7.45L9.5 5.45Z" fill="#ecfeff" opacity={0.38} />
-          </motion.g>
-          <motion.g
-            animate={{ rotate: reduced ? -24 : pickaxeRotate }}
-            transition={syncTransition}
-            style={{ transformOrigin: '18.35px 24.62px', transformBox: 'view-box' as const }}
-          >
-            <path d="M18.42 24.72L20.98 15.08" stroke="#1a0f0a" strokeWidth="0.64" strokeLinecap="round" opacity={0.45} fill="none" />
-            <ellipse
-              cx="17.98"
-              cy="24.76"
-              rx="0.37"
-              ry="0.23"
-              fill={`url(#${p}-handle)`}
-              stroke="#0a0a0a"
-              strokeWidth="0.1"
-              transform="rotate(-8 17.98 24.76)"
-            />
-            <path d="M18.35 24.62L20.98 15.08" stroke="#0a0a0a" strokeWidth="1.54" strokeLinecap="round" fill="none" />
-            <path d="M18.35 24.62L20.98 15.08" stroke={`url(#${p}-handle)`} strokeWidth="1.22" strokeLinecap="round" fill="none" />
-            <path
-              d="M18.78 22.48L18.98 19.05L19.15 16.65"
-              stroke="#3d2818"
-              strokeWidth="0.07"
-              strokeLinecap="round"
-              opacity={0.55}
+          {progressClamped !== undefined ? (
+            <circle
+              cx="24"
+              cy="24"
+              r="21.5"
               fill="none"
-            />
-            <path d="M18.58 20.95L18.75 17.45" stroke="#3d2818" strokeWidth="0.06" strokeLinecap="round" opacity={0.45} fill="none" />
-            <path d="M18.48 24.28L20.38 15.22" stroke="#c9a66c" strokeWidth="0.12" strokeLinecap="round" opacity={0.38} fill="none" />
-            <path
-              fill={`url(#${p}-steel)`}
-              stroke="#020617"
-              strokeWidth="0.12"
-              strokeLinejoin="round"
-              d="M10.42 8.38C13.55 11.22 16.88 13.38 19.48 14.62C20.22 15.02 20.9 15.26 21.58 15.42C21.88 14.48 22.15 13.52 22.35 12.58C23.72 8.68 25.88 5.18 28.08 2.72C28.48 2.28 28.42 1.68 27.88 1.35C25.32 0.82 22.48 1.95 19.62 3.88C15.82 6.38 12.58 7.96 10.42 8.38Z"
-            />
-            <path
-              d="M11.15 8.85Q15.85 12.35 20.05 14.75"
-              stroke="#f8fafc"
-              strokeWidth="0.1"
+              stroke="currentColor"
+              strokeWidth="1.75"
               strokeLinecap="round"
-              opacity={0.5}
-              fill="none"
+              pathLength={100}
+              strokeDasharray="100"
+              strokeDashoffset={ringDashOffset}
+              transform="rotate(-90 24 24)"
+              filter={`url(#${p}-glow)`}
             />
-            <path d="M13.85 6.35Q20.5 3.35 24.85 2.55Q26.95 2.15 28.25 2.65" stroke="#cbd5e1" strokeWidth="0.08" strokeLinecap="round" opacity={0.44} fill="none" />
-            <path
-              d="M10.55 8.45L10.75 8.62M26.95 1.55L27.15 1.78"
-              stroke="#f1f5f9"
-              strokeWidth="0.06"
+          ) : (
+            <motion.circle
+              cx="24"
+              cy="24"
+              r="21.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
               strokeLinecap="round"
-              opacity={0.52}
+              pathLength={100}
+              strokeDasharray="20 80"
+              transform="rotate(-90 24 24)"
+              filter={`url(#${p}-glow)`}
+              animate={reduced ? { strokeDashoffset: 0 } : { strokeDashoffset: [0, -100] }}
+              transition={
+                reduced ? { duration: 0 } : { repeat: Infinity, duration: cycleDurationSec, ease: 'linear' }
+              }
+            />
+          )}
+
+          {/* Scene: translate into inner frame */}
+          <g transform="translate(2.5 2) scale(0.92)">
+            {/* Ground */}
+            <ellipse cx="28" cy="40" rx="18" ry="2.2" fill="#0f172a" opacity="0.55" />
+
+            {/* Coin pile (behind pickaxe head at strike) */}
+            <motion.g
+              style={{ transformOrigin: '28px 36px' }}
+              animate={{ y: coinsY, scale: coinsScale }}
+              transition={coinsTransition}
+            >
+              <circle cx="33" cy="34" r="5.2" fill={`url(#${p}-btc)`} stroke="#7c2d12" strokeWidth="0.35" />
+              <text
+                x="33"
+                y="35.5"
+                textAnchor="middle"
+                fill="white"
+                fillOpacity={0.92}
+                fontSize="5.5"
+                fontWeight="700"
+                fontFamily="system-ui, sans-serif"
+              >
+                ₿
+              </text>
+              <circle cx="26.5" cy="35.5" r="4.4" fill={`url(#${p}-eth)`} stroke="#312e81" strokeWidth="0.3" />
+              <text
+                x="26.5"
+                y="36.8"
+                textAnchor="middle"
+                fill="white"
+                fillOpacity={0.9}
+                fontSize="4.5"
+                fontWeight="700"
+                fontFamily="system-ui, sans-serif"
+              >
+                Ξ
+              </text>
+              <circle cx="30" cy="37.8" r="3.5" fill={`url(#${p}-coin)`} stroke="#713f12" strokeWidth="0.28" />
+              <circle cx="36.2" cy="36.8" r="3.2" fill={`url(#${p}-xmr)`} stroke="#7c2d12" strokeWidth="0.28" />
+              <text
+                x="36.2"
+                y="38"
+                textAnchor="middle"
+                fill="white"
+                fillOpacity={0.85}
+                fontSize="3.8"
+                fontWeight="700"
+                fontFamily="system-ui, sans-serif"
+              >
+                ◈
+              </text>
+            </motion.g>
+
+            {/* Impact sparks */}
+            <motion.g
               fill="none"
-            />
-            <path d="M20.15 15.05Q21.25 13.75 22.15 15.1" stroke="#475569" strokeWidth="0.07" strokeLinecap="round" opacity={0.72} fill="none" />
-            <ellipse
-              cx="20.72"
-              cy="15.02"
-              rx="0.48"
-              ry="0.22"
-              fill={`url(#${p}-wood-socket)`}
-              stroke="#0a0a0a"
-              strokeWidth="0.06"
-              transform="rotate(-26 20.72 15.02)"
-            />
-            <ellipse
-              cx="20.72"
-              cy="15.02"
-              rx="0.58"
-              ry="0.28"
-              fill="none"
-              stroke={`url(#${p}-eye-rim)`}
-              strokeWidth="0.07"
-              transform="rotate(-26 20.72 15.02)"
-            />
-          </motion.g>
-        </g>
-      </svg>
+              stroke="#fde68a"
+              strokeWidth="0.65"
+              strokeLinecap="round"
+              animate={{ opacity: sparksOpacity }}
+              transition={sparksTransition}
+            >
+              <path d="M38 28l3-2.5M41 30l2.8-1.2M37 31l3.5 0.5" />
+            </motion.g>
+
+            {/* Pickaxe: pivot at handle base (11.5, 40.5) in this inner coord space */}
+            <g transform="translate(11.5 40.5)">
+              <motion.g animate={{ rotate: pickaxeRotate }} transition={swingTransition}>
+                <g transform="translate(-11.5 -40.5)">
+                  <path
+                    d="M9 40.5 L13 40.5 L14 18 L10 18 Z"
+                    fill={`url(#${p}-wood)`}
+                    stroke="#1a0f0a"
+                    strokeWidth="0.2"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M14 18 L22 12 L26 22 L17 24 Z"
+                    fill={`url(#${p}-steel)`}
+                    stroke="#0f172a"
+                    strokeWidth="0.2"
+                    strokeLinejoin="round"
+                  />
+                  <path d="M22 12 L28 9 L26 16 Z" fill="#cbd5e1" stroke="#0f172a" strokeWidth="0.15" />
+                </g>
+              </motion.g>
+            </g>
+          </g>
+        </svg>
+      </div>
       {label ? (
         <p className={['mt-3 text-sm text-gray-400', labelClassName].filter(Boolean).join(' ')}>{label}</p>
       ) : null}

@@ -2,98 +2,124 @@
   <defs>
     <linearGradient id="tile" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#a5f3fc" stop-opacity="0.12" />
-      <stop offset="100%" stop-color="#0e7490" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0.1" />
     </linearGradient>
-    <linearGradient id="vmg-gem-main" x1="25%" y1="0%" x2="75%" y2="100%">
-      <stop offset="0%" stop-color="#ecfeff" />
-      <stop offset="32%" stop-color="#38bdf8" />
-      <stop offset="58%" stop-color="#2563eb" />
-      <stop offset="100%" stop-color="#047857" />
+    <linearGradient id="vmg-wood" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2d1a12" />
+      <stop offset="35%" stop-color="#6b4423" />
+      <stop offset="62%" stop-color="#8b5a3c" />
+      <stop offset="100%" stop-color="#4a3020" />
     </linearGradient>
-    <linearGradient id="vmg-gem-shade" x1="0%" y1="40%" x2="100%" y2="60%">
-      <stop offset="0%" stop-color="#164e63" />
-      <stop offset="50%" stop-color="#5eead4" />
-      <stop offset="100%" stop-color="#14532d" />
-    </linearGradient>
-    <linearGradient id="vmg-gem-edge" x1="45%" y1="0%" x2="55%" y2="100%">
-      <stop offset="0%" stop-color="#bae6fd" />
-      <stop offset="100%" stop-color="#0f766e" />
-    </linearGradient>
-    <linearGradient id="vmg-base" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#5c5348" />
-      <stop offset="100%" stop-color="#0c0a08" />
-    </linearGradient>
-    <linearGradient id="vmg-base-cap" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#d4bc94" />
-      <stop offset="100%" stop-color="#8b6914" />
-    </linearGradient>
-    <linearGradient id="vmg-base-mid" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#4a4238" />
-      <stop offset="100%" stop-color="#1a1612" />
-    </linearGradient>
-    <linearGradient id="vmg-handle" gradientUnits="userSpaceOnUse" x1="18.35" y1="24.62" x2="20.98" y2="15.08">
-      <stop offset="0%" stop-color="#1a100c" />
-      <stop offset="45%" stop-color="#8b5a3c" />
-      <stop offset="100%" stop-color="#3d2818" />
+    <linearGradient id="vmg-wood-edge" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1a0f0a" />
+      <stop offset="50%" stop-color="#c4a574" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#1a0f0a" />
     </linearGradient>
     <linearGradient id="vmg-steel" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#e2e8f0" />
-      <stop offset="35%" stop-color="#94a3b8" />
+      <stop offset="0%" stop-color="#f1f5f9" />
+      <stop offset="22%" stop-color="#cbd5e1" />
+      <stop offset="48%" stop-color="#64748b" />
+      <stop offset="78%" stop-color="#334155" />
       <stop offset="100%" stop-color="#0f172a" />
     </linearGradient>
-    <linearGradient id="vmg-eye-rim" x1="20%" y1="0%" x2="80%" y2="100%">
-      <stop offset="0%" stop-color="#f8fafc" />
-      <stop offset="50%" stop-color="#64748b" />
+    <linearGradient id="vmg-steel-edge" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#020617" />
+      <stop offset="50%" stop-color="#e2e8f0" stop-opacity="0.5" />
       <stop offset="100%" stop-color="#020617" />
     </linearGradient>
-    <linearGradient id="vmg-wood-socket" x1="40%" y1="0%" x2="60%" y2="100%">
-      <stop offset="0%" stop-color="#e8dcc8" />
-      <stop offset="55%" stop-color="#78716c" />
-      <stop offset="100%" stop-color="#292524" />
+    <radialGradient id="vmg-ore-face" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#78716c" />
+      <stop offset="55%" stop-color="#44403c" />
+      <stop offset="100%" stop-color="#1c1917" />
+    </radialGradient>
+    <linearGradient id="vmg-ground" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#292524" />
+      <stop offset="50%" stop-color="#3f3a36" />
+      <stop offset="100%" stop-color="#1c1917" />
     </linearGradient>
+    <radialGradient id="vmg-hub-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.55" />
+      <stop offset="70%" stop-color="#38bdf8" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="vmg-hub" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5eead4" />
+      <stop offset="50%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#6366f1" />
+    </linearGradient>
+    <linearGradient id="vmg-peer" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#cffafe" />
+      <stop offset="100%" stop-color="#0e7490" />
+    </linearGradient>
+    <linearGradient id="vmg-spark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef9c3" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <filter id="vmg-soft-blur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="0.65" />
+    </filter>
+    <linearGradient id="vmg-node-depth-mask" gradientUnits="userSpaceOnUse" x1="14.5" y1="0" x2="18.8" y2="0">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0" />
+      <stop offset="55%" stop-color="#fff" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#fff" stop-opacity="1" />
+    </linearGradient>
+    <mask id="vmg-node-fade" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="32" height="32" fill="url(#vmg-node-depth-mask)" />
+    </mask>
   </defs>
   <rect width="100" height="100" fill="#0c0e12" />
   <rect x="14" y="14" width="72" height="72" rx="20" fill="url(#tile)" />
   <g transform="translate(34,30) scale(1.05)">
-    <path d="M3.85 27.35h14.5v2.25H3.85z" fill="url(#vmg-base-mid)" stroke="#2a2520" stroke-width="0.22" />
-    <path d="M4 26.35h13.35v2.35H4z" fill="url(#vmg-base)" stroke="#3d3530" stroke-width="0.24" />
-    <path d="M4 26.35l0.5-0.42h12.35l0.5 0.42z" fill="url(#vmg-base-cap)" opacity="0.92" />
-    <path d="M7.15 28.05h7.05" stroke="#c4a574" stroke-width="0.38" stroke-linecap="round" opacity="0.35" />
+    <g opacity="0.52" mask="url(#vmg-node-fade)">
+      <circle cx="23.5" cy="14" r="5.2" fill="url(#vmg-hub-glow)" opacity="0.35" filter="url(#vmg-soft-blur)" />
+      <path
+        d="M23.5 14L28.8 7.8M23.5 14L30.2 14.2M23.5 14L26.4 21.2M23.5 14L17.4 10.8M23.5 14L17.8 17.2"
+        stroke="#475569"
+        stroke-width="0.28"
+        stroke-linecap="round"
+        opacity="0.9"
+      />
+      <circle cx="28.8" cy="7.8" r="0.9" fill="url(#vmg-peer)" stroke="#0c4a6e" stroke-width="0.1" />
+      <circle cx="30.2" cy="14.2" r="0.86" fill="url(#vmg-peer)" stroke="#1e3a8a" stroke-width="0.1" />
+      <circle cx="26.4" cy="21.2" r="0.83" fill="url(#vmg-peer)" stroke="#065f46" stroke-width="0.1" />
+      <circle cx="17.4" cy="10.8" r="0.8" fill="url(#vmg-peer)" stroke="#0c4a6e" stroke-width="0.1" />
+      <circle cx="17.8" cy="17.2" r="0.76" fill="url(#vmg-peer)" stroke="#312e81" stroke-width="0.1" />
+      <circle cx="23.5" cy="14" r="3.05" fill="#0f172a" stroke="#1e293b" stroke-width="0.32" />
+      <circle cx="23.5" cy="14" r="2.48" fill="url(#vmg-hub)" stroke="#0f766e" stroke-width="0.12" />
+      <circle cx="23.5" cy="14" r="1.28" fill="#020617" stroke="#334155" stroke-width="0.1" opacity="0.65" />
+      <path d="M22.05 12.62h2.9M22.05 13.98h2.9M22.05 15.28h1.9" stroke="#ecfeff" stroke-width="0.2" stroke-linecap="round" opacity="0.4" />
+    </g>
+    <path d="M15.5 3.5V28.5" stroke="#475569" stroke-width="0.22" stroke-dasharray="1.1 1.3" opacity="0.58" />
+    <path d="M0.8 27.45H14.6" stroke="url(#vmg-ground)" stroke-width="0.68" stroke-linecap="round" />
+    <path d="M0.8 27.62H14.6" stroke="#1c1917" stroke-width="0.3" stroke-linecap="round" opacity="0.68" />
+    <circle cx="12.4" cy="27.15" r="0.35" fill="#44403c" stroke="#292524" stroke-width="0.06" />
+    <circle cx="2.6" cy="27.05" r="0.28" fill="#3f3a36" stroke="#1c1917" stroke-width="0.05" />
+    <ellipse cx="10.15" cy="23.05" rx="2.4" ry="1.28" fill="url(#vmg-ore-face)" stroke="#1c1917" stroke-width="0.12" />
+    <path d="M8.6 22.1L9.4 22.55M11.2 21.9L11.85 22.5" stroke="#292524" stroke-width="0.12" stroke-linecap="round" opacity="0.6" />
+    <ellipse cx="8.3" cy="22.25" rx="1.05" ry="0.62" fill="#3f3a36" stroke="#292524" stroke-width="0.07" />
+    <path d="M11.25 19.05L11.65 20.05M10.35 18.35L9.75 19.35M12.05 20.2L12.55 21.1" stroke="url(#vmg-spark)" stroke-width="0.26" stroke-linecap="round" opacity="0.8" />
     <path
-      d="M9.5 5.45L12.95 7.45L12.95 11.45L9.5 13.45L6.05 11.45L6.05 7.45L9.5 5.45Z"
-      fill="url(#vmg-gem-main)"
-      stroke="url(#vmg-gem-edge)"
-      stroke-width="0.42"
+      d="M4.05 26.18L5.58 25.86L9.95 12.42L9.38 12.22L3.92 25.65Z"
+      fill="url(#vmg-wood)"
+      stroke="#1a0f0a"
+      stroke-width="0.08"
       stroke-linejoin="round"
     />
-    <path
-      d="M9.5 5.45V13.45M6.05 9.45h6.9M7.35 7.1l4.3 4.7M7.35 11.8l4.3-4.7"
-      stroke="url(#vmg-gem-shade)"
-      stroke-width="0.2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      opacity="0.55"
-    />
-    <path d="M9.5 5.45L7.95 7.45L9.5 8.55L11.05 7.45L9.5 5.45Z" fill="#ecfeff" opacity="0.38" />
-    <path d="M18.42 24.72L20.98 15.08" stroke="#1a0f0a" stroke-width="0.64" stroke-linecap="round" opacity="0.45" fill="none" />
-    <ellipse cx="17.98" cy="24.76" rx="0.37" ry="0.23" transform="rotate(-8 17.98 24.76)" fill="url(#vmg-handle)" stroke="#0a0a0a" stroke-width="0.1" />
-    <path d="M18.35 24.62L20.98 15.08" stroke="#0a0a0a" stroke-width="1.54" stroke-linecap="round" fill="none" />
-    <path d="M18.35 24.62L20.98 15.08" stroke="url(#vmg-handle)" stroke-width="1.22" stroke-linecap="round" fill="none" />
-    <path d="M18.78 22.48L18.98 19.05L19.15 16.65" stroke="#3d2818" stroke-width="0.07" stroke-linecap="round" opacity="0.55" fill="none" />
-    <path d="M18.58 20.95L18.75 17.45" stroke="#3d2818" stroke-width="0.06" stroke-linecap="round" opacity="0.45" fill="none" />
-    <path d="M18.48 24.28L20.38 15.22" stroke="#c9a66c" stroke-width="0.12" stroke-linecap="round" opacity="0.38" fill="none" />
+    <path d="M4.35 25.95L8.85 14.1" stroke="url(#vmg-wood-edge)" stroke-width="0.14" stroke-linecap="round" opacity="0.5" />
+    <path d="M4.85 24.95L5.05 24.35M5.35 23.45L5.55 22.85" stroke="#2d1a12" stroke-width="0.16" stroke-linecap="round" opacity="0.55" />
+    <ellipse cx="4.72" cy="25.38" rx="0.58" ry="0.34" fill="#3d2818" stroke="#0a0a0a" stroke-width="0.09" transform="rotate(-56 4.72 25.38)" />
+    <ellipse cx="4.72" cy="25.38" rx="0.5" ry="0.28" fill="url(#vmg-wood)" stroke="#5c4033" stroke-width="0.05" transform="rotate(-56 4.72 25.38)" />
+    <path fill="#1c1917" d="M9.25 12.05L10.55 12.55L10.35 13.05L9.05 12.55Z" opacity="0.85" />
     <path
       fill="url(#vmg-steel)"
-      stroke="#020617"
-      stroke-width="0.12"
+      stroke="url(#vmg-steel-edge)"
+      stroke-width="0.08"
       stroke-linejoin="round"
-      d="M10.42 8.38C13.55 11.22 16.88 13.38 19.48 14.62C20.22 15.02 20.9 15.26 21.58 15.42C21.88 14.48 22.15 13.52 22.35 12.58C23.72 8.68 25.88 5.18 28.08 2.72C28.48 2.28 28.42 1.68 27.88 1.35C25.32 0.82 22.48 1.95 19.62 3.88C15.82 6.38 12.58 7.96 10.42 8.38Z"
+      d="M9.35 12.35L9.95 12.55L13.35 19.15L12.45 19.55L10.15 13.85L9.35 12.35ZM9.35 12.35L7.05 9.95L7.55 10.85L9.05 12.05L9.35 12.35Z"
     />
-    <path d="M11.15 8.85Q15.85 12.35 20.05 14.75" stroke="#f8fafc" stroke-width="0.1" stroke-linecap="round" opacity="0.5" fill="none" />
-    <path d="M13.85 6.35Q20.5 3.35 24.85 2.55Q26.95 2.15 28.25 2.65" stroke="#cbd5e1" stroke-width="0.08" stroke-linecap="round" opacity="0.44" fill="none" />
-    <path d="M10.55 8.45L10.75 8.62M26.95 1.55L27.15 1.78" stroke="#f1f5f9" stroke-width="0.06" stroke-linecap="round" opacity="0.52" fill="none" />
-    <path d="M20.15 15.05Q21.25 13.75 22.15 15.1" stroke="#475569" stroke-width="0.07" stroke-linecap="round" opacity="0.72" fill="none" />
-    <ellipse cx="20.72" cy="15.02" rx="0.48" ry="0.22" fill="url(#vmg-wood-socket)" stroke="#0a0a0a" stroke-width="0.06" transform="rotate(-26 20.72 15.02)" />
-    <ellipse cx="20.72" cy="15.02" rx="0.58" ry="0.28" fill="none" stroke="url(#vmg-eye-rim)" stroke-width="0.07" transform="rotate(-26 20.72 15.02)" />
+    <path d="M12.1 16.2Q12.85 17.6 13.05 18.95" stroke="#f8fafc" stroke-width="0.09" stroke-linecap="round" opacity="0.35" fill="none" />
+    <path d="M7.55 10.55L8.35 11.35" stroke="#cbd5e1" stroke-width="0.07" stroke-linecap="round" opacity="0.4" />
+    <ellipse cx="9.42" cy="12.38" rx="0.42" ry="0.22" fill="#57534e" stroke="#020617" stroke-width="0.05" transform="rotate(-56 9.42 12.38)" />
+    <ellipse cx="9.42" cy="12.38" rx="0.52" ry="0.26" fill="none" stroke="#94a3b8" stroke-width="0.06" transform="rotate(-56 9.42 12.38)" />
   </g>
 </svg>

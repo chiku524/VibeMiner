@@ -26,13 +26,13 @@ This opens the Tauri window loading `http://localhost:3000`. The web app loads `
 
 Windows (taskbar, title bar, Start menu, shortcuts) and other targets use the files under `src-tauri/icons/` — especially `icon.ico` and `icon.png`. Those are **not** hand-edited; they are generated from the source mark.
 
-Keep `icon-source/splash-app-icon.svg` aligned with the web app mark (`apps/web/public/logo-icon.svg`), then regenerate:
+After running `npm run generate-brand-assets` in `apps/web`, `icon-source/app-icon-1024.png` is updated. Regenerate OS icons:
 
 ```bash
 cd apps/tauri && npm run icons
 ```
 
-Equivalent: `npx @tauri-apps/cli icon icon-source/splash-app-icon.svg` from `apps/tauri`. You can also pass a square PNG (e.g. 1024×1024) instead of the SVG.
+This runs `tauri icon icon-source/app-icon-1024.png`. The legacy `splash-app-icon.svg` is unused for icon generation.
 
 There is no separate system-tray icon in this app; the same bundle icon set is used for the window and OS chrome.
 

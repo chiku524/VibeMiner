@@ -68,10 +68,14 @@ Set `NEXT_PUBLIC_APP_URL` to your production domain (e.g. `https://vibeminer.tec
 
 | Asset | Path | Use |
 |-------|------|-----|
-| Full logo (SVG) | `/logo.svg` | Nav, Footer, print |
-| Icon only (SVG) | `/logo-icon.svg` | Small spaces, favicon source |
-| Favicon | `/icon` (dynamic) | Browser tab, bookmarks |
-| Apple touch icon | `/apple-icon` (dynamic) | iOS home screen |
+| Master source | `public/brand/logo-source.png` | Replace this, then run `npm run generate-brand-assets` in `apps/web` |
+| Transparent mark | `/brand/logo-mark-transparent.png` | UI (`BrandMark` via `src/lib/brand.ts`), SVG wrappers |
+| On dark (opaque bg) | `/brand/logo-mark-on-dark.png` | Light UI / docs where transparency is awkward |
+| Full wordmark (SVG) | `/logo.svg` | Embeds PNG + “VibeMiner” text |
+| Icon wrapper (SVG) | `/logo-icon.svg` | Hotlinks; references the transparent PNG |
+| Favicon | `src/app/icon.png` (generated) | Browser tab (Next file convention) |
+| Apple touch icon | `src/app/apple-icon.png` (generated) | iOS home screen |
+| SEO / JSON-LD PNGs | `/seo/logo-512.png` (etc.) | Crawlers, manifests |
 | OG image | `/opengraph-image` (dynamic) | Social sharing (1200×630) |
 
 ### Brand colors
@@ -82,11 +86,7 @@ Set `NEXT_PUBLIC_APP_URL` to your production domain (e.g. `https://vibeminer.tec
 
 ### Logo mark
 
-The diamond (◇) symbol represents the brand. It appears in:
-
-- Favicon and app icons
-- Open Graph image
-- Nav and Footer (as emoji ◇ + text)
+The mark is a neon PCB-style pickaxe (green → cyan). Raster outputs are produced by `apps/web/scripts/build-brand-assets.cjs` from `logo-source.png`. It appears in nav/footer (`BrandMark`), loaders, favicons, OG, and Tauri icons (`npm run icons` in `apps/tauri`).
 
 ## Cloudflare setup
 
