@@ -5,6 +5,8 @@ mod node;
 mod settings;
 
 use serde::Serialize;
+use std::path::PathBuf;
+use tauri::image::Image;
 use tauri::{Emitter, Manager};
 
 #[derive(Serialize)]
@@ -304,6 +306,17 @@ fn is_node_running(network_id: String, environment: String) -> bool {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .setup(|app| {
+            // Match taskbar / title bar to bundled icons during dev and release (uses same PNG as `tauri icon` output).
+            let icon_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("icons").join("icon.png");
+            if let Ok(icon) = Image::from_path(&icon_path) {
+                let icon = icon.to_owned();
+                if let Some(window) = app.handle().get_webview_window("main") {
+                    let _ = window.set_icon(icon);
+                }
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             get_app_version,
             get_platform,

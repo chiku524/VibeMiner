@@ -1,6 +1,6 @@
 {
   "name": "vibeminer-tauri",
-  "version": "1.0.61",
+  "version": "1.0.62",
   "private": true,
   "description": "VibeMiner desktop app (Tauri 2) — mine for networks that need you.",
   "author": "nico.builds",
@@ -8,6 +8,7 @@
     "dev": "concurrently \"npm run dev:web\" \"wait-on http://localhost:3000 && npm run tauri dev\"",
     "dev:web": "npm run dev -w vibeminer-web",
     "icons": "tauri icon icon-source/app-icon-1024.png",
+    "icons:from-web": "node ../web/scripts/build-brand-assets.cjs && npm run icons",
     "prepare-frontend": "node scripts/prepare-frontend-dist.cjs",
     "tauri": "tauri",
     "build": "npm run prepare-frontend && tauri build",

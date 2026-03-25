@@ -13,6 +13,16 @@ This doc covers the **Tauri 2** desktop shell (`apps/tauri`), GitHub Releases, d
 3. Wait for [`.github/workflows/release-desktop.yml`](../.github/workflows/release-desktop.yml). It syncs the tag into `apps/tauri/src-tauri/tauri.conf.json`, `Cargo.toml`, and `apps/tauri/package.json`, then runs `npm run build -w vibeminer-tauri`.
 4. Confirm the new [GitHub Release](https://github.com/chiku524/VibeMiner/releases) lists the installers.
 
+### App icons (taskbar, installer, shortcuts)
+
+Icons under `apps/tauri/src-tauri/icons/` are generated from `apps/web/public/brand/logo-source.png` via `apps/web/scripts/build-brand-assets.cjs` and `tauri icon`. After changing the source artwork, run from the repo root:
+
+```bash
+npm run desktop:icons
+```
+
+That refreshes web brand PNGs (including `icon-source/app-icon-1024.png`) and regenerates all platform icons (`icon.ico`, `StoreLogo.png`, `Square*.png`, etc.).
+
 ### Production web URL
 
 Release builds run `apps/tauri/scripts/prepare-frontend-dist.cjs`, which creates `apps/web/out/index.html` that opens the live site (default `https://vibeminer.tech`). Override with **`VIBEMINER_APP_URL`** or **`APP_URL`** when building.

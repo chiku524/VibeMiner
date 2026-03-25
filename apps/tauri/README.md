@@ -24,17 +24,30 @@ This opens the Tauri window loading `http://localhost:3000`. The web app loads `
 
 ## Icons
 
-Windows (taskbar, title bar, Start menu, shortcuts) and other targets use the files under `src-tauri/icons/` — especially `icon.ico` and `icon.png`. Those are **not** hand-edited; they are generated from the source mark.
+All **Windows** surfaces (executable, taskbar, window title bar, Start menu, shortcuts, installer/MSIX tiles) use the generated set under `src-tauri/icons/`:
 
-After running `npm run generate-brand-assets` in `apps/web`, `icon-source/app-icon-1024.png` is updated. Regenerate OS icons:
+- **`icon.ico`** — embedded in the `.exe`; layers for 16–256px (taskbar, title bar, Alt+Tab).
+- **`icon.png`** — primary app icon (also applied at runtime to the main window for consistent dev/prod).
+- **`32x32.png` / `64x64.png` / `128x128.png` / `128x128@2x.png`** — listed in `bundle.icon` in `tauri.conf.json`.
+- **`StoreLogo.png`**, **`Square*.png`** — Windows Store / MSIX packaging from `tauri icon`.
+
+Nothing here is hand-edited; it is generated from **`icon-source/app-icon-1024.png`**, which is produced by the web app’s brand pipeline (`apps/web/scripts/build-brand-assets.cjs`).
+
+**One command from repo root** (refresh web brand PNGs, then regenerate all Tauri icons):
 
 ```bash
-cd apps/tauri && npm run icons
+npm run desktop:icons
 ```
 
-This runs `tauri icon icon-source/app-icon-1024.png`. The legacy `splash-app-icon.svg` is unused for icon generation.
+**Or** from `apps/tauri` after updating `apps/web` assets:
 
-There is no separate system-tray icon in this app; the same bundle icon set is used for the window and OS chrome.
+```bash
+npm run icons:from-web
+```
+
+The legacy `splash-app-icon.svg` is not used for icon generation.
+
+**System tray:** this app does not register a tray icon yet. There is no separate tray asset; adding a tray would reuse the same `icons/icon.png` / `icon.ico`.
 
 ## Production build
 
