@@ -3,7 +3,7 @@
 # Asset names match the download API (VibeMiner-Setup-*.exe, *-arm64.dmg, *.AppImage).
 #
 # Optional: code signing / notarization — see docs/DESKTOP_APP.md.
-# In-app updates: optional. Add repo secret TAURI_SIGNING_PRIVATE_KEY = full contents of the minisign .key file (must include BOTH lines: `untrusted comment:` and the base64 line). Paste multiline in GitHub; it must match `plugins.updater.pubkey` in tauri.conf.json. If unset or wrong, builds skip signing; release still publishes installers without latest.json.
+# In-app updates: TAURI_SIGNING_PRIVATE_KEY must be the full minisign .key file (both lines). Must match `plugins.updater.pubkey` in apps/tauri/src-tauri/tauri.conf.json. See docs/DESKTOP_APP.md.
 
 name: Release desktop app
 
@@ -55,8 +55,7 @@ jobs:
         run: npm run build -w vibeminer-tauri
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Uncomment when TAURI_SIGNING_PRIVATE_KEY is the full minisign secret key file (both lines):
-          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -93,7 +92,7 @@ jobs:
         run: npm run build -w vibeminer-tauri
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -141,7 +140,7 @@ jobs:
         run: npm run build -w vibeminer-tauri
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4

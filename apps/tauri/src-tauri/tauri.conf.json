@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "VibeMiner",
-  "version": "1.0.63",
+  "version": "1.0.64",
   "identifier": "com.nicobuilds.vibeminer",
   "build": {
     "beforeDevCommand": "",
@@ -79,7 +79,7 @@
       "open": true
     },
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDdGODgwOERBMTlFRDNGNTkKUldSWlArMFoyZ2lJZjE3amg4N3N1eG1KM2VwRkhDNU1NNWwrOWp4c09qNUYxcFdkMWxUNmltOU4K",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc2QTAwM0JDRDBDNkMyQjkKUldTNXdzYlF2QU9nZHR1d0lCbHM5QW80UVpSMEhWYW04ajdJeEN1NmV4QzM3cUN4V3NlVnJOU0YK",
       "endpoints": [
         "https://github.com/chiku524/VibeMiner/releases/latest/download/latest.json"
       ],

@@ -1,0 +1,3 @@
+# Minisign updater keypair (private key → GitHub secret only; public key lives in tauri.conf.json)
+*.key
+vibeminer-updater.key.pub
