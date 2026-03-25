@@ -1,6 +1,6 @@
-# Build VibeMiner desktop (Tauri 2) for Windows, macOS, and Linux on tag push (v*),
-# then create a GitHub Release with installers. Asset names match the download API
-# (VibeMiner-Setup-*.exe, *-arm64.dmg, *.AppImage).
+# Build VibeMiner desktop (Tauri 2) for Windows, macOS, and Linux when a version tag is pushed (v*),
+# then create a GitHub Release with installers. Does not run on ordinary branch pushes—only new/updated v* tags.
+# Asset names match the download API (VibeMiner-Setup-*.exe, *-arm64.dmg, *.AppImage).
 #
 # Optional: code signing / notarization — see docs/DESKTOP_APP.md.
 
