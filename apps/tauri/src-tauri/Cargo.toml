@@ -1,6 +1,6 @@
 [package]
 name = "vibeminer-tauri"
-version = "1.0.62"
+version = "1.0.63"
 description = "VibeMiner desktop app"
 authors = ["nico.builds"]
 edition = "2021"
@@ -14,8 +14,11 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["image-png"] }
+tauri = { version = "2", features = ["image-png", "image-ico", "tray-icon"] }
 tauri-plugin-shell = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+tauri-plugin-single-instance = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 open = "5"

@@ -5,15 +5,103 @@ mod node;
 mod settings;
 
 use serde::Serialize;
+use serde_json::json;
 use std::path::PathBuf;
 use tauri::image::Image;
-use tauri::{Emitter, Manager};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::{AppHandle, Emitter, Manager, RunEvent, WindowEvent};
+use tauri_plugin_updater::UpdaterExt;
 
 #[derive(Serialize)]
 struct UpdateInfo {
     latest_version: String,
     release_page_url: String,
     direct_download_url: String,
+}
+
+fn load_tray_icon() -> tauri::image::Image<'static> {
+    #[cfg(windows)]
+    {
+        tauri::image::Image::from_bytes(include_bytes!("../icons/icon.ico"))
+            .expect("icons/icon.ico must decode for system tray")
+    }
+    #[cfg(target_os = "macos")]
+    {
+        tauri::image::Image::from_bytes(include_bytes!("../icons/128x128.png"))
+            .expect("icons/128x128.png must decode for system tray")
+    }
+    #[cfg(all(not(windows), not(target_os = "macos")))]
+    {
+        tauri::image::Image::from_bytes(include_bytes!("../icons/32x32.png"))
+            .expect("icons/32x32.png must decode for system tray")
+    }
+}
+
+fn show_and_focus_main(app: &AppHandle) {
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.unminimize();
+        let _ = w.show();
+        let _ = w.set_focus();
+    }
+}
+
+fn create_tray(app: &AppHandle) -> tauri::Result<()> {
+    let icon = load_tray_icon();
+    let show_i = MenuItem::with_id(app, "show", "Show VibeMiner", true, None::<&str>)?;
+    let sep = PredefinedMenuItem::separator(app)?;
+    let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&show_i, &sep, &quit_i])?;
+
+    let _ = TrayIconBuilder::with_id("main-tray")
+        .icon(icon)
+        .tooltip("VibeMiner")
+        .menu(&menu)
+        .show_menu_on_left_click(false)
+        .on_menu_event(|app, event| match event.id.as_ref() {
+            "show" => show_and_focus_main(app),
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                show_and_focus_main(tray.app_handle());
+            }
+        })
+        .build(app);
+
+    Ok(())
+}
+
+fn attach_window_close_handlers(app: &tauri::App) -> tauri::Result<()> {
+    if let Some(main) = app.get_webview_window("main") {
+        let handle = app.handle().clone();
+        main.on_window_event(move |event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                if let Some(w) = handle.get_webview_window("main") {
+                    let _ = w.hide();
+                }
+            }
+        });
+    }
+
+    if let Some(splash) = app.get_webview_window("splashscreen") {
+        let handle = app.handle().clone();
+        splash.on_window_event(move |event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = handle.exit(0);
+            }
+        });
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -63,44 +151,27 @@ fn open_external(url: String) -> Result<(), String> {
 
 #[tauri::command]
 async fn check_for_updates(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    let current = app.package_info().version.to_string();
-    let client = reqwest::Client::builder()
-        .user_agent("VibeMiner/1.0")
-        .build()
-        .map_err(|e| e.to_string())?;
-    let res = client
-        .get("https://api.github.com/repos/chiku524/VibeMiner/releases/latest")
-        .header("Accept", "application/vnd.github.v3+json")
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
-    let json: serde_json::Value = res.json().await.map_err(|e| e.to_string())?;
-    let tag = json
-        .get("tag_name")
-        .and_then(|t| t.as_str())
-        .unwrap_or("")
-        .trim_start_matches('v');
-    let newer = tag
-        .split('.')
-        .zip(current.split('.'))
-        .find(|(a, b)| a.parse::<u32>().unwrap_or(0) > b.parse::<u32>().unwrap_or(0))
-        .is_some();
-    let (_os, ext) = if std::env::consts::OS == "windows" {
-        ("win", "VibeMiner-Setup-latest.exe")
-    } else if std::env::consts::OS == "macos" {
-        ("macos", "VibeMiner-latest-arm64.dmg")
-    } else {
-        ("linux", "VibeMiner-latest.AppImage")
-    };
-    let base = "https://github.com/chiku524/VibeMiner/releases/latest/download";
-    let direct = format!("{}/{}", base, ext);
-    Ok(serde_json::json!({
-        "updateAvailable": newer && !tag.is_empty(),
-        "latestVersion": if tag.is_empty() { serde_json::Value::Null } else { serde_json::json!(tag) },
-        "releasePageUrl": "https://github.com/chiku524/VibeMiner/releases/latest",
-        "directDownloadUrl": direct,
-        "error": false
-    }))
+    match app.updater().map_err(|e| e.to_string())?.check().await {
+        Ok(Some(update)) => Ok(json!({
+            "updateAvailable": true,
+            "latestVersion": update.version,
+            "releasePageUrl": "https://github.com/chiku524/VibeMiner/releases/latest",
+            "directDownloadUrl": update.download_url.to_string(),
+            "error": false
+        })),
+        Ok(None) => Ok(json!({
+            "updateAvailable": false,
+            "latestVersion": serde_json::Value::Null,
+            "releasePageUrl": "https://github.com/chiku524/VibeMiner/releases/latest",
+            "directDownloadUrl": serde_json::Value::Null,
+            "error": false
+        })),
+        Err(e) => Ok(json!({
+            "updateAvailable": false,
+            "error": true,
+            "message": e.to_string()
+        })),
+    }
 }
 
 #[tauri::command]
@@ -114,13 +185,65 @@ fn get_update_available_info() -> Option<UpdateInfo> {
 }
 
 #[tauri::command]
-async fn quit_and_install() -> Result<(), String> {
-    Err("Not implemented".into())
+fn quit_and_install(app: tauri::AppHandle) -> Result<(), String> {
+    app.request_restart();
+    Ok(())
 }
 
 #[tauri::command]
-async fn install_update_now() -> Result<serde_json::Value, String> {
-    Err("Not implemented".into())
+async fn install_update_now(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let Some(update) = app
+        .updater()
+        .map_err(|e| e.to_string())?
+        .check()
+        .await
+        .map_err(|e| e.to_string())?
+    else {
+        return Ok(json!({ "ok": false, "error": "No update available" }));
+    };
+
+    let emit = app.clone();
+    update
+        .download_and_install(
+            move |chunk_len, content_len| {
+                let _ = emit.emit(
+                    "desktop-update-progress",
+                    json!({
+                        "phase": "downloading",
+                        "chunkLen": chunk_len,
+                        "contentLen": content_len
+                    }),
+                );
+            },
+            {
+                let fin = app.clone();
+                move || {
+                    let _ = fin.emit(
+                        "desktop-update-progress",
+                        json!({ "phase": "installing" }),
+                    );
+                }
+            },
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+
+    app.request_restart();
+    Ok(json!({ "ok": true }))
+}
+
+#[tauri::command]
+async fn close_splash_and_show_main(app: tauri::AppHandle) -> Result<(), String> {
+    let splash = app
+        .get_webview_window("splashscreen")
+        .ok_or_else(|| "splash window not found".to_string())?;
+    let main_win = app
+        .get_webview_window("main")
+        .ok_or_else(|| "main window not found".to_string())?;
+    splash.destroy().map_err(|e| e.to_string())?;
+    main_win.show().map_err(|e| e.to_string())?;
+    main_win.set_focus().map_err(|e| e.to_string())?;
+    Ok(())
 }
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -304,19 +427,10 @@ fn is_node_running(network_id: String, environment: String) -> bool {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .setup(|app| {
-            // Match taskbar / title bar to bundled icons during dev and release (uses same PNG as `tauri icon` output).
-            let icon_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("icons").join("icon.png");
-            if let Ok(icon) = Image::from_path(&icon_path) {
-                let icon = icon.to_owned();
-                if let Some(window) = app.handle().get_webview_window("main") {
-                    let _ = window.set_icon(icon);
-                }
-            }
-            Ok(())
-        })
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .invoke_handler(tauri::generate_handler![
             get_app_version,
             get_platform,
@@ -329,6 +443,7 @@ pub fn run() {
             get_update_available_info,
             quit_and_install,
             install_update_now,
+            close_splash_and_show_main,
             start_real_mining,
             stop_real_mining,
             get_real_mining_stats,
@@ -337,7 +452,38 @@ pub fn run() {
             stop_node,
             get_node_status,
             is_node_running,
-        ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        ]);
+
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            show_and_focus_main(app);
+        }));
+    }
+
+    let app = builder
+        .setup(|app| {
+            create_tray(app.handle())?;
+            attach_window_close_handlers(app)?;
+            let icon_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("icons").join("icon.png");
+            if let Ok(icon) = Image::from_path(&icon_path) {
+                let icon = icon.to_owned();
+                for label in ["main", "splashscreen"] {
+                    if let Some(window) = app.handle().get_webview_window(label) {
+                        let _ = window.set_icon(icon.clone());
+                    }
+                }
+            }
+            Ok(())
+        })
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|_app_handle, event| {
+        if let RunEvent::ExitRequested { api, code, .. } = event {
+            if code.is_none() {
+                api.prevent_exit();
+            }
+        }
+    });
 }

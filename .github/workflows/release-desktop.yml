@@ -3,6 +3,7 @@
 # Asset names match the download API (VibeMiner-Setup-*.exe, *-arm64.dmg, *.AppImage).
 #
 # Optional: code signing / notarization — see docs/DESKTOP_APP.md.
+# In-app updates: set repository secret TAURI_SIGNING_PRIVATE_KEY (minisign) to match `plugins.updater.pubkey` in apps/tauri/src-tauri/tauri.conf.json.
 
 name: Release desktop app
 
@@ -54,6 +55,7 @@ jobs:
         run: npm run build -w vibeminer-tauri
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -61,6 +63,7 @@ jobs:
           name: desktop-windows
           path: |
             apps/tauri/src-tauri/target/release/bundle/**/*.exe
+            apps/tauri/src-tauri/target/release/bundle/**/*.sig
 
   build-macos:
     runs-on: macos-latest
@@ -89,6 +92,7 @@ jobs:
         run: npm run build -w vibeminer-tauri
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -99,6 +103,8 @@ jobs:
           name: desktop-macos
           path: |
             apps/tauri/src-tauri/target/release/bundle/**/*.dmg
+            apps/tauri/src-tauri/target/release/bundle/**/*.app.tar.gz
+            apps/tauri/src-tauri/target/release/bundle/**/*.sig
 
   build-linux:
     runs-on: ubuntu-22.04
@@ -134,6 +140,7 @@ jobs:
         run: npm run build -w vibeminer-tauri
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
@@ -141,6 +148,7 @@ jobs:
           name: desktop-linux
           path: |
             apps/tauri/src-tauri/target/release/bundle/**/*.AppImage
+            apps/tauri/src-tauri/target/release/bundle/**/*.sig
 
   release:
     needs: [build-windows, build-macos, build-linux]
@@ -172,26 +180,44 @@ jobs:
           echo "Windows: $win_exe"
           cp "$win_exe" "VibeMiner-Setup-latest.exe"
           cp "$win_exe" "VibeMiner-Setup-${VER}.exe"
+          if [ -f "${win_exe}.sig" ]; then cp "${win_exe}.sig" "VibeMiner-Setup-latest.exe.sig"; fi
 
           dmg=$(find . -type f -name "*.dmg" | head -1)
           if [ -z "$dmg" ]; then echo "No macOS .dmg found"; exit 1; fi
-          echo "macOS: $dmg"
+          echo "macOS dmg: $dmg"
           cp "$dmg" "VibeMiner-latest-arm64.dmg"
           cp "$dmg" "VibeMiner-${VER}-arm64.dmg"
+
+          app_tgz=$(find . -type f -name "*.app.tar.gz" | head -1)
+          if [ -z "$app_tgz" ]; then echo "No macOS .app.tar.gz (updater bundle) found"; exit 1; fi
+          echo "macOS updater: $app_tgz"
+          cp "$app_tgz" "VibeMiner-latest-aarch64.app.tar.gz"
+          if [ -f "${app_tgz}.sig" ]; then cp "${app_tgz}.sig" "VibeMiner-latest-aarch64.app.tar.gz.sig"; fi
 
           appimg=$(find . -type f -name "*.AppImage" | head -1)
           if [ -z "$appimg" ]; then echo "No Linux .AppImage found"; exit 1; fi
           echo "Linux: $appimg"
           cp "$appimg" "VibeMiner-latest.AppImage"
           cp "$appimg" "VibeMiner-${VER}.AppImage"
+          if [ -f "${appimg}.sig" ]; then cp "${appimg}.sig" "VibeMiner-latest.AppImage.sig"; fi
 
           ls -la
           test -f "VibeMiner-Setup-latest.exe"
           test -f "VibeMiner-Setup-${VER}.exe"
           test -f "VibeMiner-latest-arm64.dmg"
           test -f "VibeMiner-${VER}-arm64.dmg"
+          test -f "VibeMiner-latest-aarch64.app.tar.gz"
           test -f "VibeMiner-latest.AppImage"
           test -f "VibeMiner-${VER}.AppImage"
+
+      - name: Generate updater latest.json
+        env:
+          VERSION: ${{ env.RELEASE_TAG }}
+        run: |
+          set -e
+          VER="${VERSION#v}"
+          node .github/scripts/generate-updater-latest.mjs artifacts "$VER" chiku524/VibeMiner "$VERSION"
+          test -f artifacts/latest.json
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

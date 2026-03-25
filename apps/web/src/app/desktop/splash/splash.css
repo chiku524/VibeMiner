@@ -1,0 +1,102 @@
+/* Desktop splash — frameless intro before main window (see dice.express / bountyhub pattern) */
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #0a0a0f;
+  overflow: hidden;
+}
+
+.splash-screen__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+}
+
+.splash-screen__symbol {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    rgba(34, 211, 238, 0.22) 0%,
+    rgba(16, 185, 129, 0.18) 100%
+  );
+  border-radius: 1.25rem;
+  animation: splashSymbolFade 0.8s ease-out;
+}
+
+@keyframes splashSymbolFade {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.splash-screen__name {
+  margin-top: 1rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #22d3ee, #34d399);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: splashNameFade 0.6s ease-out 0.15s both;
+}
+
+@keyframes splashNameFade {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.splash-screen__tagline {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  animation: splashTaglineFade 0.5s ease-out 0.3s both;
+}
+
+.splash-screen__loader {
+  margin-top: 1.75rem;
+  animation: splashLoaderFade 0.45s ease-out 0.2s both;
+}
+
+@keyframes splashLoaderFade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes splashTaglineFade {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

@@ -7,18 +7,36 @@ import { MiningLoader } from '@/components/ui/MiningLoader';
 type UpdatePhase = 'downloading' | 'installing';
 
 /**
- * Shows an in-app overlay during update download/install so we don't open a separate
- * popup window. Listens for main process update-progress and displays a themed
- * "Downloading…" / "Installing…" overlay in the main window (industry standard).
+ * Overlay during update download/install from Settings → "Update now" (Rust emits
+ * `desktop-update-progress`). Falls back to desktop-bridge stub when not in Tauri.
  */
 export function DesktopUpdateOverlay() {
   const [phase, setPhase] = useState<UpdatePhase | null>(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.desktopAPI?.isDesktop || !window.desktopAPI?.onUpdateProgress) return;
-    const cleanup = window.desktopAPI.onUpdateProgress((payload) => setPhase(payload.phase));
+    if (typeof window === 'undefined' || !window.desktopAPI?.isDesktop) return;
+
+    let unlisten: (() => void) | undefined;
+
+    (async () => {
+      if (typeof window !== 'undefined' && window.__TAURI__) {
+        try {
+          const { listen } = await import('@tauri-apps/api/event');
+          unlisten = await listen<{ phase?: string }>('desktop-update-progress', (e) => {
+            const p = e.payload?.phase;
+            if (p === 'downloading' || p === 'installing') setPhase(p);
+          });
+        } catch {
+          /* ignore */
+        }
+      } else if (window.desktopAPI?.onUpdateProgress) {
+        const cleanup = window.desktopAPI.onUpdateProgress((payload) => setPhase(payload.phase));
+        unlisten = typeof cleanup === 'function' ? cleanup : undefined;
+      }
+    })();
+
     return () => {
-      if (typeof cleanup === 'function') cleanup();
+      if (unlisten) unlisten();
     };
   }, []);
 

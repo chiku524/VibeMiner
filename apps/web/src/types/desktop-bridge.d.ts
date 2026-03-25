@@ -13,6 +13,10 @@ type DesktopUpdateAvailableInfo = {
 
 declare global {
   interface Window {
+    /** Injected when running inside Tauri (`withGlobalTauri`). */
+    __TAURI__?: {
+      core?: { invoke: (cmd: string, args?: Record<string, unknown>) => Promise<unknown> };
+    };
     /** Tauri desktop shell: IPC surface for settings, mining, nodes, updates. */
     desktopAPI?: {
       isDesktop?: boolean;

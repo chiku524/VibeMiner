@@ -1,6 +1,6 @@
 {
   "name": "vibeminer-web",
-  "version": "1.0.62",
+  "version": "1.0.63",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -16,6 +16,9 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-process": "^2",
+    "@tauri-apps/plugin-updater": "^2",
     "@opennextjs/cloudflare": "^1.0.0",
     "@vibeminer/shared": "*",
     "framer-motion": "^11.0.0",
