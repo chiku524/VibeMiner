@@ -16,39 +16,69 @@ const PHASE = {
 
 type Phase = (typeof PHASE)[keyof typeof PHASE];
 
+function hasTauriRuntime(): boolean {
+  return typeof window !== 'undefined' && typeof window.__TAURI__ !== 'undefined';
+}
+
 /**
  * Frameless splash window: intro animation → optional in-app update (Tauri updater) → main window.
+ * Uses @tauri-apps/api/core invoke (same as BountyHub) so close works even if __TAURI__ attached late.
  */
 export default function DesktopSplashPage() {
   const [phase, setPhase] = useState<Phase>(PHASE.INTRO);
   const [introDone, setIntroDone] = useState(false);
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+  const [inTauriShell, setInTauriShell] = useState(false);
   const cancelledRef = useRef(false);
 
-  const isTauri = typeof window !== 'undefined' && Boolean(window.__TAURI__);
-
   useEffect(() => {
-    if (!isTauri) {
-      setIntroDone(true);
+    if (typeof window === 'undefined') return;
+
+    if (hasTauriRuntime()) {
+      setInTauriShell(true);
       return;
     }
-    const t = setTimeout(() => setIntroDone(true), 1800);
-    return () => clearTimeout(t);
-  }, [isTauri]);
+
+    const onReady = () => setInTauriShell(true);
+    window.addEventListener('vibeminer-tauri-ready', onReady);
+
+    const t = window.setTimeout(() => {
+      if (!hasTauriRuntime()) {
+        setIntroDone(true);
+      }
+    }, 500);
+
+    return () => {
+      window.removeEventListener('vibeminer-tauri-ready', onReady);
+      window.clearTimeout(t);
+    };
+  }, []);
 
   useEffect(() => {
-    if (!introDone || !isTauri) return;
+    if (!inTauriShell) return;
+    const t = setTimeout(() => setIntroDone(true), 1800);
+    return () => clearTimeout(t);
+  }, [inTauriShell]);
+
+  useEffect(() => {
+    if (!introDone) return;
 
     cancelledRef.current = false;
 
     const closeSplash = async () => {
-      const tauri = window.__TAURI__;
-      if (tauri?.core?.invoke) {
-        await tauri.core.invoke('close_splash_and_show_main').catch(() => {});
+      try {
+        const { invoke } = await import('@tauri-apps/api/core');
+        await invoke('close_splash_and_show_main');
+      } catch {
+        void 0;
       }
     };
 
     const run = async () => {
+      if (!hasTauriRuntime() && !window.desktopAPI?.isDesktop) {
+        return;
+      }
+
       setPhase(PHASE.CHECKING);
 
       let autoUpdate = true;
@@ -94,17 +124,17 @@ export default function DesktopSplashPage() {
       await closeSplash();
     };
 
-    run();
+    void run();
     return () => {
       cancelledRef.current = true;
     };
-  }, [introDone, isTauri]);
+  }, [introDone]);
 
   const showUpdateOverlay = phase === PHASE.DOWNLOADING || phase === PHASE.INSTALLING;
 
   return (
     <>
-      <div className="splash-screen">
+      <div className="splash-screen splash-screen--intro">
         <div className="splash-screen__content">
           <div className="splash-screen__symbol" aria-hidden>
             <BrandMark className="h-[72px] w-[72px]" />
