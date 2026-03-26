@@ -62,7 +62,7 @@ export function DownloadPageContent({ initialDownloads, githubReleasesUrl }: Dow
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
       <Nav />
-      <div className={`mx-auto max-w-2xl px-4 sm:px-6 ${isDesktop ? 'pt-14 pb-16' : 'py-16'}`}>
+      <div className={`mx-auto w-full min-w-0 max-w-2xl px-4 sm:px-6 ${isDesktop ? 'pt-14 pb-16' : 'py-16'}`}>
         <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: 'Download' }]} />
         <motion.div
           initial={{ opacity: 0, y: 12 }}

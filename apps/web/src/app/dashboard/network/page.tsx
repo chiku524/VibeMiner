@@ -96,7 +96,7 @@ export default function NetworkDashboardPage() {
         </header>
       )}
 
-      <div className={`mx-auto max-w-6xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pt-6 pb-8'}`}>
+      <div className={`mx-auto w-full min-w-0 max-w-6xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pt-6 pb-8'}`}>
         <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: 'Network dashboard' }]} />
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -108,15 +108,16 @@ export default function NetworkDashboardPage() {
             Statistics and metrics for your network presence. Request new listings or manage existing ones.
           </p>
           {profile?.network_name && (
-            <div className="mt-3 flex items-center gap-2 text-sm">
-              <Globe className="h-4 w-4 text-gray-500" />
-              <span className="text-gray-400">{profile.network_name}</span>
+            <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+              <Globe className="h-4 w-4 shrink-0 text-gray-500" />
+              <span className="min-w-0 break-words text-gray-400">{profile.network_name}</span>
               {profile.network_website && (
                 <a
                   href={profile.network_website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-accent-cyan hover:underline"
+                  className="min-w-0 max-w-full truncate text-accent-cyan hover:underline sm:max-w-md"
+                  title={profile.network_website}
                 >
                   {profile.network_website.replace(/^https?:\/\//, '')}
                 </a>
@@ -136,12 +137,12 @@ export default function NetworkDashboardPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="flex items-center gap-4 rounded-xl border border-white/10 bg-surface-900/50 p-5"
+            className="flex min-w-0 items-center gap-4 rounded-xl border border-white/10 bg-surface-900/50 p-5"
           >
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-accent-cyan/20 text-accent-cyan">
               <BarChart3 className="h-6 w-6" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm text-gray-500">Total listings</p>
               <p className="font-mono text-2xl font-semibold text-white">{total}</p>
             </div>
@@ -150,12 +151,12 @@ export default function NetworkDashboardPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="flex items-center gap-4 rounded-xl border border-white/10 bg-surface-900/50 p-5"
+            className="flex min-w-0 items-center gap-4 rounded-xl border border-white/10 bg-surface-900/50 p-5"
           >
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
               <Network className="h-6 w-6" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm text-gray-500">Mainnet</p>
               <p className="font-mono text-2xl font-semibold text-white">{mainnet.length}</p>
             </div>
@@ -164,12 +165,12 @@ export default function NetworkDashboardPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="flex items-center gap-4 rounded-xl border border-white/10 bg-surface-900/50 p-5"
+            className="flex min-w-0 items-center gap-4 rounded-xl border border-white/10 bg-surface-900/50 p-5"
           >
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-violet-500/20 text-violet-400">
               <Layers className="h-6 w-6" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm text-gray-500">Devnet</p>
               <p className="font-mono text-2xl font-semibold text-white">{devnet.length}</p>
             </div>
@@ -178,12 +179,12 @@ export default function NetworkDashboardPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="flex items-center gap-4 rounded-xl border border-white/10 bg-surface-900/50 p-5"
+            className="flex min-w-0 items-center gap-4 rounded-xl border border-white/10 bg-surface-900/50 p-5"
           >
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-400">
               <BarChart3 className="h-6 w-6" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm text-gray-500">Live</p>
               <p className="font-mono text-2xl font-semibold text-white">{live.length}</p>
             </div>

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { BlockchainNetwork } from '@vibeminer/shared';
 import { INCENTIVIZED_TESTNET_IDS, getResourceTier, RESOURCE_TIER_LABELS, RESOURCE_TIER_DESCRIPTIONS, hasNodeConfig } from '@vibeminer/shared';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useToast } from '@/contexts/ToastContext';
 
 interface NetworkModalProps {
   network: BlockchainNetwork | null;
@@ -24,6 +25,7 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const isDesktop = useIsDesktop();
+  const { addToast } = useToast();
   const [nodeRunning, setNodeRunning] = useState(false);
   const [nodeStarting, setNodeStarting] = useState(false);
   const [nodeStatus, setNodeStatus] = useState<string | null>(null);
@@ -102,15 +104,20 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
           exit={{ opacity: 0, scale: reduced ? 1 : 0.95 }}
           transition={{ duration: reduced ? 0 : 0.2 }}
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-lg rounded-2xl border border-white/10 bg-surface-900 p-6 shadow-xl"
+          className="w-full max-w-lg max-h-[min(90dvh,720px)] overflow-y-auto rounded-2xl border border-white/10 bg-surface-900 p-4 shadow-xl sm:p-6"
         >
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/10 text-3xl">
+          <div className="flex min-w-0 items-start justify-between gap-4">
+            <div className="flex min-w-0 flex-1 items-start gap-4">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/10 text-3xl">
                 {network.icon}
               </span>
-              <div>
-                <h2 id="network-modal-title" className="font-display text-xl font-semibold text-white">{network.name}</h2>
+              <div className="min-w-0 flex-1">
+                <h2
+                  id="network-modal-title"
+                  className="font-display break-words text-xl font-semibold text-white"
+                >
+                  {network.name}
+                </h2>
                 <p className="text-sm text-gray-500">{network.symbol} · {network.algorithm}</p>
                 <span
                   className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -144,7 +151,7 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
               ref={closeButtonRef}
               type="button"
               onClick={onClose}
-              className="rounded-lg p-2 text-gray-400 transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-accent-cyan focus:ring-offset-2 focus:ring-offset-surface-900"
+              className="shrink-0 rounded-lg p-2 text-gray-400 transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-accent-cyan focus:ring-offset-2 focus:ring-offset-surface-900"
               aria-label="Close modal"
             >
               <span aria-hidden="true">✕</span>
@@ -155,7 +162,10 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
             {network.poolUrl && (
               <div>
                 <span className="text-gray-500">Pool</span>
-                <p className="font-mono text-white">{network.poolUrl}{network.poolPort ? `:${network.poolPort}` : ''}</p>
+                <p className="break-all font-mono text-white">
+                  {network.poolUrl}
+                  {network.poolPort ? `:${network.poolPort}` : ''}
+                </p>
               </div>
             )}
             {network.rewardRate && (
@@ -223,7 +233,10 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                       type="button"
                       disabled={nodeStarting}
                       onClick={async () => {
-                        if (!window.desktopAPI?.startNode) return;
+                        if (!window.desktopAPI?.startNode) {
+                          addToast('Desktop bridge not ready. Close this window and try again, or restart the app.', 'error');
+                          return;
+                        }
                         setNodeStarting(true);
                         try {
                           const result = await window.desktopAPI.startNode({
@@ -235,8 +248,19 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                               nodeBinarySha256: network.nodeBinarySha256,
                             },
                           });
-                          if (result.ok) setNodeRunning(true);
-                          else alert(result.error);
+                          if (result && typeof result === 'object' && 'ok' in result && result.ok) {
+                            setNodeRunning(true);
+                            addToast(`${network.name} node started`);
+                          } else {
+                            const err =
+                              result && typeof result === 'object' && 'error' in result && typeof result.error === 'string'
+                                ? result.error
+                                : 'Could not start node';
+                            addToast(err, 'error');
+                          }
+                        } catch (e) {
+                          const msg = e instanceof Error ? e.message : String(e);
+                          addToast(msg || 'Could not start node', 'error');
                         } finally {
                           setNodeStarting(false);
                         }

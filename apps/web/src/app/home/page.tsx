@@ -82,7 +82,7 @@ export default function HomePage() {
         </header>
       )}
 
-      <div className={`mx-auto max-w-2xl px-4 py-8 sm:px-6 ${!isDesktop ? 'pt-14' : 'pt-6'}`}>
+      <div className={`mx-auto w-full min-w-0 max-w-2xl px-4 py-8 sm:px-6 ${!isDesktop ? 'pt-14' : 'pt-6'}`}>
         <Breadcrumbs crumbs={[{ label: 'Home' }]} />
         <motion.div
           initial={{ opacity: 0, y: 8 }}

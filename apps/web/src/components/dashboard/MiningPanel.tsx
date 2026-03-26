@@ -132,17 +132,17 @@ export function MiningPanel({ session, network, onStop, compact = false }: Minin
       className="overflow-hidden rounded-2xl border border-accent-cyan/20 bg-surface-900/50 mining-glow"
     >
       <div className="border-b border-white/5 bg-surface-850/80 px-5 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">{network.icon}</span>
-            <div>
-              <h2 className="font-display text-lg font-semibold text-white">
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <span className="shrink-0 text-2xl">{network.icon}</span>
+            <div className="min-w-0">
+              <h2 className="font-display truncate text-lg font-semibold text-white">
                 Mining {network.name}
               </h2>
-              <p className="text-sm text-gray-500">{network.symbol} · {network.algorithm}</p>
+              <p className="truncate text-sm text-gray-500">{network.symbol} · {network.algorithm}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             {network.environment === 'devnet' && (
               <span className="rounded bg-violet-500/20 px-2 py-0.5 text-xs font-medium text-violet-300">
                 Devnet

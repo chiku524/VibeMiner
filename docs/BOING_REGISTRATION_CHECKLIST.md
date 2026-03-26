@@ -71,6 +71,7 @@ Use this checklist to onboard Boing Network via VibeMiner's Request listing form
 | "Node config validation failed" | Ensure download URL is from github.com (or another allowed host) |
 | "Command contains disallowed characters" | Avoid `;&|$\`<>()` in the command template. Use `{dataDir}` or `{data_dir}` for the data path. |
 | Duplicate / conflict | If Boing is already in the static list, the registered version overrides it |
+| **Run node** does nothing / no message | Use **network id `boing-devnet`** on the listing so it **replaces** the static Boing devnet row and carries your node URL + command template. A different id creates a second row without merging. The app now shows **toasts** for IPC errors (e.g. wrong SHA256, missing binary on Windows — use `boing-node` or `boing-node.exe` in the zip). |
 
 ## URL Allowlist
 

@@ -146,8 +146,8 @@ export function DesktopAppSettings() {
           </div>
         </div>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-sm font-medium text-white">Desktop app settings</p>
           <p className="text-xs text-gray-500">
             {version ? `VibeMiner ${version}` : 'VibeMiner desktop'} · Update check on startup and every 4 hours; install when you quit the app.

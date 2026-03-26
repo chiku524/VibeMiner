@@ -61,8 +61,8 @@ function NetworkCard({ network, isNew, requestServiceHref = '/#request-service' 
             {network.icon}
           </span>
           <div className="min-w-0 flex-1">
-            <h3 className="font-display font-semibold text-white flex items-center gap-2 truncate">
-              {network.name}
+            <h3 className="font-display flex min-w-0 items-center gap-2 font-semibold text-white">
+              <span className="min-w-0 truncate">{network.name}</span>
               {isNew && (
                 <span className="shrink-0 rounded bg-accent-cyan/20 px-1.5 py-0.5 text-xs font-medium text-accent-cyan">
                   New

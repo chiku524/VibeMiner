@@ -43,7 +43,7 @@ export function HowMiningWorksContent() {
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
       <Nav />
-      <div className={`mx-auto max-w-3xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 py-16' : 'py-12'}`}>
+      <div className={`mx-auto w-full min-w-0 max-w-3xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 py-16' : 'py-12'}`}>
         <Breadcrumbs
           crumbs={[
             { label: 'Home', href: homeHref },

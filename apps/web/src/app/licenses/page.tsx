@@ -25,7 +25,7 @@ export default function LicensesPage() {
       )}
 
       <main className={`min-h-screen bg-surface-950 bg-grid ${hasChecked && !isDesktop ? 'pt-14' : 'pt-6'}`}>
-        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+        <div className="mx-auto w-full min-w-0 max-w-3xl px-4 py-8 sm:px-6">
           <Breadcrumbs
             crumbs={[
               { label: 'Home', href: '/home' },

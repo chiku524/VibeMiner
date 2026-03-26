@@ -133,6 +133,73 @@ pub fn ensure_node_ready(
     Ok((bin_dir, data_dir))
 }
 
+/// Quote paths that contain whitespace so a single shell-style token survives splitting.
+fn quote_path_token(path: &str) -> String {
+    if path.chars().any(|c| c.is_whitespace()) {
+        format!("\"{}\"", path.replace('"', ""))
+    } else {
+        path.to_string()
+    }
+}
+
+/// Split a command line respecting double-quoted segments (paths with spaces).
+fn split_command_args(input: &str) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    let mut current = String::new();
+    let mut in_quotes = false;
+    for ch in input.chars() {
+        match ch {
+            '"' => in_quotes = !in_quotes,
+            w if w.is_whitespace() && !in_quotes => {
+                if !current.is_empty() {
+                    out.push(unquote_token(&current));
+                    current.clear();
+                }
+            }
+            c => current.push(c),
+        }
+    }
+    if !current.is_empty() {
+        out.push(unquote_token(&current));
+    }
+    out
+}
+
+fn unquote_token(s: &str) -> String {
+    let t = s.trim();
+    if t.len() >= 2 && t.starts_with('"') && t.ends_with('"') {
+        t[1..t.len() - 1].to_string()
+    } else {
+        t.to_string()
+    }
+}
+
+fn resolve_node_executable(bin_dir: &Path, exe_token: &str) -> Result<std::path::PathBuf, String> {
+    let clean = unquote_token(exe_token);
+    let p = if Path::new(&clean).is_absolute() {
+        std::path::PathBuf::from(&clean)
+    } else {
+        bin_dir.join(&clean)
+    };
+    if p.exists() {
+        return Ok(p);
+    }
+    #[cfg(windows)]
+    {
+        if !clean.ends_with(".exe") {
+            let with_exe = bin_dir.join(format!("{clean}.exe"));
+            if with_exe.exists() {
+                return Ok(with_exe);
+            }
+        }
+    }
+    Err(format!(
+        "Node binary not found: {} (searched under {})",
+        clean,
+        bin_dir.display()
+    ))
+}
+
 pub fn start_node(
     network_id: String,
     environment: String,
@@ -150,25 +217,20 @@ pub fn start_node(
 
     let data_dir_str = data_dir.to_string_lossy();
     let node_dir_bin = bin_dir.to_string_lossy();
+    let dd = quote_path_token(&data_dir_str);
+    let nd = quote_path_token(&node_dir_bin);
     let cmd_str = node_command_template
-        .replace("{dataDir}", &data_dir_str)
-        .replace("{dataDirPath}", &data_dir_str)
-        .replace("{data_dir}", &data_dir_str)
-        .replace("{data_dir_path}", &data_dir_str)
-        .replace("{nodeDir}", &node_dir_bin)
+        .replace("{dataDir}", &dd)
+        .replace("{dataDirPath}", &dd)
+        .replace("{data_dir}", &dd)
+        .replace("{data_dir_path}", &dd)
+        .replace("{nodeDir}", &nd)
         .trim()
         .to_string();
-    let parts: Vec<&str> = cmd_str.split_whitespace().collect();
-    let exe = parts.get(0).ok_or("Empty command template")?;
-    let args: Vec<String> = parts.iter().skip(1).map(|s| (*s).to_string()).collect();
-    let exe_path = if Path::new(exe).is_absolute() {
-        Path::new(exe).to_path_buf()
-    } else {
-        bin_dir.join(exe)
-    };
-    if !exe_path.exists() {
-        return Err(format!("Node binary not found: {}", exe_path.display()));
-    }
+    let parts = split_command_args(&cmd_str);
+    let exe = parts.first().ok_or("Empty command template")?;
+    let args: Vec<String> = parts.iter().skip(1).cloned().collect();
+    let exe_path = resolve_node_executable(bin_dir, exe)?;
     let cwd = exe_path.parent().ok_or("Invalid path")?;
     let child = Command::new(&exe_path)
         .args(&args)

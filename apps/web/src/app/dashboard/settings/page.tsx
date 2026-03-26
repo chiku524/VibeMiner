@@ -87,7 +87,7 @@ export default function SettingsPage() {
         </header>
       )}
 
-      <div className={`mx-auto max-w-2xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pt-6 pb-8'}`}>
+      <div className={`mx-auto w-full min-w-0 max-w-2xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pt-6 pb-8'}`}>
         <Breadcrumbs
           crumbs={[
             { label: 'Home', href: '/home' },

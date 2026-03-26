@@ -322,16 +322,16 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
             </div>
           </header>
         )}
-        <div className={`mx-auto max-w-6xl px-4 py-8 sm:px-6 ${!isDesktop ? 'pt-14' : ''}`}>
+        <div className={`mx-auto w-full min-w-0 max-w-6xl px-4 py-8 sm:px-6 ${!isDesktop ? 'pt-14' : ''}`}>
           <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: title }]} />
           <div className="mb-8 mt-4 h-16 w-64 rounded-lg bg-white/5 animate-pulse" aria-hidden />
-          <div className="grid gap-8 lg:grid-cols-3">
-            <div className="lg:col-span-1 space-y-4">
+          <div className="grid min-w-0 gap-8 lg:grid-cols-3">
+            <div className="min-w-0 space-y-4 lg:col-span-1">
               <div className="h-12 rounded-xl bg-white/5 animate-pulse" />
               <div className="h-10 rounded-xl bg-white/5 animate-pulse" />
               <NetworkListSkeleton />
             </div>
-            <div className="lg:col-span-2">
+            <div className="min-w-0 lg:col-span-2">
               <div className="rounded-2xl border border-white/5 bg-surface-900/30 p-8">
                 <DashboardSkeleton />
               </div>
@@ -363,7 +363,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
         </header>
       )}
 
-      <div className={`mx-auto max-w-6xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pb-8 pt-6'}`}>
+      <div className={`mx-auto w-full min-w-0 max-w-6xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pb-8 pt-6'}`}>
         <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: title }]} />
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8 mt-4">
           <h1 className="font-display text-2xl font-bold sm:text-3xl">{title}</h1>
@@ -373,8 +373,8 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
           </p>
         </motion.div>
 
-        <div className="grid gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-1">
+        <div className="grid min-w-0 gap-8 lg:grid-cols-3">
+          <div className="min-w-0 lg:col-span-1">
             <div className="relative mb-4 flex rounded-xl bg-surface-900/50 p-1">
               {ENV_OPTIONS.map((opt) => (
                 <button
@@ -441,7 +441,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                 const isNewlyListed = nWithMeta.listedAt && (Date.now() - new Date(nWithMeta.listedAt).getTime()) < 30 * 24 * 60 * 60 * 1000;
                 return (
                   <motion.li key={`${network.environment}-${network.id}`} variants={{ visible: { opacity: 1, x: 0 }, hidden: { opacity: 0, x: -12 } }} transition={{ duration: 0.25, ease: 'easeOut' }} className="list-none">
-                    <div className="flex items-stretch gap-1 rounded-xl border border-transparent">
+                    <div className="flex min-w-0 items-stretch gap-1 rounded-xl border border-transparent">
                       <motion.button
                         onClick={() => {
                           if (canStartMining) handleStart(network);
@@ -452,7 +452,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                         whileTap={(canStartMining || canOpenNodeModal) ? { scale: 0.99 } : undefined}
                         transition={{ duration: 0.15 }}
                         title={canOpenNodeModal ? 'Run node' : undefined}
-                        className={`flex flex-1 items-center gap-3 rounded-l-xl border px-4 py-3 text-left transition-colors ${
+                        className={`flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-2 rounded-l-xl border px-4 py-3 text-left transition-colors ${
                           isActive ? 'border-accent-cyan/50 bg-accent-cyan/10' :
                           isStarting ? 'border-accent-cyan/30 bg-accent-cyan/5' :
                           (canStartMining || canOpenNodeModal) ? 'border-white/10 hover:border-white/20 hover:bg-white/5' :
@@ -460,7 +460,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                           'cursor-not-allowed border-white/5 bg-white/5 opacity-60'
                         }`}
                       >
-                        <span className="text-xl" aria-hidden="true">{network.icon}</span>
+                        <span className="shrink-0 text-xl" aria-hidden="true">{network.icon}</span>
                         <div className="min-w-0 flex-1">
                           {isStarting ? (
                             <p className="font-medium text-accent-cyan flex items-center gap-2">
@@ -468,11 +468,15 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                             </p>
                           ) : (
                             <>
-                              <p className="font-medium text-white flex items-center gap-2">
-                                {network.name}
-                                {isNewlyListed && <span className="rounded bg-accent-cyan/20 px-1.5 py-0.5 text-xs font-medium text-accent-cyan">New</span>}
+                              <p className="flex min-w-0 items-center gap-2 font-medium text-white">
+                                <span className="min-w-0 truncate">{network.name}</span>
+                                {isNewlyListed && (
+                                  <span className="shrink-0 rounded bg-accent-cyan/20 px-1.5 py-0.5 text-xs font-medium text-accent-cyan">
+                                    New
+                                  </span>
+                                )}
                               </p>
-                              <p className="truncate text-xs text-gray-500">
+                              <p className="min-w-0 break-words text-xs text-gray-500">
                                 {network.symbol} · {network.algorithm}
                                 {isNetworkMineable(network) && (
                                   <span className="ml-1.5 rounded bg-emerald-500/20 px-1 py-0.5 text-emerald-300">Mineable</span>
@@ -492,10 +496,20 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                             </>
                           )}
                         </div>
-                        {!isStarting && network.environment === 'devnet' && <span className="rounded bg-violet-500/20 px-1.5 py-0.5 text-xs text-violet-300">Test</span>}
-                        {INCENTIVIZED_TESTNET_IDS.includes(network.id) && <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-medium text-amber-300">Incentivized testnet</span>}
-                        {!isStarting && network.status === 'coming-soon' && <span className="text-xs text-gray-500">Soon</span>}
-                        {isActive && <span className="h-2 w-2 rounded-full bg-accent-emerald animate-pulse" aria-hidden />}
+                        {!isStarting && network.environment === 'devnet' && (
+                          <span className="shrink-0 rounded bg-violet-500/20 px-1.5 py-0.5 text-xs text-violet-300">Test</span>
+                        )}
+                        {INCENTIVIZED_TESTNET_IDS.includes(network.id) && (
+                          <span className="shrink-0 rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-medium text-amber-300">
+                            Incentivized testnet
+                          </span>
+                        )}
+                        {!isStarting && network.status === 'coming-soon' && (
+                          <span className="shrink-0 text-xs text-gray-500">Soon</span>
+                        )}
+                        {isActive && (
+                          <span className="h-2 w-2 shrink-0 rounded-full bg-accent-emerald animate-pulse" aria-hidden />
+                        )}
                       </motion.button>
                       <button onClick={(e) => { modalTriggerRef.current = e.currentTarget as HTMLButtonElement; setModalNetwork(network); }} className="rounded-r-xl border border-white/10 bg-surface-850/80 px-3 py-2 text-xs text-gray-400 transition hover:border-white/20 hover:bg-white/5 hover:text-white" title="Learn more">ℹ</button>
                     </div>
@@ -512,7 +526,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
             </motion.ul>
           </div>
 
-          <div className="lg:col-span-2">
+          <div className="min-w-0 lg:col-span-2">
             <AnimatePresence mode="wait">
               {sessionsWithNetworks.length > 0 ? (
                 <div className="space-y-4">
@@ -521,8 +535,8 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                     animate={{ opacity: 1, y: 0 }}
                     className="rounded-2xl border border-white/5 bg-surface-900/30 p-5"
                   >
-                    <h2 className="font-display text-sm font-semibold uppercase tracking-wider text-gray-500 flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4" />
+                    <h2 className="font-display flex min-w-0 flex-wrap items-center gap-2 text-sm font-semibold uppercase tracking-wider text-gray-500">
+                      <BarChart3 className="h-4 w-4 shrink-0" />
                       {mode === 'mining' ? 'Current mining statistics' : 'Current node running'}
                     </h2>
                     <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">

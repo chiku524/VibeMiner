@@ -19,7 +19,7 @@ function CopyableWalletRow({ label, value }: { label: string; value: string }) {
     );
   }, [value]);
   return (
-    <div className="rounded-lg border border-white/10 bg-surface-900/50 px-4 py-3">
+    <div className="min-w-0 rounded-lg border border-white/10 bg-surface-900/50 px-4 py-3">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium uppercase tracking-wider text-gray-500">{label}</span>
         <button
@@ -74,7 +74,7 @@ export default function FeesPage() {
     <main className="min-h-screen bg-surface-950 bg-grid">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(feesJsonLd) }} />
       <Nav />
-      <div className={`mx-auto max-w-2xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 py-16' : 'py-12'}`}>
+      <div className={`mx-auto w-full min-w-0 max-w-2xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 py-16' : 'py-12'}`}>
         <Breadcrumbs crumbs={[{ label: 'Home', href: homeHref }, { label: 'Fees & transparency' }]} />
         <h1 className="mt-6 font-display text-3xl font-bold tracking-tight text-white">
           Fees & transparency

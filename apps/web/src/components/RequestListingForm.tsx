@@ -376,9 +376,9 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
         <button
           type="button"
           onClick={() => setShowNodeSection(!showNodeSection)}
-          className="flex w-full items-center justify-between text-left text-sm font-medium text-gray-300"
+          className="flex w-full min-w-0 items-center justify-between gap-2 text-left text-sm font-medium text-gray-300"
         >
-          <span>Node support (optional)</span>
+          <span className="min-w-0">Node support (optional)</span>
           <span className="text-gray-500">{showNodeSection ? '▼' : '▶'}</span>
         </button>
         <p className="mt-1 text-xs text-gray-500">

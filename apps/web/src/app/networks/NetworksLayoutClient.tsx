@@ -19,7 +19,7 @@ export function NetworksLayoutClient({ children }: { children: React.ReactNode }
   if (isDesktop) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 min-h-screen">
+        <div className="mx-auto min-h-screen w-full min-w-0 max-w-6xl px-4 pt-6 sm:px-6">
           <NetworksPageContent />
         </div>
       </main>
@@ -29,7 +29,7 @@ export function NetworksLayoutClient({ children }: { children: React.ReactNode }
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
       <NetworksNavClient />
-      <div className="mx-auto max-w-6xl px-4 pt-14 sm:px-6">
+      <div className="mx-auto w-full min-w-0 max-w-6xl px-4 pt-14 sm:px-6">
         {children}
       </div>
     </main>

@@ -75,8 +75,8 @@ export function NetworkListingsSection() {
     <ul className="space-y-3">
       {networks.map((n) => (
         <li key={n.id}>
-          <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-surface-900/30 p-4">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-4 rounded-xl border border-white/10 bg-surface-900/30 p-4">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/5 text-xl">
                 {n.icon ?? '⛓'}
               </span>

@@ -95,7 +95,7 @@ export default function AdminDashboardPage() {
         </header>
       )}
 
-      <div className={`mx-auto max-w-4xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pt-6 pb-8'}`}>
+      <div className={`mx-auto w-full min-w-0 max-w-4xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pt-6 pb-8'}`}>
         <Breadcrumbs
           crumbs={[
             { label: 'Home', href: '/home' },
@@ -150,8 +150,8 @@ export default function AdminDashboardPage() {
             </section>
 
             <section className="rounded-2xl border border-white/5 bg-surface-900/30 p-6">
-              <h2 className="font-display text-lg font-semibold text-white flex items-center gap-2">
-                <Wallet className="h-5 w-5 text-gray-400" />
+              <h2 className="font-display flex min-w-0 flex-wrap items-center gap-2 text-lg font-semibold text-white">
+                <Wallet className="h-5 w-5 shrink-0 text-gray-400" />
                 Platform wallet (fee destination)
               </h2>
               <p className="mt-2 text-sm text-gray-400">
