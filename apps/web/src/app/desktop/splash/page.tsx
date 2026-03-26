@@ -20,45 +20,21 @@ function hasTauriRuntime(): boolean {
   return typeof window !== 'undefined' && typeof window.__TAURI__ !== 'undefined';
 }
 
+const INTRO_MS = 1800;
+
 /**
  * Frameless splash window: intro animation → optional in-app update (Tauri updater) → main window.
- * Uses @tauri-apps/api/core invoke (same as BountyHub) so close works even if __TAURI__ attached late.
  */
 export default function DesktopSplashPage() {
   const [phase, setPhase] = useState<Phase>(PHASE.INTRO);
   const [introDone, setIntroDone] = useState(false);
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
-  const [inTauriShell, setInTauriShell] = useState(false);
   const cancelledRef = useRef(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    if (hasTauriRuntime()) {
-      setInTauriShell(true);
-      return;
-    }
-
-    const onReady = () => setInTauriShell(true);
-    window.addEventListener('vibeminer-tauri-ready', onReady);
-
-    const t = window.setTimeout(() => {
-      if (!hasTauriRuntime()) {
-        setIntroDone(true);
-      }
-    }, 500);
-
-    return () => {
-      window.removeEventListener('vibeminer-tauri-ready', onReady);
-      window.clearTimeout(t);
-    };
+    const t = window.setTimeout(() => setIntroDone(true), INTRO_MS);
+    return () => window.clearTimeout(t);
   }, []);
-
-  useEffect(() => {
-    if (!inTauriShell) return;
-    const t = setTimeout(() => setIntroDone(true), 1800);
-    return () => clearTimeout(t);
-  }, [inTauriShell]);
 
   useEffect(() => {
     if (!introDone) return;

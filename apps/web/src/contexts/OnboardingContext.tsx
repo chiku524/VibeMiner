@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ONBOARDING_KEY = 'vibeminer-onboarding-seen';
@@ -15,6 +16,7 @@ type OnboardingState = {
 const OnboardingContext = createContext<OnboardingState | null>(null);
 
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [seen, setSeen] = useState(true);
   const [show, setShow] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -23,12 +25,16 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (pathname === '/desktop/splash' || pathname === '/desktop/launch') {
+      setShow(false);
+      return;
+    }
     const stored = localStorage.getItem(ONBOARDING_KEY);
     if (!stored) {
       setSeen(false);
       setShow(true);
     }
-  }, []);
+  }, [pathname]);
 
   const dismiss = useCallback(() => {
     setShow(false);

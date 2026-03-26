@@ -35,6 +35,11 @@ function LoadingShell({ showRecovery }: { showRecovery: boolean }) {
   );
 }
 
+function isDesktopBootstrapPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return pathname === '/desktop/splash' || pathname === '/desktop/launch';
+}
+
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
@@ -50,6 +55,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
 
   // When we're showing the loading shell (no content), offer recovery after a delay in case navigation/chunk failed.
   useEffect(() => {
+    if (isDesktopBootstrapPath(pathname)) return;
     if (!hasContent) {
       setShowRecovery(false);
       const t = setTimeout(() => setShowRecovery(true), RECOVERY_DELAY_MS);
@@ -57,6 +63,10 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     }
     setShowRecovery(false);
   }, [hasContent, pathname]);
+
+  if (isDesktopBootstrapPath(pathname)) {
+    return <>{children}</>;
+  }
 
   // No exit animation: avoid a full-screen dark layer (exiting page's wrapper) covering the next page.
   const skipInitialFade = true;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { BrandMark } from '@/components/BrandMark';
 import { MiningLoader } from '@/components/ui/MiningLoader';
 
@@ -11,9 +12,11 @@ type UpdatePhase = 'downloading' | 'installing';
  * `desktop-update-progress`). Falls back to desktop-bridge stub when not in Tauri.
  */
 export function DesktopUpdateOverlay() {
+  const pathname = usePathname();
   const [phase, setPhase] = useState<UpdatePhase | null>(null);
 
   useEffect(() => {
+    if (pathname === '/desktop/splash' || pathname === '/desktop/launch') return;
     if (typeof window === 'undefined' || !window.desktopAPI?.isDesktop) return;
 
     let unlisten: (() => void) | undefined;
@@ -38,7 +41,9 @@ export function DesktopUpdateOverlay() {
     return () => {
       if (unlisten) unlisten();
     };
-  }, []);
+  }, [pathname]);
+
+  if (pathname === '/desktop/splash' || pathname === '/desktop/launch') return null;
 
   if (!phase) return null;
 
