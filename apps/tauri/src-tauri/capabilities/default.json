@@ -2,6 +2,14 @@
   "identifier": "default",
   "description": "Default capability for splash, main, and desktop IPC",
   "windows": ["main", "splashscreen"],
+  "remote": {
+    "urls": [
+      "https://vibeminer.tech/*",
+      "https://www.vibeminer.tech/*",
+      "http://localhost:3000/*",
+      "http://127.0.0.1:3000/*"
+    ]
+  },
   "permissions": [
     "core:default",
     "core:event:default",
