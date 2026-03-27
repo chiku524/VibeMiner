@@ -3,7 +3,9 @@ const nextConfig = {
   transpilePackages: ['@vibeminer/shared'],
   async redirects() {
     return [
-      { source: '/favicon.ico', destination: '/icon', permanent: true },
+      // Webpack build exposes `app/icon.png` as `/icon.png` (not `/icon`); keep favicon + legacy `/icon` valid.
+      { source: '/favicon.ico', destination: '/icon.png', permanent: true },
+      { source: '/icon', destination: '/icon.png', permanent: true },
     ];
   },
   async headers() {
