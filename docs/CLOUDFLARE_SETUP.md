@@ -107,7 +107,7 @@ After deploy succeeds, go to **Workers & Pages** in the dashboard—**vibeminer*
 
 **Deploy via GitHub Actions:** Add two repository secrets (Settings → Secrets and variables → Actions): **CLOUDFLARE_API_TOKEN** (create at [profile API tokens](https://dash.cloudflare.com/profile/api-tokens), use “Edit Cloudflare Workers” template) and **CLOUDFLARE_ACCOUNT_ID** (your account ID—stops “Authentication failed” on `/memberships`; find it in the dashboard URL when you open any zone, or in the right-hand sidebar on **Workers & Pages**). Then run **Actions → Deploy to Cloudflare → Run workflow**.
 
-**Deploying on Windows:** If you see "Missing file or directory" with a path ending in `.wasm?module`, deploy from GitHub Actions or WSL instead (see above).
+**Deploying on Windows:** Wrangler **before ~4.77** could fail with “Missing file or directory” and a path ending in `.wasm?module` (invalid `?` on Windows). **Fix:** keep `wrangler` in `apps/web` at **^4.77.0** or newer (`npm install` from repo root), then retry `npm run deploy:cloudflare`. **Fallbacks:** deploy from **GitHub Actions** (Linux) or **WSL** (see above).
 
 ### Pages (alternative)
 
