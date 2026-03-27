@@ -1,0 +1,34 @@
+{
+  "default": null,
+  "permission": [
+    {
+      "identifier": "allow-vibeminer-ipc",
+      "description": "VibeMiner custom invoke commands (required when UI is loaded from remote HTTPS)",
+      "commands": {
+        "allow": [
+          "get_app_version",
+          "get_platform",
+          "get_auto_update_enabled",
+          "set_auto_update_enabled",
+          "reload",
+          "open_external",
+          "check_for_updates",
+          "get_update_downloaded",
+          "get_update_available_info",
+          "quit_and_install",
+          "install_update_now",
+          "close_splash_and_show_main",
+          "start_real_mining",
+          "stop_real_mining",
+          "get_real_mining_stats",
+          "is_real_mining",
+          "start_node",
+          "stop_node",
+          "get_node_status",
+          "is_node_running"
+        ],
+        "deny": []
+      }
+    }
+  ]
+}

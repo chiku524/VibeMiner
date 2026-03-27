@@ -27,6 +27,8 @@ That refreshes web brand PNGs (including `icon-source/app-icon-1024.png`) and re
 
 Release builds run `apps/tauri/scripts/prepare-frontend-dist.cjs`, which creates `apps/web/out/index.html` that opens the live site (default `https://vibeminer.tech`). Override with **`VIBEMINER_APP_URL`** or **`APP_URL`** when building.
 
+Because the **main window loads that HTTPS origin**, Tauri 2 treats it as a **remote** webview. `core:default` alone does **not** expose custom `invoke` commands (`start_node`, mining, etc.). Those are granted by **`permissions/allow-vibeminer-ipc.json`** and referenced from **`capabilities/default.json`** alongside the `remote.urls` allowlist.
+
 ### Updates in the app
 
 The UI uses **`window.desktopAPI`**, set by [`apps/web/public/desktop-bridge.js`](../apps/web/public/desktop-bridge.js) when Tauri’s `__TAURI__` runtime is present. The Tauri **updater** plugin is configured in `apps/tauri/src-tauri/tauri.conf.json` (`plugins.updater`).

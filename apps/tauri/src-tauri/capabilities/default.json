@@ -1,7 +1,10 @@
 {
   "identifier": "default",
   "description": "Default capability for splash, main, and desktop IPC",
-  "windows": ["main", "splashscreen"],
+  "windows": [
+    "main",
+    "splashscreen"
+  ],
   "remote": {
     "urls": [
       "https://vibeminer.tech/*",
@@ -15,6 +18,7 @@
     "core:event:default",
     "shell:allow-open",
     "updater:default",
-    "process:default"
+    "process:default",
+    "allow-vibeminer-ipc"
   ]
 }
