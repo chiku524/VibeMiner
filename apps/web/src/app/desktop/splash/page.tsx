@@ -73,26 +73,38 @@ export default function DesktopSplashPage() {
       }
 
       try {
-        const [{ check }, { relaunch }] = await Promise.all([
-          import('@tauri-apps/plugin-updater'),
-          import('@tauri-apps/plugin-process'),
-        ]);
-        const update = await check();
+        const { invoke } = await import('@tauri-apps/api/core');
+        type CheckResult = {
+          updateAvailable?: boolean;
+          error?: boolean;
+          message?: string;
+          latestVersion?: string | null;
+        };
+        const status = await invoke<CheckResult>('check_for_updates');
         if (cancelledRef.current) return;
 
-        if (update) {
-          setUpdateVersion(update.version);
+        if (status.error) {
+          console.warn(
+            '[VibeMiner] Update check failed:',
+            status.message ?? 'unknown (see docs: latest.json on GitHub release)'
+          );
+        } else if (status.updateAvailable) {
+          const v =
+            typeof status.latestVersion === 'string' && status.latestVersion
+              ? status.latestVersion
+              : null;
+          setUpdateVersion(v);
           setPhase(PHASE.DOWNLOADING);
-          await update.downloadAndInstall(() => {
-            if (cancelledRef.current) return;
-          });
+          const result = await invoke<{ ok?: boolean; error?: string }>('install_update_now');
           if (cancelledRef.current) return;
-          setPhase(PHASE.INSTALLING);
-          await relaunch();
-          return;
+          if (result?.ok) {
+            setPhase(PHASE.INSTALLING);
+            return;
+          }
+          console.warn('[VibeMiner] Update install failed:', result?.error ?? 'unknown');
         }
-      } catch {
-        // Missing updater config, offline, or unsigned dev build — open main app.
+      } catch (e) {
+        console.warn('[VibeMiner] Updater unavailable:', e);
       }
 
       if (cancelledRef.current) return;

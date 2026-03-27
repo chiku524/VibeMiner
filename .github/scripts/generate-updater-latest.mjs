@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Build Tauri static updater manifest (latest.json) from release assets + .sig files.
- * Expects Windows NSIS, macOS .app.tar.gz (arm64), and Linux AppImage with matching .sig next to each.
+ * Includes each platform only when both the artifact and its .sig exist (under fixed names
+ * from the release workflow). Partial manifests are OK: e.g. Windows-only still updates on Windows.
  *
  * Usage: node .github/scripts/generate-updater-latest.mjs <assetsDir> <semverVersion> <githubRepo> <gitTag>
  */
@@ -18,62 +19,48 @@ if (!assetsDir || !version || !repo || !tag) {
 
 const baseUrl = `https://github.com/${repo}/releases/download/${tag}`;
 
-function readSig(baseName, files) {
-  const sigName = `${baseName}.sig`;
-  const sigPath = files.find((f) => f === sigName);
-  if (!sigPath) return null;
-  return fs.readFileSync(path.join(assetsDir, sigPath), 'utf8').trim();
-}
+/** Fixed names produced by .github/workflows/release-desktop.yml "Add latest and versioned asset names". */
+const PLATFORM_FILES = [
+  { key: 'windows-x86_64', file: `VibeMiner-Setup-${version}.exe` },
+  { key: 'darwin-aarch64', file: 'VibeMiner-latest-aarch64.app.tar.gz' },
+  { key: 'darwin-x86_64', file: 'VibeMiner-latest-x64.app.tar.gz' },
+  { key: 'linux-x86_64', file: `VibeMiner-${version}.AppImage` },
+];
 
-const files = fs.readdirSync(assetsDir).filter((f) => !f.startsWith('.'));
 const platforms = {};
 
-const winSetup =
-  files.find((f) => /-setup\.exe$/i.test(f) && !f.endsWith('.sig')) ||
-  files.find((f) => /\.exe$/i.test(f) && !/uninstall/i.test(f) && !f.endsWith('.sig'));
-if (winSetup) {
-  const sig = readSig(winSetup, files);
-  if (sig) {
-    platforms['windows-x86_64'] = {
-      signature: sig,
-      url: `${baseUrl}/${winSetup}`,
-    };
+for (const { key, file } of PLATFORM_FILES) {
+  const artifact = path.join(assetsDir, file);
+  const sigPath = `${artifact}.sig`;
+  if (!fs.existsSync(artifact)) continue;
+  if (!fs.existsSync(sigPath)) {
+    console.warn(`Skipping ${key}: missing signature file ${file}.sig`);
+    continue;
   }
-}
-
-for (const f of files) {
-  if (!f.endsWith('.app.tar.gz') || f.endsWith('.sig')) continue;
-  const sig = readSig(f, files);
-  if (!sig) continue;
-  let key = null;
-  if (/_aarch64\.app\.tar\.gz$/i.test(f) || /aarch64|arm64/i.test(f)) key = 'darwin-aarch64';
-  else if (/_x64\.app\.tar\.gz$/i.test(f) || /x86_64|x64/i.test(f)) key = 'darwin-x86_64';
-  if (key) platforms[key] = { signature: sig, url: `${baseUrl}/${f}` };
-}
-
-const appimage = files.find((f) => f.endsWith('.AppImage') && !f.endsWith('.sig'));
-if (appimage) {
-  const sig = readSig(appimage, files);
-  if (sig) {
-    platforms['linux-x86_64'] = {
-      signature: sig,
-      url: `${baseUrl}/${appimage}`,
-    };
+  const signature = fs.readFileSync(sigPath, 'utf8').trim();
+  if (!signature) {
+    console.warn(`Skipping ${key}: empty signature in ${file}.sig`);
+    continue;
   }
+  platforms[key] = {
+    signature,
+    url: `${baseUrl}/${file}`,
+  };
 }
 
-const required = ['windows-x86_64', 'darwin-aarch64', 'linux-x86_64'];
-const missing = required.filter((k) => !platforms[k]);
-if (missing.length) {
+const platformKeys = Object.keys(platforms);
+if (platformKeys.length === 0) {
   console.warn(
-    'Skipping latest.json: missing signed updater artifacts for:',
-    missing.join(', ')
-  );
-  console.warn(
-    'Enable CI signing: uncomment TAURI_SIGNING_PRIVATE_KEY in release-desktop.yml and set the repo secret to the full minisign .key file (both lines, including untrusted comment).'
+    'No signed updater artifacts found — latest.json not written. Need .exe/.AppImage/.app.tar.gz plus matching .sig next to the versioned names from CI.'
   );
   process.exit(0);
 }
+
+console.warn(
+  'Updater manifest will include:',
+  platformKeys.join(', '),
+  '(other platforms omitted until signed artifacts exist)'
+);
 
 const manifest = {
   version,

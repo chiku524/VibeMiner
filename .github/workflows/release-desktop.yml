@@ -183,7 +183,10 @@ jobs:
           echo "Windows: $win_exe"
           cp "$win_exe" "VibeMiner-Setup-latest.exe"
           cp "$win_exe" "VibeMiner-Setup-${VER}.exe"
-          if [ -f "${win_exe}.sig" ]; then cp "${win_exe}.sig" "VibeMiner-Setup-latest.exe.sig"; fi
+          if [ -f "${win_exe}.sig" ]; then
+            cp "${win_exe}.sig" "VibeMiner-Setup-latest.exe.sig"
+            cp "${win_exe}.sig" "VibeMiner-Setup-${VER}.exe.sig"
+          fi
 
           dmg=$(find . -type f -name "*.dmg" | head -1)
           if [ -z "$dmg" ]; then echo "No macOS .dmg found"; exit 1; fi
@@ -195,7 +198,16 @@ jobs:
           if [ -n "$app_tgz" ]; then
             echo "macOS updater: $app_tgz"
             cp "$app_tgz" "VibeMiner-latest-aarch64.app.tar.gz"
-            if [ -f "${app_tgz}.sig" ]; then cp "${app_tgz}.sig" "VibeMiner-latest-aarch64.app.tar.gz.sig"; fi
+            if [ -f "${app_tgz}.sig" ]; then
+              cp "${app_tgz}.sig" "VibeMiner-latest-aarch64.app.tar.gz.sig"
+            fi
+            # x64 macOS updater bundle (if the build produces it)
+            app_tgz_x64=$(find . -type f -name "*.app.tar.gz" ! -name "*aarch64*" ! -name "*arm64*" | head -1)
+            if [ -n "$app_tgz_x64" ] && [ "$app_tgz_x64" != "$app_tgz" ]; then
+              echo "macOS x64 updater: $app_tgz_x64"
+              cp "$app_tgz_x64" "VibeMiner-latest-x64.app.tar.gz"
+              if [ -f "${app_tgz_x64}.sig" ]; then cp "${app_tgz_x64}.sig" "VibeMiner-latest-x64.app.tar.gz.sig"; fi
+            fi
           else
             echo "No macOS .app.tar.gz (updater bundle) — OK when updater signing is not configured"
           fi
@@ -205,7 +217,10 @@ jobs:
           echo "Linux: $appimg"
           cp "$appimg" "VibeMiner-latest.AppImage"
           cp "$appimg" "VibeMiner-${VER}.AppImage"
-          if [ -f "${appimg}.sig" ]; then cp "${appimg}.sig" "VibeMiner-latest.AppImage.sig"; fi
+          if [ -f "${appimg}.sig" ]; then
+            cp "${appimg}.sig" "VibeMiner-latest.AppImage.sig"
+            cp "${appimg}.sig" "VibeMiner-${VER}.AppImage.sig"
+          fi
 
           ls -la
           test -f "VibeMiner-Setup-latest.exe"
@@ -222,6 +237,11 @@ jobs:
           set -e
           VER="${VERSION#v}"
           node .github/scripts/generate-updater-latest.mjs artifacts "$VER" chiku524/VibeMiner "$VERSION"
+          if [ ! -f artifacts/latest.json ]; then
+            echo "::warning::latest.json was not generated (no signed updater bundles). In-app auto-update will not work until signing produces .sig files."
+          else
+            echo "Updater manifest:" && cat artifacts/latest.json
+          fi
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
