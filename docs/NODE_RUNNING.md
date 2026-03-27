@@ -50,4 +50,14 @@ Run the migration for existing D1 databases:
 cd apps/web && wrangler d1 execute vibeminer-db --remote --file=./d1/migrations/001_add_node_columns.sql
 ```
 
-New installs use the updated `schema.sql` which includes the node columns.
+**Multiple node modes** (`node_presets_json`):
+
+- **Idempotent (recommended):** skips if the column already exists.
+
+```bash
+npm run db:ensure-node-presets-json -w vibeminer-web
+```
+
+- **Raw SQL:** `wrangler d1 execute vibeminer-db --remote --file=./d1/migrations/002_add_node_presets_json.sql` — fails with *duplicate column* if already applied; that is safe to ignore.
+
+New installs use the updated `d1/schema.sql`, which includes these columns.

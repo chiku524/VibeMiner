@@ -13,7 +13,9 @@
     "lint": "next lint",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "db:ensure-node-presets-json": "node ./scripts/d1-ensure-node-presets-json.mjs",
+    "db:ensure-node-presets-json:local": "node ./scripts/d1-ensure-node-presets-json.mjs --local"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
