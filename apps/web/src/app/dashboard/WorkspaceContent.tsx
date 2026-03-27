@@ -29,6 +29,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { BrandMark } from '@/components/BrandMark';
 import { MiningLoader } from '@/components/ui/MiningLoader';
+import { NetworkMark } from '@/components/ui/NetworkMark';
 import { Radio, Zap, Coins, BarChart3 } from 'lucide-react';
 
 export type WorkspaceMode = 'mining' | 'nodes';
@@ -460,7 +461,11 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                           'cursor-not-allowed border-white/5 bg-white/5 opacity-60'
                         }`}
                       >
-                        <span className="shrink-0 text-xl" aria-hidden="true">{network.icon}</span>
+                        <NetworkMark
+                          icon={network.icon}
+                          label={network.name}
+                          className="h-9 w-9 text-xl"
+                        />
                         <div className="min-w-0 flex-1">
                           {isStarting ? (
                             <p className="font-medium text-accent-cyan flex items-center gap-2">

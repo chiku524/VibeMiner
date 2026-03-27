@@ -41,6 +41,7 @@ create table if not exists network_listings (
   node_disk_gb integer,
   node_ram_mb integer,
   node_binary_sha256 text,
+  node_presets_json text,
   created_at text default (datetime('now')) not null,
   updated_at text default (datetime('now')) not null
 );

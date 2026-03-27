@@ -85,7 +85,7 @@ function isUrlHostAllowed(urlStr: string): boolean {
 /** Command template placeholders we allow (desktop node-service substitutes these). No shell metacharacters. */
 const ALLOWED_PLACEHOLDERS = ['{dataDir}', '{dataDirPath}', '{data_dir}', '{data_dir_path}'];
 
-function sanitizeCommandTemplate(template: string): { valid: boolean; sanitized?: string; error?: string } {
+export function sanitizeCommandTemplate(template: string): { valid: boolean; sanitized?: string; error?: string } {
   // Reject shell metacharacters
   if (/[;&|$`<>()]/.test(template)) {
     return { valid: false, error: 'Command contains disallowed characters (;&|$`<>()' };
@@ -103,6 +103,29 @@ function sanitizeCommandTemplate(template: string): { valid: boolean; sanitized?
   }
   return { valid: true, sanitized };
 }
+
+const PRESET_ID_REGEX = /^[a-z0-9]([a-z0-9-]{0,46}[a-z0-9])?$/;
+
+/** One runnable node mode (e.g. full node vs validator). Same binary; different command / resources. */
+export const NetworkNodePresetSchema = z
+  .object({
+    presetId: z
+      .string()
+      .min(1)
+      .max(48)
+      .regex(PRESET_ID_REGEX, 'preset id: lowercase letters, numbers, hyphens only'),
+    label: z.string().min(1).max(80),
+    description: z.string().max(256).optional(),
+    commandTemplate: z
+      .string()
+      .max(MAX_NODE_STRING_LENGTHS.nodeCommandTemplate)
+      .refine((v) => sanitizeCommandTemplate(v).valid, 'Command contains disallowed characters or is invalid'),
+    nodeDiskGb: z.number().int().min(1).max(2000).optional(),
+    nodeRamMb: z.number().int().min(256).max(65536).optional(),
+  })
+  .strict();
+
+export type NetworkNodePreset = z.infer<typeof NetworkNodePresetSchema>;
 
 export const NodeConfigSchema = z
   .object({
@@ -142,6 +165,143 @@ export function validateNodeConfig(
 }
 
 /** Check if a network has runnable node config. */
-export function hasNodeConfig(network: { nodeDownloadUrl?: string | null; nodeCommandTemplate?: string | null }): boolean {
-  return !!(network.nodeDownloadUrl?.trim() && network.nodeCommandTemplate?.trim());
+export function hasNodeConfig(network: {
+  nodeDownloadUrl?: string | null;
+  nodeCommandTemplate?: string | null;
+  nodePresets?: NetworkNodePreset[] | null;
+}): boolean {
+  const url = network.nodeDownloadUrl?.trim();
+  if (!url) return false;
+  if (Array.isArray(network.nodePresets) && network.nodePresets.length > 0) return true;
+  return !!network.nodeCommandTemplate?.trim();
+}
+
+/**
+ * Resolved presets for UI + desktop: explicit `nodePresets` from API, or legacy single command as one preset.
+ */
+export function resolveNodePresets(network: {
+  nodePresets?: NetworkNodePreset[] | null;
+  nodeDownloadUrl?: string | null;
+  nodeCommandTemplate?: string | null;
+  nodeDiskGb?: number | null;
+  nodeRamMb?: number | null;
+}): NetworkNodePreset[] {
+  if (Array.isArray(network.nodePresets) && network.nodePresets.length > 0) {
+    return network.nodePresets;
+  }
+  if (network.nodeDownloadUrl?.trim() && network.nodeCommandTemplate?.trim()) {
+    return [
+      {
+        presetId: 'default',
+        label: 'Node',
+        commandTemplate: network.nodeCommandTemplate.trim(),
+        nodeDiskGb: network.nodeDiskGb ?? undefined,
+        nodeRamMb: network.nodeRamMb ?? undefined,
+      },
+    ];
+  }
+  return [];
+}
+
+/** Normalize node fields after Zod parse: validates URL + commands, returns DB-ready values. */
+export function normalizeNodeFieldsForListing(input: {
+  nodeDownloadUrl?: string | null;
+  nodeCommandTemplate?: string | null;
+  nodeDiskGb?: number | null;
+  nodeRamMb?: number | null;
+  nodeBinarySha256?: string | null;
+  nodePresets?: NetworkNodePreset[] | null;
+}):
+  | {
+      ok: true;
+      nodeDownloadUrl: string | null;
+      nodeCommandTemplate: string | null;
+      nodeDiskGb: number | null;
+      nodeRamMb: number | null;
+      nodeBinarySha256: string | null;
+      nodePresetsJson: string | null;
+    }
+  | { ok: false; error: string } {
+  const url = input.nodeDownloadUrl?.trim() ?? '';
+  if (!url) {
+    return {
+      ok: true,
+      nodeDownloadUrl: null,
+      nodeCommandTemplate: null,
+      nodeDiskGb: null,
+      nodeRamMb: null,
+      nodeBinarySha256: null,
+      nodePresetsJson: null,
+    };
+  }
+  if (!isUrlHostAllowed(url)) {
+    return { ok: false, error: 'Download URL must be from an allowed host (e.g. GitHub)' };
+  }
+
+  const sha = input.nodeBinarySha256?.trim();
+  if (sha && !/^[a-fA-F0-9]{64}$/.test(sha)) {
+    return { ok: false, error: 'Binary SHA256 must be 64 hex characters' };
+  }
+
+  const presets = input.nodePresets;
+  if (Array.isArray(presets) && presets.length > 0) {
+    const seen = new Set<string>();
+    for (const p of presets) {
+      if (seen.has(p.presetId)) {
+        return { ok: false, error: `Duplicate node preset id: ${p.presetId}` };
+      }
+      seen.add(p.presetId);
+      const sc = sanitizeCommandTemplate(p.commandTemplate);
+      if (!sc.valid) {
+        return { ok: false, error: sc.error ?? `Invalid command for preset ${p.presetId}` };
+      }
+    }
+    const first = presets[0];
+    return {
+      ok: true,
+      nodeDownloadUrl: url,
+      nodeCommandTemplate: first.commandTemplate.trim(),
+      nodeDiskGb: first.nodeDiskGb ?? input.nodeDiskGb ?? null,
+      nodeRamMb: first.nodeRamMb ?? input.nodeRamMb ?? null,
+      nodeBinarySha256: sha ?? null,
+      nodePresetsJson: JSON.stringify(presets),
+    };
+  }
+
+  const tpl = input.nodeCommandTemplate?.trim() ?? '';
+  if (!tpl) {
+    return { ok: false, error: 'Provide node command template or at least one node preset' };
+  }
+  const sc = sanitizeCommandTemplate(tpl);
+  if (!sc.valid) {
+    return { ok: false, error: sc.error ?? 'Invalid node command template' };
+  }
+  return {
+    ok: true,
+    nodeDownloadUrl: url,
+    nodeCommandTemplate: tpl,
+    nodeDiskGb: input.nodeDiskGb ?? null,
+    nodeRamMb: input.nodeRamMb ?? null,
+    nodeBinarySha256: sha ?? null,
+    nodePresetsJson: null,
+  };
+}
+
+/** Parse `node_presets_json` from D1 into validated presets (empty / invalid → undefined). */
+export function parseStoredNodePresetsJson(
+  json: string | null | undefined
+): NetworkNodePreset[] | undefined {
+  if (typeof json !== 'string' || !json.trim()) return undefined;
+  try {
+    const raw: unknown = JSON.parse(json);
+    if (!Array.isArray(raw)) return undefined;
+    const out: NetworkNodePreset[] = [];
+    for (const item of raw) {
+      const r = NetworkNodePresetSchema.safeParse(item);
+      if (r.success) out.push(r.data);
+    }
+    return out.length > 0 ? out : undefined;
+  } catch {
+    return undefined;
+  }
 }

@@ -1,6 +1,6 @@
 {
   "name": "vibeminer-tauri",
-  "version": "1.0.68",
+  "version": "1.0.69",
   "private": true,
   "description": "VibeMiner desktop app (Tauri 2) — mine for networks that need you.",
   "author": "nico.builds",

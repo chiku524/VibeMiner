@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { BrandMark } from '@/components/BrandMark';
+import { NetworkMark } from '@/components/ui/NetworkMark';
 import { Network, Layers, Globe, FilePlus, List, BarChart3, Users, Coins, Calendar } from 'lucide-react';
 
 type ListingSummary = {
@@ -247,9 +248,11 @@ export default function NetworkDashboardPage() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10 text-lg">
-                          {n.icon ?? '⛓'}
-                        </span>
+                        <NetworkMark
+                          icon={n.icon ?? '⛓'}
+                          label={n.name}
+                          className="h-10 w-10 rounded-lg bg-white/10 text-lg"
+                        />
                         <div className="min-w-0">
                           <h3 className="font-display font-semibold text-white truncate">{n.name}</h3>
                           <p className="text-xs text-gray-500">{n.symbol} · {n.environment}</p>

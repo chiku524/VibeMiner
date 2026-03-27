@@ -7,6 +7,7 @@ import type { MiningSession as SessionType } from '@vibeminer/shared';
 import type { BlockchainNetwork } from '@vibeminer/shared';
 import { FEE_CONFIG } from '@vibeminer/shared';
 import { Sparkline } from '@/components/ui/Sparkline';
+import { NetworkMark } from '@/components/ui/NetworkMark';
 
 interface MiningPanelProps {
   session: SessionType;
@@ -71,7 +72,7 @@ export function MiningPanel({ session, network, onStop, compact = false }: Minin
       >
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:flex-nowrap">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="text-xl">{network.icon}</span>
+            <NetworkMark icon={network.icon} label={network.name} className="h-8 w-8 text-xl" />
             <div className="min-w-0">
               <h2 className="font-display text-base font-semibold text-white truncate">
                 Mining {network.name}
@@ -134,7 +135,7 @@ export function MiningPanel({ session, network, onStop, compact = false }: Minin
       <div className="border-b border-white/5 bg-surface-850/80 px-5 py-3">
         <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <span className="shrink-0 text-2xl">{network.icon}</span>
+            <NetworkMark icon={network.icon} label={network.name} className="h-10 w-10 text-2xl" />
             <div className="min-w-0">
               <h2 className="font-display truncate text-lg font-semibold text-white">
                 Mining {network.name}

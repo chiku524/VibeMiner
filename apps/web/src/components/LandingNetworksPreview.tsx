@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { getMainnetNetworksListed, getDevnetNetworks } from '@vibeminer/shared';
 import type { BlockchainNetwork } from '@vibeminer/shared';
+import { NetworkMark } from '@/components/ui/NetworkMark';
 
 const PREVIEW_COUNT = 4;
 
@@ -14,9 +15,11 @@ function MiniNetworkCard({ network, env }: { network: BlockchainNetwork; env: 'm
       className="block rounded-xl border border-white/5 bg-surface-900/50 p-4 transition hover:border-accent-cyan/20 hover:bg-surface-850/80"
     >
       <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 text-xl">
-          {network.icon}
-        </span>
+        <NetworkMark
+          icon={network.icon}
+          label={network.name}
+          className="h-10 w-10 rounded-lg bg-white/5 text-xl"
+        />
         <div className="min-w-0 flex-1">
           <p className="font-medium text-white truncate">{network.name}</p>
           <p className="text-xs text-gray-500">{network.symbol} · {network.algorithm}</p>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getMainnetNetworksListed, getDevnetNetworks } from '@vibeminer/shared';
+import { getMainnetNetworksListed, getDevnetNetworks, parseStoredNodePresetsJson } from '@vibeminer/shared';
 import { getEnv } from '@/lib/auth-server';
 
 /** Returns mainnet and devnet networks: static list + dynamic listings from D1. Excludes placeholder "Your Network". */
@@ -76,6 +76,9 @@ function rowToNetwork(row: Record<string, unknown>, environment: 'mainnet' | 'de
     nodeDiskGb: typeof row.node_disk_gb === 'number' ? row.node_disk_gb : undefined,
     nodeRamMb: typeof row.node_ram_mb === 'number' ? row.node_ram_mb : undefined,
     nodeBinarySha256: row.node_binary_sha256 ?? undefined,
+    nodePresets: parseStoredNodePresetsJson(
+      typeof row.node_presets_json === 'string' ? row.node_presets_json : undefined
+    ),
     listedAt: typeof row.created_at === 'string' ? row.created_at : undefined,
   };
 }

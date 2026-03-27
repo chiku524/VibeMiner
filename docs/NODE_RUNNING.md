@@ -36,6 +36,7 @@ The dashboard and network modal show these tiers so users can choose suitable ne
 
 When requesting a listing, networks can optionally add **Node support**:
 
+- **Network logo** — Upload PNG, JPEG, or WebP (max 512 KB) on the listing form, stored in R2 and served at `/api/network-icons/…`, or use a short emoji as before. Replacing the logo on save removes the previous file from R2; deleting the listing removes its logo too.
 - **Node download URL** — HTTPS URL to the node binary/archive
 - **Command template** — Use `{dataDir}` for the data directory path
 - **Disk (GB)** / **RAM (MB)** — Resource requirements

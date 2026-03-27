@@ -1,11 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useToast } from '@/contexts/ToastContext';
-import { FEE_CONFIG, ALGORITHM_OPTIONS } from '@vibeminer/shared';
-import type { NetworkEnvironment } from '@vibeminer/shared';
+import {
+  FEE_CONFIG,
+  ALGORITHM_OPTIONS,
+  isValidBlockchainNetworkIcon,
+  isUploadedNetworkIconPath,
+} from '@vibeminer/shared';
+import { NetworkMark } from '@/components/ui/NetworkMark';
+import type { NetworkEnvironment, NetworkNodePreset } from '@vibeminer/shared';
 
 type RequestStatus = 'idle' | 'pending' | 'listed' | 'error';
 
@@ -27,7 +34,41 @@ export type NetworkListingInitialData = {
   nodeDiskGb?: number;
   nodeRamMb?: number;
   nodeBinarySha256?: string;
+  nodePresets?: NetworkNodePreset[];
 };
+
+const PRESET_ID_PATTERN = /^[a-z0-9]([a-z0-9-]{0,46}[a-z0-9])?$/;
+
+type PresetRow = {
+  presetId: string;
+  label: string;
+  description: string;
+  commandTemplate: string;
+  nodeDiskGb: string;
+  nodeRamMb: string;
+};
+
+function emptyPresetRow(): PresetRow {
+  return {
+    presetId: '',
+    label: '',
+    description: '',
+    commandTemplate: '',
+    nodeDiskGb: '',
+    nodeRamMb: '',
+  };
+}
+
+function presetRowFromApi(p: NetworkNodePreset): PresetRow {
+  return {
+    presetId: p.presetId,
+    label: p.label,
+    description: p.description ?? '',
+    commandTemplate: p.commandTemplate,
+    nodeDiskGb: p.nodeDiskGb != null ? String(p.nodeDiskGb) : '',
+    nodeRamMb: p.nodeRamMb != null ? String(p.nodeRamMb) : '',
+  };
+}
 
 function toNetworkId(name: string): string {
   return name
@@ -42,9 +83,11 @@ type RequestListingFormProps = {
 };
 
 export function RequestListingForm({ editId, initialData }: RequestListingFormProps = {}) {
+  const router = useRouter();
   const [name, setName] = useState('');
   const [symbol, setSymbol] = useState('');
-  const [icon, setIcon] = useState('⛓');
+  const [iconEmoji, setIconEmoji] = useState('⛓');
+  const [iconImagePath, setIconImagePath] = useState<string | null>(null);
   const [algorithm, setAlgorithm] = useState('');
   const [environment, setEnvironment] = useState<NetworkEnvironment>('devnet');
   const [poolUrl, setPoolUrl] = useState('');
@@ -60,15 +103,27 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
   const [nodeDiskGb, setNodeDiskGb] = useState('');
   const [nodeRamMb, setNodeRamMb] = useState('');
   const [nodeBinarySha256, setNodeBinarySha256] = useState('');
+  const [useMultiPresets, setUseMultiPresets] = useState(false);
+  const [presetRows, setPresetRows] = useState<PresetRow[]>(() => [emptyPresetRow()]);
   const [status, setStatus] = useState<RequestStatus>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [iconUploading, setIconUploading] = useState(false);
+  const [deletePending, setDeletePending] = useState(false);
+  const iconFileRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
 
   useEffect(() => {
     if (!initialData) return;
     setName(initialData.name);
     setSymbol(initialData.symbol);
-    setIcon(initialData.icon ?? '⛓');
+    const ic = initialData.icon ?? '⛓';
+    if (isUploadedNetworkIconPath(ic)) {
+      setIconImagePath(ic);
+      setIconEmoji('⛓');
+    } else {
+      setIconImagePath(null);
+      setIconEmoji(ic);
+    }
     setAlgorithm(initialData.algorithm);
     setEnvironment(initialData.environment);
     setDescription(initialData.description);
@@ -82,7 +137,13 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
     setNodeDiskGb(initialData.nodeDiskGb != null ? String(initialData.nodeDiskGb) : '');
     setNodeRamMb(initialData.nodeRamMb != null ? String(initialData.nodeRamMb) : '');
     setNodeBinarySha256(initialData.nodeBinarySha256 ?? '');
-    setShowNodeSection(!!(initialData.nodeDownloadUrl || initialData.nodeCommandTemplate));
+    const stored = initialData.nodePresets;
+    const hasMulti = Array.isArray(stored) && stored.length > 0;
+    setUseMultiPresets(hasMulti);
+    setPresetRows(hasMulti ? stored.map(presetRowFromApi) : [emptyPresetRow()]);
+    setShowNodeSection(
+      !!(initialData.nodeDownloadUrl || initialData.nodeCommandTemplate || hasMulti)
+    );
   }, [initialData]);
 
   const isMainnet = environment === 'mainnet';
@@ -96,10 +157,10 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
     const baseId = toNetworkId(name);
     const desc = description.trim();
     const portNum = poolPort ? Number(poolPort) : undefined;
-    const iconTrim = icon.trim();
-    if (!iconTrim) {
+    const iconTrim = (iconImagePath ?? iconEmoji).trim();
+    if (!isValidBlockchainNetworkIcon(iconTrim)) {
       setStatus('error');
-      setErrorMsg('Please enter a network logo (emoji or icon character).');
+      setErrorMsg('Upload a PNG or JPEG logo, or enter a short emoji (max 64 characters).');
       return;
     }
     if (!algorithm.trim()) {
@@ -112,7 +173,27 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
       setErrorMsg('Please provide a clear description of your network and its use case (at least 20 characters).');
       return;
     }
-    const hasNode = !!(nodeDownloadUrl.trim() && nodeCommandTemplate.trim());
+    const urlOk = !!nodeDownloadUrl.trim();
+    let hasNode = false;
+    if (useMultiPresets) {
+      const filled = presetRows.filter(
+        (r) => r.presetId.trim() && r.label.trim() && r.commandTemplate.trim()
+      );
+      if (urlOk && filled.length > 0) {
+        for (const r of filled) {
+          if (!PRESET_ID_PATTERN.test(r.presetId.trim())) {
+            setStatus('error');
+            setErrorMsg(
+              `Invalid node mode id "${r.presetId.trim()}": use lowercase letters, numbers, and hyphens only (1–48 chars).`
+            );
+            return;
+          }
+        }
+        hasNode = true;
+      }
+    } else {
+      hasNode = !!(urlOk && nodeCommandTemplate.trim());
+    }
     const hasPool = !!(poolUrl.trim() && portNum != null && portNum >= 1 && portNum <= 65535);
     if (!hasPool && !hasNode) {
       setStatus('error');
@@ -141,9 +222,33 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
       status: 'live',
       ...(!editId && requiresFee && { feeConfirmed }),
     };
-    if (nodeDownloadUrl.trim() && nodeCommandTemplate.trim()) {
+    if (urlOk && useMultiPresets) {
+      const filled = presetRows.filter(
+        (r) => r.presetId.trim() && r.label.trim() && r.commandTemplate.trim()
+      );
+      if (filled.length > 0) {
+        payload.nodeDownloadUrl = nodeDownloadUrl.trim();
+        const presets: NetworkNodePreset[] = filled.map((r) => {
+          const disk = r.nodeDiskGb ? Number(r.nodeDiskGb) : undefined;
+          const ram = r.nodeRamMb ? Number(r.nodeRamMb) : undefined;
+          return {
+            presetId: r.presetId.trim(),
+            label: r.label.trim(),
+            description: r.description.trim() || undefined,
+            commandTemplate: r.commandTemplate.trim(),
+            ...(disk && disk >= 1 && disk <= 2000 ? { nodeDiskGb: disk } : {}),
+            ...(ram && ram >= 256 && ram <= 65536 ? { nodeRamMb: ram } : {}),
+          };
+        });
+        payload.nodePresets = presets;
+        if (nodeBinarySha256.trim() && /^[a-fA-F0-9]{64}$/.test(nodeBinarySha256.trim())) {
+          payload.nodeBinarySha256 = nodeBinarySha256.trim();
+        }
+      }
+    } else if (urlOk && nodeCommandTemplate.trim()) {
       payload.nodeDownloadUrl = nodeDownloadUrl.trim();
       payload.nodeCommandTemplate = nodeCommandTemplate.trim();
+      payload.nodePresets = [];
       const disk = nodeDiskGb ? Number(nodeDiskGb) : undefined;
       const ram = nodeRamMb ? Number(nodeRamMb) : undefined;
       if (disk && disk >= 1 && disk <= 2000) payload.nodeDiskGb = disk;
@@ -180,6 +285,65 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
     } catch {
       setStatus('error');
       setErrorMsg('Network unreachable. Try again.');
+    }
+  }
+
+  async function handleIconFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setIconUploading(true);
+    try {
+      const fd = new FormData();
+      fd.set('file', file);
+      const res = await fetch('/api/networks/icon', {
+        method: 'POST',
+        body: fd,
+        credentials: 'include',
+      });
+      const data = (await res.json().catch(() => ({}))) as { path?: string; error?: string };
+      if (!res.ok) {
+        addToast(data.error ?? 'Logo upload failed', 'error');
+        return;
+      }
+      if (data.path) {
+        setIconImagePath(data.path);
+        addToast('Logo uploaded', 'info');
+      }
+    } catch {
+      addToast('Logo upload failed', 'error');
+    } finally {
+      setIconUploading(false);
+    }
+  }
+
+  async function handleDeleteListing() {
+    if (!editId) return;
+    if (
+      !window.confirm(
+        'Delete this network listing permanently? It will be removed from VibeMiner and miners will no longer see it. This cannot be undone.'
+      )
+    ) {
+      return;
+    }
+    setDeletePending(true);
+    try {
+      const res = await fetch(`/api/networks/${encodeURIComponent(editId)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        addToast(data.error ?? 'Could not delete listing', 'error');
+        return;
+      }
+      addToast('Listing deleted', 'info');
+      router.push('/dashboard/settings');
+      router.refresh();
+    } catch {
+      addToast('Could not delete listing', 'error');
+    } finally {
+      setDeletePending(false);
     }
   }
 
@@ -247,18 +411,58 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
       </div>
 
       <div>
-        <label htmlFor="req-icon" className="block text-sm font-medium text-gray-400">Network logo (required)</label>
+        <span className="block text-sm font-medium text-gray-400">Network logo (required)</span>
+        <p className="mt-1 text-xs text-gray-500">
+          Upload PNG, JPEG, or WebP (max 512 KB), or enter a short emoji below.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-4">
+          <NetworkMark
+            icon={iconImagePath ?? iconEmoji}
+            label={name.trim() || 'Network logo preview'}
+            className="h-14 w-14 text-2xl"
+          />
+          <div className="flex flex-col gap-2">
+            <input
+              ref={iconFileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+              className="sr-only"
+              aria-label="Upload logo image"
+              onChange={handleIconFileChange}
+              disabled={iconUploading}
+            />
+            <button
+              type="button"
+              onClick={() => iconFileRef.current?.click()}
+              disabled={iconUploading}
+              className="rounded-lg border border-white/10 bg-surface-850 px-4 py-2 text-sm text-white transition hover:border-accent-cyan/40 hover:bg-white/5 disabled:opacity-50"
+            >
+              {iconUploading ? 'Uploading…' : 'Upload image'}
+            </button>
+            {iconImagePath && (
+              <button
+                type="button"
+                onClick={() => setIconImagePath(null)}
+                className="rounded-lg border border-white/10 px-4 py-2 text-sm text-gray-400 transition hover:border-white/20 hover:text-white"
+              >
+                Remove image
+              </button>
+            )}
+          </div>
+        </div>
+        <label htmlFor="req-icon" className="mt-4 block text-xs font-medium text-gray-500">
+          Or emoji / text (max 64 characters){iconImagePath ? ' — ignored while an image is set' : ''}
+        </label>
         <input
           id="req-icon"
           type="text"
-          value={icon}
-          onChange={(e) => setIcon(e.target.value)}
-          required
-          maxLength={10}
-          placeholder="e.g. ⛓ ⛏ 🔷"
-          className="mt-1 w-full max-w-[8rem] rounded-lg border border-white/10 bg-surface-850 px-4 py-2.5 text-2xl text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none"
+          value={iconEmoji}
+          onChange={(e) => setIconEmoji(e.target.value)}
+          maxLength={64}
+          disabled={!!iconImagePath}
+          placeholder="e.g. ⛓"
+          className="mt-1 w-full max-w-md rounded-lg border border-white/10 bg-surface-850 px-4 py-2.5 text-2xl text-white placeholder-gray-500 focus:border-accent-cyan/50 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
         />
-        <p className="mt-1 text-xs text-gray-500">Single emoji or icon character shown on your network card.</p>
       </div>
 
       <div>
@@ -398,46 +602,220 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
                 className="mt-1 w-full rounded-lg border border-white/10 bg-surface-900 px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none"
               />
             </div>
-            <div>
-              <label htmlFor="req-node-cmd" className="block text-xs font-medium text-gray-500">Command template (use {`{dataDir}`} or {`{data_dir}`} for data path)</label>
+            <label className="flex cursor-pointer items-start gap-2 text-sm text-gray-400">
               <input
-                id="req-node-cmd"
-                type="text"
-                value={nodeCommandTemplate}
-                onChange={(e) => setNodeCommandTemplate(e.target.value)}
-                placeholder="monerod --data-dir {dataDir} --non-interactive"
-                maxLength={1024}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-surface-900 px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none"
+                type="checkbox"
+                checked={useMultiPresets}
+                onChange={() => {
+                  if (!useMultiPresets) {
+                    setUseMultiPresets(true);
+                    if (nodeCommandTemplate.trim()) {
+                      setPresetRows([
+                        {
+                          presetId: 'default',
+                          label: 'Node',
+                          description: '',
+                          commandTemplate: nodeCommandTemplate,
+                          nodeDiskGb,
+                          nodeRamMb,
+                        },
+                      ]);
+                    }
+                  } else {
+                    setUseMultiPresets(false);
+                    const first = presetRows.find((r) => r.commandTemplate.trim());
+                    if (first) {
+                      setNodeCommandTemplate(first.commandTemplate);
+                      setNodeDiskGb(first.nodeDiskGb);
+                      setNodeRamMb(first.nodeRamMb);
+                    }
+                  }
+                }}
+                className="mt-1 rounded border-white/20"
               />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="req-node-disk" className="block text-xs font-medium text-gray-500">Disk (GB)</label>
-                <input
-                  id="req-node-disk"
-                  type="number"
-                  value={nodeDiskGb}
-                  onChange={(e) => setNodeDiskGb(e.target.value)}
-                  placeholder="e.g. 50"
-                  min={1}
-                  max={2000}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-surface-900 px-3 py-2 text-sm text-white focus:outline-none"
-                />
+              <span>
+                Offer multiple node modes (users pick e.g. full node vs validator). Up to 8 modes; each has its own command and optional resource hints.
+              </span>
+            </label>
+            {useMultiPresets ? (
+              <div className="space-y-4">
+                {presetRows.map((row, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-lg border border-white/10 bg-surface-900/80 p-3 space-y-2"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-medium text-gray-400">Node mode {idx + 1}</span>
+                      {presetRows.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setPresetRows((rows) => rows.filter((_, i) => i !== idx))}
+                          className="text-xs text-red-400 hover:underline"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-xs text-gray-500">Mode id (lowercase, hyphens)</label>
+                        <input
+                          type="text"
+                          value={row.presetId}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setPresetRows((rows) =>
+                              rows.map((r, i) => (i === idx ? { ...r, presetId: v } : r))
+                            );
+                          }}
+                          placeholder="e.g. full-node"
+                          maxLength={48}
+                          className="mt-1 w-full rounded border border-white/10 bg-surface-950 px-2 py-1.5 font-mono text-sm text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500">Label (shown in app)</label>
+                        <input
+                          type="text"
+                          value={row.label}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setPresetRows((rows) =>
+                              rows.map((r, i) => (i === idx ? { ...r, label: v } : r))
+                            );
+                          }}
+                          placeholder="e.g. Full node"
+                          maxLength={80}
+                          className="mt-1 w-full rounded border border-white/10 bg-surface-950 px-2 py-1.5 text-sm text-white"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500">Description (optional)</label>
+                      <input
+                        type="text"
+                        value={row.description}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setPresetRows((rows) =>
+                            rows.map((r, i) => (i === idx ? { ...r, description: v } : r))
+                          );
+                        }}
+                        placeholder="Short hint for users"
+                        maxLength={256}
+                        className="mt-1 w-full rounded border border-white/10 bg-surface-950 px-2 py-1.5 text-sm text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500">
+                        Command ({`{dataDir}`} / {`{data_dir}`} = data path)
+                      </label>
+                      <input
+                        type="text"
+                        value={row.commandTemplate}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setPresetRows((rows) =>
+                            rows.map((r, i) => (i === idx ? { ...r, commandTemplate: v } : r))
+                          );
+                        }}
+                        placeholder="mychaind --data-dir {dataDir}"
+                        maxLength={1024}
+                        className="mt-1 w-full rounded border border-white/10 bg-surface-950 px-2 py-1.5 font-mono text-sm text-white"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs text-gray-500">Disk (GB)</label>
+                        <input
+                          type="number"
+                          value={row.nodeDiskGb}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setPresetRows((rows) =>
+                              rows.map((r, i) => (i === idx ? { ...r, nodeDiskGb: v } : r))
+                            );
+                          }}
+                          min={1}
+                          max={2000}
+                          placeholder="optional"
+                          className="mt-1 w-full rounded border border-white/10 bg-surface-950 px-2 py-1.5 text-sm text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500">RAM (MB)</label>
+                        <input
+                          type="number"
+                          value={row.nodeRamMb}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setPresetRows((rows) =>
+                              rows.map((r, i) => (i === idx ? { ...r, nodeRamMb: v } : r))
+                            );
+                          }}
+                          min={256}
+                          max={65536}
+                          placeholder="optional"
+                          className="mt-1 w-full rounded border border-white/10 bg-surface-950 px-2 py-1.5 text-sm text-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {presetRows.length < 8 && (
+                  <button
+                    type="button"
+                    onClick={() => setPresetRows((rows) => [...rows, emptyPresetRow()])}
+                    className="text-sm text-accent-cyan hover:underline"
+                  >
+                    + Add node mode
+                  </button>
+                )}
               </div>
-              <div>
-                <label htmlFor="req-node-ram" className="block text-xs font-medium text-gray-500">RAM (MB)</label>
-                <input
-                  id="req-node-ram"
-                  type="number"
-                  value={nodeRamMb}
-                  onChange={(e) => setNodeRamMb(e.target.value)}
-                  placeholder="e.g. 4096"
-                  min={256}
-                  max={65536}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-surface-900 px-3 py-2 text-sm text-white focus:outline-none"
-                />
-              </div>
-            </div>
+            ) : (
+              <>
+                <div>
+                  <label htmlFor="req-node-cmd" className="block text-xs font-medium text-gray-500">Command template (use {`{dataDir}`} or {`{data_dir}`} for data path)</label>
+                  <input
+                    id="req-node-cmd"
+                    type="text"
+                    value={nodeCommandTemplate}
+                    onChange={(e) => setNodeCommandTemplate(e.target.value)}
+                    placeholder="monerod --data-dir {dataDir} --non-interactive"
+                    maxLength={1024}
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-surface-900 px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="req-node-disk" className="block text-xs font-medium text-gray-500">Disk (GB)</label>
+                    <input
+                      id="req-node-disk"
+                      type="number"
+                      value={nodeDiskGb}
+                      onChange={(e) => setNodeDiskGb(e.target.value)}
+                      placeholder="e.g. 50"
+                      min={1}
+                      max={2000}
+                      className="mt-1 w-full rounded-lg border border-white/10 bg-surface-900 px-3 py-2 text-sm text-white focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="req-node-ram" className="block text-xs font-medium text-gray-500">RAM (MB)</label>
+                    <input
+                      id="req-node-ram"
+                      type="number"
+                      value={nodeRamMb}
+                      onChange={(e) => setNodeRamMb(e.target.value)}
+                      placeholder="e.g. 4096"
+                      min={256}
+                      max={65536}
+                      className="mt-1 w-full rounded-lg border border-white/10 bg-surface-900 px-3 py-2 text-sm text-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
             <div>
               <label htmlFor="req-node-sha256" className="block text-xs font-medium text-gray-500">Binary SHA256 (optional, for integrity)</label>
               <input
@@ -468,6 +846,23 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
         />
         <p className="mt-1 text-xs text-gray-500">Helps miners discover and choose your network. 20–1024 characters.</p>
       </div>
+
+      {editId && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+          <h4 className="text-sm font-medium text-red-300">Delete listing</h4>
+          <p className="mt-1 text-xs text-gray-500">
+            Remove this network from VibeMiner. Uploaded logos are deleted from storage. You can submit a new listing later if you change your mind.
+          </p>
+          <button
+            type="button"
+            onClick={handleDeleteListing}
+            disabled={deletePending || status === 'pending'}
+            className="mt-3 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
+          >
+            {deletePending ? 'Deleting…' : 'Delete this listing'}
+          </button>
+        </div>
+      )}
 
       {!editId && requiresFee && (
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">

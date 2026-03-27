@@ -9,7 +9,7 @@ import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { BrandMark } from '@/components/BrandMark';
 import { MiningLoader } from '@/components/ui/MiningLoader';
 import { RequestListingForm, type NetworkListingInitialData } from '@/components/RequestListingForm';
-import type { NetworkEnvironment } from '@vibeminer/shared';
+import type { NetworkEnvironment, NetworkNodePreset } from '@vibeminer/shared';
 
 type NetworkFromApi = {
   id: string;
@@ -29,6 +29,7 @@ type NetworkFromApi = {
   nodeDiskGb?: number;
   nodeRamMb?: number;
   nodeBinarySha256?: string;
+  nodePresets?: NetworkNodePreset[];
 };
 
 export default function EditNetworkPage() {
@@ -72,6 +73,7 @@ export default function EditNetworkPage() {
           nodeDiskGb: net.nodeDiskGb,
           nodeRamMb: net.nodeRamMb,
           nodeBinarySha256: net.nodeBinarySha256,
+          nodePresets: net.nodePresets,
         });
       })
       .catch(() => {

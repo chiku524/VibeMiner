@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { NetworkMark } from '@/components/ui/NetworkMark';
+import { useToast } from '@/contexts/ToastContext';
 
 type NetworkSummary = {
   id: string;
@@ -19,6 +21,8 @@ export function NetworkListingsSection() {
   const [networks, setNetworks] = useState<NetworkSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { addToast } = useToast();
 
   useEffect(() => {
     let cancelled = false;
@@ -38,6 +42,30 @@ export function NetworkListingsSection() {
       });
     return () => { cancelled = true; };
   }, []);
+
+  async function handleDelete(n: NetworkSummary) {
+    if (!window.confirm(`Delete "${n.name}" from VibeMiner? This cannot be undone.`)) {
+      return;
+    }
+    setDeletingId(n.id);
+    try {
+      const res = await fetch(`/api/networks/${encodeURIComponent(n.id)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        addToast(data.error ?? 'Could not delete listing', 'error');
+        return;
+      }
+      addToast('Listing deleted', 'info');
+      setNetworks((prev) => prev.filter((x) => x.id !== n.id));
+    } catch {
+      addToast('Could not delete listing', 'error');
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   if (loading) {
     return (
@@ -77,9 +105,11 @@ export function NetworkListingsSection() {
         <li key={n.id}>
           <div className="flex min-w-0 flex-wrap items-center justify-between gap-4 rounded-xl border border-white/10 bg-surface-900/30 p-4">
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/5 text-xl">
-                {n.icon ?? '⛓'}
-              </span>
+              <NetworkMark
+                icon={n.icon ?? '⛓'}
+                label={n.name}
+                className="h-10 w-10 rounded-lg bg-white/5 text-xl"
+              />
               <div className="min-w-0">
                 <p className="font-medium text-white truncate">{n.name}</p>
                 <p className="text-xs text-gray-500 truncate">{n.symbol} · {n.algorithm}</p>
@@ -95,12 +125,22 @@ export function NetworkListingsSection() {
                 </span>
               )}
             </div>
-            <Link
-              href={`/dashboard/network/edit?id=${encodeURIComponent(n.id)}`}
-              className="shrink-0 rounded-lg border border-white/10 px-3 py-1.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white"
-            >
-              Edit
-            </Link>
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <Link
+                href={`/dashboard/network/edit?id=${encodeURIComponent(n.id)}`}
+                className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white"
+              >
+                Edit
+              </Link>
+              <button
+                type="button"
+                onClick={() => handleDelete(n)}
+                disabled={deletingId === n.id}
+                className="rounded-lg border border-red-500/30 px-3 py-1.5 text-sm text-red-400 transition hover:bg-red-500/10 disabled:opacity-50"
+              >
+                {deletingId === n.id ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
           </div>
         </li>
       ))}

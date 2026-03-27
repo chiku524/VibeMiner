@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { parseNetwork, FEE_CONFIG, getNetworkById, validateNodeConfig } from '@vibeminer/shared';
+import { parseNetwork, FEE_CONFIG, getNetworkById, normalizeNodeFieldsForListing } from '@vibeminer/shared';
 import { getEnv, getSessionCookie, getUserIdFromSession } from '@/lib/auth-server';
 
 /**
@@ -65,28 +65,24 @@ export async function POST(request: Request) {
       );
     }
 
-    // Node config: if provided, run security validation (URL allowlist, command sanitization)
-    let nodeConfig: { nodeDownloadUrl?: string; nodeCommandTemplate?: string; nodeDiskGb?: number; nodeRamMb?: number; nodeBinarySha256?: string } | null = null;
-    if (network.nodeDownloadUrl?.trim() && network.nodeCommandTemplate?.trim()) {
-      const nodeResult = validateNodeConfig({
-        nodeDownloadUrl: network.nodeDownloadUrl.trim(),
-        nodeCommandTemplate: network.nodeCommandTemplate.trim(),
-        nodeDiskGb: network.nodeDiskGb,
-        nodeRamMb: network.nodeRamMb,
-        nodeBinarySha256: network.nodeBinarySha256?.trim(),
-      });
-      if (!nodeResult.success) {
-        return NextResponse.json(
-          { error: `Node config validation failed: ${nodeResult.error}. Download URLs must be from allowed hosts (e.g. GitHub).` },
-          { status: 400 }
-        );
-      }
-      nodeConfig = nodeResult.data;
+    const nodeNorm = normalizeNodeFieldsForListing({
+      nodeDownloadUrl: network.nodeDownloadUrl,
+      nodeCommandTemplate: network.nodeCommandTemplate,
+      nodeDiskGb: network.nodeDiskGb,
+      nodeRamMb: network.nodeRamMb,
+      nodeBinarySha256: network.nodeBinarySha256,
+      nodePresets: network.nodePresets,
+    });
+    if (!nodeNorm.ok) {
+      return NextResponse.json(
+        { error: `Node config validation failed: ${nodeNorm.error}. Download URLs must be from allowed hosts (e.g. GitHub).` },
+        { status: 400 }
+      );
     }
 
     // Require either pool (mining) OR node config (PoS / full node)
     const hasPool = !!(network.poolUrl?.trim() && network.poolPort != null && network.poolPort >= 1 && network.poolPort <= 65535);
-    const hasNode = !!nodeConfig;
+    const hasNode = !!(nodeNorm.nodeDownloadUrl && nodeNorm.nodeCommandTemplate);
     if (!hasPool && !hasNode) {
       return NextResponse.json(
         {
@@ -143,8 +139,8 @@ export async function POST(request: Request) {
       `insert into network_listings (
         id, name, symbol, algorithm, environment, description, icon,
         pool_url, pool_port, website, reward_rate, min_payout, status,
-        requested_by_user_id, listing_fee_paid, node_download_url, node_command_template, node_disk_gb, node_ram_mb, node_binary_sha256
-      ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        requested_by_user_id, listing_fee_paid, node_download_url, node_command_template, node_disk_gb, node_ram_mb, node_binary_sha256, node_presets_json
+      ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
       .bind(
         id,
@@ -162,11 +158,12 @@ export async function POST(request: Request) {
         network.status ?? 'live',
         userId,
         isMainnet ? 1 : 0,
-        nodeConfig?.nodeDownloadUrl ?? null,
-        nodeConfig?.nodeCommandTemplate ?? null,
-        nodeConfig?.nodeDiskGb ?? null,
-        nodeConfig?.nodeRamMb ?? null,
-        nodeConfig?.nodeBinarySha256 ?? null
+        nodeNorm.nodeDownloadUrl,
+        nodeNorm.nodeCommandTemplate,
+        nodeNorm.nodeDiskGb,
+        nodeNorm.nodeRamMb,
+        nodeNorm.nodeBinarySha256,
+        nodeNorm.nodePresetsJson
       )
       .run();
 

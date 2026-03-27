@@ -24,8 +24,34 @@ lazy_static::lazy_static! {
     static ref NODE_STATS: Mutex<HashMap<String, NodeStatus>> = Mutex::new(HashMap::new());
 }
 
-fn network_key(network_id: &str, environment: &str) -> String {
+fn node_dir_key(network_id: &str, environment: &str) -> String {
     format!("{}:{}", environment, network_id)
+}
+
+fn sanitize_preset_id(raw: &str) -> String {
+    let t = raw.trim().to_lowercase();
+    if t.is_empty() {
+        return "default".to_string();
+    }
+    let mut out = String::new();
+    for c in t.chars() {
+        if c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' {
+            out.push(c);
+        } else if !out.is_empty() && !out.ends_with('-') {
+            out.push('-');
+        }
+    }
+    let out = out.trim_matches('-').to_string();
+    if out.is_empty() {
+        "default".to_string()
+    } else {
+        out
+    }
+}
+
+fn process_key(network_id: &str, environment: &str, preset_raw: &str) -> String {
+    let p = sanitize_preset_id(preset_raw);
+    format!("{}:{}:{}", environment, network_id, p)
 }
 
 fn sha256_bytes(bytes: &[u8]) -> String {
@@ -37,16 +63,19 @@ fn sha256_bytes(bytes: &[u8]) -> String {
 pub fn ensure_node_ready(
     network_id: &str,
     environment: &str,
+    node_preset_id: &str,
     node_download_url: &str,
     node_binary_sha256: Option<&str>,
     user_data_path: &Path,
     mut on_progress: impl FnMut(&str, u32, &str),
 ) -> Result<(std::path::PathBuf, std::path::PathBuf), String> {
-    let key = network_key(network_id, environment);
+    let key = node_dir_key(network_id, environment);
     let node_dir = user_data_path.join("nodes").join(&key);
-    let data_dir = node_dir.join("data");
+    let preset_safe = sanitize_preset_id(node_preset_id);
+    let data_dir = node_dir.join("data").join(&preset_safe);
     let ready_marker = node_dir.join("ready");
     if ready_marker.exists() {
+        std::fs::create_dir_all(&data_dir).map_err(|e| e.to_string())?;
         return Ok((node_dir.join("bin"), data_dir));
     }
 
@@ -203,11 +232,12 @@ fn resolve_node_executable(bin_dir: &Path, exe_token: &str) -> Result<std::path:
 pub fn start_node(
     network_id: String,
     environment: String,
+    node_preset_id: &str,
     node_command_template: &str,
     bin_dir: &Path,
     data_dir: &Path,
 ) -> Result<(), String> {
-    let key = network_key(&network_id, &environment);
+    let key = process_key(&network_id, &environment, node_preset_id);
     {
         let nodes = ACTIVE_NODES.lock().map_err(|e| e.to_string())?;
         if nodes.contains_key(&key) {
@@ -266,8 +296,8 @@ pub fn start_node(
     Ok(())
 }
 
-pub fn stop_node(network_id: &str, environment: &str) {
-    let key = network_key(network_id, environment);
+pub fn stop_node(network_id: &str, environment: &str, node_preset_id: &str) {
+    let key = process_key(network_id, environment, node_preset_id);
     if let Ok(mut nodes) = ACTIVE_NODES.lock() {
         if let Some(mut entry) = nodes.remove(&key) {
             let _ = entry._child.kill();
@@ -280,14 +310,15 @@ pub fn stop_node(network_id: &str, environment: &str) {
     }
 }
 
-pub fn get_node_status(network_id: &str, environment: &str) -> Option<NodeStatus> {
-    let key = network_key(network_id, environment);
+pub fn get_node_status(network_id: &str, environment: &str, node_preset_id: &str) -> Option<NodeStatus> {
+    let key = process_key(network_id, environment, node_preset_id);
     NODE_STATS.lock().ok().and_then(|m| m.get(&key).cloned())
 }
 
-pub fn is_node_running(network_id: &str, environment: &str) -> bool {
+pub fn is_node_running(network_id: &str, environment: &str, node_preset_id: &str) -> bool {
+    let key = process_key(network_id, environment, node_preset_id);
     ACTIVE_NODES
         .lock()
-        .map(|m| m.contains_key(&network_key(network_id, environment)))
+        .map(|m| m.contains_key(&key))
         .unwrap_or(false)
 }

@@ -339,6 +339,7 @@ struct NodeNetwork {
     node_download_url: Option<String>,
     node_command_template: Option<String>,
     node_binary_sha256: Option<String>,
+    node_preset_id: Option<String>,
 }
 
 #[tauri::command]
@@ -366,6 +367,10 @@ async fn start_node(
         .unwrap_or("")
         .to_string();
     let network_id = n.id.clone();
+    let preset_raw = n
+        .node_preset_id
+        .clone()
+        .unwrap_or_else(|| "default".to_string());
     if url.is_empty() {
         return Ok(serde_json::json!({ "ok": false, "error": "No node download URL" }));
     }
@@ -377,10 +382,12 @@ async fn start_node(
     let id_for_ready = network_id.clone();
     let env_for_ready = env.clone();
     let url_for_ready = url.clone();
+    let preset_for_ready = preset_raw.clone();
     let (bin_dir, data_dir) = tauri::async_runtime::spawn_blocking(move || {
         node::ensure_node_ready(
             &id_for_ready,
             &env_for_ready,
+            &preset_for_ready,
             &url_for_ready,
             sha.as_deref(),
             &user_data_path,
@@ -397,6 +404,7 @@ async fn start_node(
     node::start_node(
         network_id,
         env,
+        &preset_raw,
         &template,
         &bin_dir,
         &data_dir,
@@ -405,13 +413,15 @@ async fn start_node(
 }
 
 #[tauri::command]
-fn stop_node(network_id: String, environment: String) {
-    node::stop_node(&network_id, &environment);
+fn stop_node(network_id: String, environment: String, node_preset_id: Option<String>) {
+    let pid = node_preset_id.as_deref().unwrap_or("default");
+    node::stop_node(&network_id, &environment, pid);
 }
 
 #[tauri::command]
-fn get_node_status(network_id: String, environment: String) -> Option<serde_json::Value> {
-    node::get_node_status(&network_id, &environment).map(|s| {
+fn get_node_status(network_id: String, environment: String, node_preset_id: Option<String>) -> Option<serde_json::Value> {
+    let pid = node_preset_id.as_deref().unwrap_or("default");
+    node::get_node_status(&network_id, &environment, pid).map(|s| {
         serde_json::json!({
             "startedAt": s.started_at,
             "status": s.status,
@@ -421,8 +431,9 @@ fn get_node_status(network_id: String, environment: String) -> Option<serde_json
 }
 
 #[tauri::command]
-fn is_node_running(network_id: String, environment: String) -> bool {
-    node::is_node_running(&network_id, &environment)
+fn is_node_running(network_id: String, environment: String, node_preset_id: Option<String>) -> bool {
+    let pid = node_preset_id.as_deref().unwrap_or("default");
+    node::is_node_running(&network_id, &environment, pid)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

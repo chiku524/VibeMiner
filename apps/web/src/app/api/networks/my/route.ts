@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { parseStoredNodePresetsJson } from '@vibeminer/shared';
 import { getEnv, getSessionCookie, getUserIdFromSession } from '@/lib/auth-server';
 
 function rowToNetwork(row: Record<string, unknown>, stats?: { minerCount: number; totalBalanceRaw: string; currency: string } | null) {
@@ -22,6 +23,9 @@ function rowToNetwork(row: Record<string, unknown>, stats?: { minerCount: number
     nodeDiskGb: typeof row.node_disk_gb === 'number' ? row.node_disk_gb : undefined,
     nodeRamMb: typeof row.node_ram_mb === 'number' ? row.node_ram_mb : undefined,
     nodeBinarySha256: row.node_binary_sha256 ?? undefined,
+    nodePresets: parseStoredNodePresetsJson(
+      typeof row.node_presets_json === 'string' ? row.node_presets_json : undefined
+    ),
     listedAt: typeof row.created_at === 'string' ? row.created_at : undefined,
     ...(stats && { minerCount: stats.minerCount, totalBalanceRaw: stats.totalBalanceRaw, currency: stats.currency }),
   };

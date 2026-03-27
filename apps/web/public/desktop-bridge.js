@@ -72,14 +72,26 @@
       startNode: function (opts) {
         return invoke('start_node', opts);
       },
-      stopNode: function (networkId, environment) {
-        return invoke('stop_node', { network_id: networkId, environment: environment });
+      stopNode: function (networkId, environment, nodePresetId) {
+        return invoke('stop_node', {
+          network_id: networkId,
+          environment: environment,
+          node_preset_id: nodePresetId != null && nodePresetId !== '' ? nodePresetId : null,
+        });
       },
-      getNodeStatus: function (networkId, environment) {
-        return invoke('get_node_status', { network_id: networkId, environment: environment });
+      getNodeStatus: function (networkId, environment, nodePresetId) {
+        return invoke('get_node_status', {
+          network_id: networkId,
+          environment: environment,
+          node_preset_id: nodePresetId != null && nodePresetId !== '' ? nodePresetId : null,
+        });
       },
-      isNodeRunning: function (networkId, environment) {
-        return invoke('is_node_running', { network_id: networkId, environment: environment });
+      isNodeRunning: function (networkId, environment, nodePresetId) {
+        return invoke('is_node_running', {
+          network_id: networkId,
+          environment: environment,
+          node_preset_id: nodePresetId != null && nodePresetId !== '' ? nodePresetId : null,
+        });
       },
       onNodeDownloadProgress: function (cb) {
         return function () {};

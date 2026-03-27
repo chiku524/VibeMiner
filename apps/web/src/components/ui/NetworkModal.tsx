@@ -1,12 +1,20 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
 import type { BlockchainNetwork } from '@vibeminer/shared';
-import { INCENTIVIZED_TESTNET_IDS, getResourceTier, RESOURCE_TIER_LABELS, RESOURCE_TIER_DESCRIPTIONS, hasNodeConfig } from '@vibeminer/shared';
+import {
+  INCENTIVIZED_TESTNET_IDS,
+  getResourceTier,
+  RESOURCE_TIER_LABELS,
+  RESOURCE_TIER_DESCRIPTIONS,
+  hasNodeConfig,
+  resolveNodePresets,
+} from '@vibeminer/shared';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useToast } from '@/contexts/ToastContext';
+import { NetworkMark } from '@/components/ui/NetworkMark';
 
 interface NetworkModalProps {
   network: BlockchainNetwork | null;
@@ -29,24 +37,46 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
   const [nodeRunning, setNodeRunning] = useState(false);
   const [nodeStarting, setNodeStarting] = useState(false);
   const [nodeStatus, setNodeStatus] = useState<string | null>(null);
+  const [selectedPresetId, setSelectedPresetId] = useState<string>('default');
 
-  const tier = getResourceTier(network?.nodeDiskGb, network?.nodeRamMb);
+  const nodePresets = useMemo(
+    () => (network ? resolveNodePresets(network) : []),
+    [network]
+  );
+  const selectedPreset = useMemo(() => {
+    const p = nodePresets.find((x) => x.presetId === selectedPresetId);
+    return p ?? nodePresets[0];
+  }, [nodePresets, selectedPresetId]);
+
+  useEffect(() => {
+    if (!network) return;
+    const list = resolveNodePresets(network);
+    setSelectedPresetId(list[0]?.presetId ?? 'default');
+  }, [network]);
+
+  const displayDiskGb = network ? selectedPreset?.nodeDiskGb ?? network.nodeDiskGb : undefined;
+  const displayRamMb = network ? selectedPreset?.nodeRamMb ?? network.nodeRamMb : undefined;
+  const tier = getResourceTier(displayDiskGb, displayRamMb);
   const canRunNode = network && hasNodeConfig(network) && isDesktop;
 
   useEffect(() => {
-    if (!network || !isDesktop || !window.desktopAPI?.isNodeRunning) return;
-    window.desktopAPI.isNodeRunning(network.id, network.environment ?? 'mainnet').then(setNodeRunning);
-  }, [network, isDesktop]);
+    if (!network || !isDesktop || !window.desktopAPI?.isNodeRunning || !selectedPreset) return;
+    window.desktopAPI
+      .isNodeRunning(network.id, network.environment ?? 'mainnet', selectedPreset.presetId)
+      .then(setNodeRunning);
+  }, [network, isDesktop, selectedPreset?.presetId]);
 
   useEffect(() => {
-    if (!network || !isDesktop || !nodeRunning || !window.desktopAPI?.getNodeStatus) return;
+    if (!network || !isDesktop || !nodeRunning || !window.desktopAPI?.getNodeStatus || !selectedPreset) return;
     const interval = setInterval(() => {
-      window.desktopAPI?.getNodeStatus?.(network.id, network.environment ?? 'mainnet').then((s) => {
-        if (s) setNodeStatus(s.status ?? null);
-      });
+      window.desktopAPI
+        ?.getNodeStatus?.(network.id, network.environment ?? 'mainnet', selectedPreset.presetId)
+        .then((s) => {
+          if (s) setNodeStatus(s.status ?? null);
+        });
     }, 3000);
     return () => clearInterval(interval);
-  }, [network, isDesktop, nodeRunning]);
+  }, [network, isDesktop, nodeRunning, selectedPreset?.presetId]);
 
   useEffect(() => {
     if (!network) return;
@@ -108,9 +138,11 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
         >
           <div className="flex min-w-0 items-start justify-between gap-4">
             <div className="flex min-w-0 flex-1 items-start gap-4">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/10 text-3xl">
-                {network.icon}
-              </span>
+              <NetworkMark
+                icon={network.icon}
+                label={network.name}
+                className="h-14 w-14 rounded-xl bg-white/10 text-3xl"
+              />
               <div className="min-w-0 flex-1">
                 <h2
                   id="network-modal-title"
@@ -140,7 +172,7 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                     Incentivized testnet
                   </span>
                 )}
-                {(network.nodeDiskGb || network.nodeRamMb) && (
+                {(displayDiskGb || displayRamMb) && (
                   <span className="ml-2 inline-block rounded-full bg-sky-500/20 px-2.5 py-0.5 text-xs text-sky-300" title={RESOURCE_TIER_DESCRIPTIONS[tier]}>
                     {RESOURCE_TIER_LABELS[tier]} node
                   </span>
@@ -180,13 +212,13 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                 <p className="font-mono text-white">{network.minPayout}</p>
               </div>
             )}
-            {(network.nodeDiskGb || network.nodeRamMb) && (
+            {(displayDiskGb || displayRamMb) && (
               <div>
                 <span className="text-gray-500">Node resources</span>
                 <p className="font-mono text-white">
-                  {network.nodeDiskGb ? `${network.nodeDiskGb} GB disk` : ''}
-                  {network.nodeDiskGb && network.nodeRamMb ? ' · ' : ''}
-                  {network.nodeRamMb ? `${Math.round(network.nodeRamMb / 1024)} GB RAM` : ''}
+                  {displayDiskGb ? `${displayDiskGb} GB disk` : ''}
+                  {displayDiskGb && displayRamMb ? ' · ' : ''}
+                  {displayRamMb ? `${Math.round(displayRamMb / 1024)} GB RAM` : ''}
                 </p>
                 <p className="mt-0.5 text-xs text-gray-500">{RESOURCE_TIER_DESCRIPTIONS[tier]}</p>
               </div>
@@ -210,8 +242,34 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
               >
                 Start mining →
               </Link>
-              {canRunNode && (
+              {canRunNode && selectedPreset && (
                 <>
+                  {nodePresets.length > 1 && (
+                    <div className="w-full min-w-0 sm:w-auto">
+                      <label htmlFor="node-preset-select" className="sr-only">
+                        Node mode
+                      </label>
+                      <select
+                        id="node-preset-select"
+                        value={selectedPresetId}
+                        disabled={nodeRunning || nodeStarting}
+                        onChange={(e) => setSelectedPresetId(e.target.value)}
+                        className="w-full max-w-xs rounded-lg border border-white/10 bg-surface-850 px-3 py-2 text-sm text-white focus:border-accent-cyan/50 focus:outline-none disabled:opacity-50"
+                      >
+                        {nodePresets.map((p) => (
+                          <option key={p.presetId} value={p.presetId}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </select>
+                      {selectedPreset.description && (
+                        <p className="mt-1 max-w-md text-xs text-gray-500">{selectedPreset.description}</p>
+                      )}
+                    </div>
+                  )}
+                  {nodePresets.length === 1 && selectedPreset.description && (
+                    <p className="w-full text-xs text-gray-500">{selectedPreset.description}</p>
+                  )}
                   {nodeRunning ? (
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-accent-emerald animate-pulse" />
@@ -220,7 +278,11 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                       <button
                         type="button"
                         onClick={async () => {
-                          await window.desktopAPI?.stopNode?.(network.id, network.environment ?? 'mainnet');
+                          await window.desktopAPI?.stopNode?.(
+                            network.id,
+                            network.environment ?? 'mainnet',
+                            selectedPreset.presetId
+                          );
                           setNodeRunning(false);
                         }}
                         className="rounded-lg border border-red-500/30 px-3 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10"
@@ -244,8 +306,9 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                               id: network.id,
                               environment: network.environment ?? 'mainnet',
                               nodeDownloadUrl: network.nodeDownloadUrl,
-                              nodeCommandTemplate: network.nodeCommandTemplate,
+                              nodeCommandTemplate: selectedPreset.commandTemplate,
                               nodeBinarySha256: network.nodeBinarySha256,
+                              nodePresetId: selectedPreset.presetId,
                             },
                           });
                           if (result && typeof result === 'object' && 'ok' in result && result.ok) {

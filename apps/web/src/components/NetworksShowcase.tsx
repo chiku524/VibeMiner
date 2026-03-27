@@ -7,6 +7,7 @@ import { Layers } from 'lucide-react';
 import { getMainnetNetworksListed, getDevnetNetworks, INCENTIVIZED_TESTNET_IDS } from '@vibeminer/shared';
 import type { BlockchainNetwork } from '@vibeminer/shared';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { NetworkMark } from '@/components/ui/NetworkMark';
 
 type NetworkWithMeta = BlockchainNetwork & { listedAt?: string };
 
@@ -57,9 +58,11 @@ function NetworkCard({ network, isNew, requestServiceHref = '/#request-service' 
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-1 items-center gap-4">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/5 text-2xl">
-            {network.icon}
-          </span>
+          <NetworkMark
+            icon={network.icon}
+            label={network.name}
+            className="h-12 w-12 rounded-xl bg-white/5 text-2xl"
+          />
           <div className="min-w-0 flex-1">
             <h3 className="font-display flex min-w-0 items-center gap-2 font-semibold text-white">
               <span className="min-w-0 truncate">{network.name}</span>

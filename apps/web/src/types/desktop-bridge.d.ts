@@ -61,12 +61,17 @@ declare global {
       ) => Promise<{ hashrate: number; shares: number } | null>;
       isRealMining?: (networkId: string, environment: string) => Promise<boolean>;
       startNode?: (opts: { network: Record<string, unknown> }) => Promise<{ ok: boolean; error?: string }>;
-      stopNode?: (networkId: string, environment: string) => void;
+      stopNode?: (networkId: string, environment: string, nodePresetId?: string) => void;
       getNodeStatus?: (
         networkId: string,
-        environment: string
+        environment: string,
+        nodePresetId?: string
       ) => Promise<{ status?: string; isActive?: boolean } | null>;
-      isNodeRunning?: (networkId: string, environment: string) => Promise<boolean>;
+      isNodeRunning?: (
+        networkId: string,
+        environment: string,
+        nodePresetId?: string
+      ) => Promise<boolean>;
       onMinerDownloadProgress?: (cb: unknown) => () => void;
       onNodeDownloadProgress?: (cb: unknown) => () => void;
     };
