@@ -73,6 +73,8 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
   const { registerNodeSession, stopSession } = useMining();
   const [nodeRunning, setNodeRunning] = useState(false);
   const [nodeStarting, setNodeStarting] = useState(false);
+  /** Shown while Rust downloads/extracts the node (IPC event `node-download-progress`). */
+  const [nodeProgressText, setNodeProgressText] = useState<string | null>(null);
   const [nodeStatus, setNodeStatus] = useState<string | null>(null);
   const [selectedPresetId, setSelectedPresetId] = useState<string>('default');
 
@@ -126,6 +128,10 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
   useEffect(() => {
     if (!network) return;
     closeButtonRef.current?.focus({ preventScroll: true });
+  }, [network]);
+
+  useEffect(() => {
+    if (!network) setNodeProgressText(null);
   }, [network]);
 
   useEffect(() => {
@@ -354,6 +360,7 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                       </button>
                     </div>
                   ) : (
+                    <div className="flex w-full min-w-0 flex-col items-start gap-2">
                     <button
                       type="button"
                       disabled={nodeStarting}
@@ -363,6 +370,27 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                           return;
                         }
                         setNodeStarting(true);
+                        setNodeProgressText('Preparing node…');
+                        let unlistenProgress: (() => void) | undefined;
+                        if (typeof window !== 'undefined' && window.__TAURI__) {
+                          try {
+                            const { listen } = await import('@tauri-apps/api/event');
+                            unlistenProgress = await listen<{
+                              message?: string;
+                              phase?: string;
+                              percent?: number;
+                            }>('node-download-progress', (ev) => {
+                              const p = ev.payload;
+                              const line =
+                                (typeof p?.message === 'string' && p.message.trim()) ||
+                                (typeof p?.phase === 'string' && p.phase.trim()) ||
+                                null;
+                              if (line) setNodeProgressText(line);
+                            });
+                          } catch {
+                            /* progress events optional */
+                          }
+                        }
                         try {
                           const effUrl = effectivePresetNodeDownloadUrl(
                             selectedPreset,
@@ -404,16 +432,32 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                             addToast(err, 'error');
                           }
                         } catch (e) {
-                          const msg = e instanceof Error ? e.message : String(e);
+                          const raw = e instanceof Error ? e.message : String(e);
+                          const msg =
+                            /permission|not allowed|forbidden|capabilit/i.test(raw)
+                              ? `${raw} Update to the latest VibeMiner release if you have not yet — the desktop shell must allow Run node over the remote UI.`
+                              : raw;
                           addToast(msg || 'Could not start node', 'error');
                         } finally {
+                          unlistenProgress?.();
                           setNodeStarting(false);
+                          setNodeProgressText(null);
                         }
                       }}
                       className="rounded-xl border border-sky-500/40 bg-sky-500/10 px-4 py-2 text-sm font-medium text-sky-300 transition hover:bg-sky-500/20 disabled:opacity-50"
                     >
                       {nodeStarting ? 'Starting…' : 'Run node'}
                     </button>
+                    {nodeStarting ? (
+                      <p className="max-w-md text-xs text-gray-400" aria-live="polite">
+                        {nodeProgressText ?? 'Contacting desktop…'}
+                      </p>
+                    ) : (
+                      <p className="max-w-md text-xs text-gray-500">
+                        The desktop app runs the node process directly (no bundled PowerShell or Command Prompt window). First run downloads and extracts the binary and can take several minutes on a slow connection.
+                      </p>
+                    )}
+                    </div>
                   )}
                 </>
               )}
