@@ -358,6 +358,19 @@ export function normalizeNodeFieldsForListing(input: {
 }
 
 /** Parse `node_presets_json` from D1 into validated presets (empty / invalid → undefined). */
+function normalizePresetJsonItem(item: unknown): unknown {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) return item;
+  const o = item as Record<string, unknown>;
+  const next = { ...o };
+  if (typeof next.nodeDownloadUrl === 'string' && next.nodeDownloadUrl.trim() === '') {
+    delete next.nodeDownloadUrl;
+  }
+  if (typeof next.nodeBinarySha256 === 'string' && next.nodeBinarySha256.trim() === '') {
+    delete next.nodeBinarySha256;
+  }
+  return next;
+}
+
 export function parseStoredNodePresetsJson(
   json: string | null | undefined
 ): NetworkNodePreset[] | undefined {
@@ -367,7 +380,7 @@ export function parseStoredNodePresetsJson(
     if (!Array.isArray(raw)) return undefined;
     const out: NetworkNodePreset[] = [];
     for (const item of raw) {
-      const r = NetworkNodePresetSchema.safeParse(item);
+      const r = NetworkNodePresetSchema.safeParse(normalizePresetJsonItem(item));
       if (r.success) out.push(r.data);
     }
     return out.length > 0 ? out : undefined;

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
+import { site } from '@/lib/site';
 import type { BlockchainNetwork } from '@vibeminer/shared';
 import type { NetworkNodePreset } from '@vibeminer/shared';
 import {
@@ -95,7 +96,8 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
   const displayDiskGb = network ? selectedPreset?.nodeDiskGb ?? network.nodeDiskGb : undefined;
   const displayRamMb = network ? selectedPreset?.nodeRamMb ?? network.nodeRamMb : undefined;
   const tier = getResourceTier(displayDiskGb, displayRamMb);
-  const canRunNode = network && hasNodeConfig(network) && isDesktop;
+  const hasNode = !!(network && hasNodeConfig(network));
+  const canRunNode = hasNode && isDesktop;
 
   useEffect(() => {
     if (!network || !isDesktop || !window.desktopAPI?.isNodeRunning || !selectedPreset) return;
@@ -280,6 +282,21 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
               >
                 Start mining →
               </Link>
+              {hasNode && !isDesktop && (
+                <div className="w-full rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/95">
+                  <p className="font-medium text-amber-200">Run node needs the desktop app</p>
+                  <p className="mt-1 text-xs text-amber-100/80">
+                    Browsers cannot download or start the node binary. Install VibeMiner for Windows, macOS, or Linux,
+                    sign in with your account, then open this network again and use <strong className="font-semibold">Run node</strong>.
+                  </p>
+                  <Link
+                    href="/download"
+                    className="mt-2 inline-block text-sm font-medium text-accent-cyan underline-offset-2 hover:underline"
+                  >
+                    Download {site.name} →
+                  </Link>
+                </div>
+              )}
               {canRunNode && selectedPreset && (
                 <>
                   {nodePresets.length > 1 && (
