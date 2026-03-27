@@ -51,6 +51,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Main window loads VIBEMINER_APP_URL (default vibeminer.tech); build web so CI matches shipped UX + desktop-bridge.
+      - name: Build shared + web
+        run: npm run build -w @vibeminer/shared && npm run build -w vibeminer-web
+
       - name: Build Tauri (Windows)
         run: npm run build -w vibeminer-tauri
         env:
@@ -88,6 +92,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Build shared + web
+        run: npm run build -w @vibeminer/shared && npm run build -w vibeminer-web
 
       - name: Build Tauri (macOS)
         run: npm run build -w vibeminer-tauri
@@ -137,6 +144,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Build shared + web
+        run: npm run build -w @vibeminer/shared && npm run build -w vibeminer-web
 
       - name: Build Tauri (Linux)
         run: npm run build -w vibeminer-tauri
