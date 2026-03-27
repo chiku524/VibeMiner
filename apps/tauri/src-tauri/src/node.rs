@@ -12,11 +12,20 @@ pub struct NodeStatus {
     pub is_active: bool,
 }
 
-#[allow(dead_code)]
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RunningNodeDescriptor {
+    pub network_id: String,
+    pub environment: String,
+    pub node_preset_id: String,
+    pub started_at: u64,
+}
+
 struct NodeEntry {
     _child: Child,
     network_id: String,
     environment: String,
+    node_preset_id: String,
 }
 
 lazy_static::lazy_static! {
@@ -289,6 +298,7 @@ pub fn start_node(
         .map_err(|e| e.to_string())?;
 
     let started_at = chrono::Utc::now().timestamp_millis() as u64;
+    let preset_stored = sanitize_preset_id(node_preset_id);
     NODE_STATS
         .lock()
         .map_err(|e| e.to_string())?
@@ -309,6 +319,7 @@ pub fn start_node(
                 _child: child,
                 network_id,
                 environment,
+                node_preset_id: preset_stored,
             },
         );
     Ok(())
@@ -339,4 +350,30 @@ pub fn is_node_running(network_id: &str, environment: &str, node_preset_id: &str
         .lock()
         .map(|m| m.contains_key(&key))
         .unwrap_or(false)
+}
+
+pub fn list_running_nodes() -> Vec<RunningNodeDescriptor> {
+    let Ok(nodes) = ACTIVE_NODES.lock() else {
+        return vec![];
+    };
+    let Ok(stats) = NODE_STATS.lock() else {
+        return vec![];
+    };
+    nodes
+        .values()
+        .map(|entry| {
+            let key = process_key(
+                &entry.network_id,
+                &entry.environment,
+                &entry.node_preset_id,
+            );
+            let started_at = stats.get(&key).map(|s| s.started_at).unwrap_or(0);
+            RunningNodeDescriptor {
+                network_id: entry.network_id.clone(),
+                environment: entry.environment.clone(),
+                node_preset_id: entry.node_preset_id.clone(),
+                started_at,
+            }
+        })
+        .collect()
 }

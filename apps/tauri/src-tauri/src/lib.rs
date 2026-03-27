@@ -436,6 +436,11 @@ fn is_node_running(network_id: String, environment: String, node_preset_id: Opti
     node::is_node_running(&network_id, &environment, pid)
 }
 
+#[tauri::command]
+fn list_running_nodes() -> Vec<node::RunningNodeDescriptor> {
+    node::list_running_nodes()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut builder = tauri::Builder::default()
@@ -463,6 +468,7 @@ pub fn run() {
             stop_node,
             get_node_status,
             is_node_running,
+            list_running_nodes,
         ]);
 
     #[cfg(desktop)]

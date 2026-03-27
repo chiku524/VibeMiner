@@ -46,6 +46,27 @@ export const RESOURCE_TIER_DESCRIPTIONS: Record<ResourceTier, string> = {
   heavy: '100+ GB disk',
 };
 
+/**
+ * Matches desktop `sanitize_preset_id` (Tauri) so session keys and IPC agree.
+ */
+export function sanitizeNodePresetId(raw: string): string {
+  const t = raw.trim().toLowerCase();
+  if (t.length === 0) return 'default';
+  let out = '';
+  for (const c of t) {
+    const lower = c >= 'a' && c <= 'z';
+    const digit = c >= '0' && c <= '9';
+    if (lower || digit || c === '-') {
+      out += c;
+    } else if (out.length > 0 && !out.endsWith('-')) {
+      out += '-';
+    }
+  }
+  const trimmed = out.replace(/^-+|-+$/g, '');
+  if (trimmed.length === 0) return 'default';
+  return trimmed;
+}
+
 // ---------------------------------------------------------------------------
 // Node config schema (optional fields for networks that support running nodes)
 // ---------------------------------------------------------------------------

@@ -74,6 +74,14 @@ declare global {
         environment: string,
         nodePresetId?: string
       ) => Promise<boolean>;
+      listRunningNodes?: () => Promise<
+        Array<{
+          networkId: string;
+          environment: string;
+          nodePresetId: string;
+          startedAt: number;
+        }>
+      >;
       onMinerDownloadProgress?: (cb: unknown) => () => void;
       onNodeDownloadProgress?: (cb: unknown) => () => void;
     };

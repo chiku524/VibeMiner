@@ -16,8 +16,12 @@ import {
   isNetworkMineable,
   hasNodeConfig,
   type ResourceTier,
+  type MiningSession,
+  isMiningSessionNode,
+  sessionListKey,
 } from '@vibeminer/shared';
 import { MiningPanel } from '@/components/dashboard/MiningPanel';
+import { NodeSessionPanel } from '@/components/dashboard/NodeSessionPanel';
 import { useMining } from '@/contexts/MiningContext';
 import { getMiningWallet } from '@/components/MiningWalletSettings';
 import { useAuth } from '@/contexts/AuthContext';
@@ -236,7 +240,7 @@ export function DashboardContent() {
     return getNetworkById(preselectedId);
   }, [preselectedId, fetchedMainnet, fetchedDevnet]);
 
-  const { sessions, startMining, stopMining, isMining } = useMining();
+  const { sessions, startMining, stopSession, isMining } = useMining();
 
   const handleStart = useCallback(
     async (network: BlockchainNetwork) => {
@@ -258,12 +262,12 @@ export function DashboardContent() {
     if (sessions.length > 0) setStartingId(null);
   }, [sessions.length]);
 
-  const handleStop = useCallback(
-    (networkId: string, environment?: NetworkEnvironment) => {
-      addToast('Mining stopped');
-      stopMining(networkId, environment);
+  const handleStopSession = useCallback(
+    (session: MiningSession) => {
+      addToast(isMiningSessionNode(session) ? 'Node stopped' : 'Mining stopped');
+      stopSession(session);
     },
-    [stopMining, addToast]
+    [stopSession, addToast]
   );
 
   const sessionsWithNetworks = useMemo(() => {
@@ -284,7 +288,7 @@ export function DashboardContent() {
       if (e.key === 'Escape') {
         if (modalNetwork) setModalNetwork(null);
         else if (sessions.length > 0) {
-          handleStop(sessions[0].networkId, sessions[0].environment);
+          handleStopSession(sessions[0]);
         }
       }
       if (e.key === 's' && !e.ctrlKey && !e.metaKey && sessions.length === 0 && !modalNetwork) {
@@ -294,7 +298,7 @@ export function DashboardContent() {
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [sessions, modalNetwork, filteredNetworks, handleStart, handleStop]);
+  }, [sessions, modalNetwork, filteredNetworks, handleStart, handleStopSession]);
 
   if (!authLoading && accountType === 'network') {
     return (
@@ -484,7 +488,13 @@ export function DashboardContent() {
                 const isLive = network.status === 'live';
                 const mineable = isNetworkMineable(network);
                 const canRunNode = hasNodeConfig(network);
-                const isActive = isMining(network.id, network.environment);
+                const hasActiveNode = sessions.some(
+                  (s) =>
+                    isMiningSessionNode(s) &&
+                    s.networkId === network.id &&
+                    s.environment === network.environment
+                );
+                const isActive = isMining(network.id, network.environment) || hasActiveNode;
                 const isStarting = startingId === network.id;
                 const canStartMining = isLive && mineable && !isActive && !isStarting;
                 const nWithMeta = network as NetworkWithMeta;
@@ -618,15 +628,25 @@ export function DashboardContent() {
             <AnimatePresence mode="wait">
               {sessionsWithNetworks.length > 0 ? (
                 <div className="space-y-3">
-                  {sessionsWithNetworks.map(({ session, network }) => (
-                    <MiningPanel
-                      key={`${session.environment}-${session.networkId}`}
-                      session={session}
-                      network={network}
-                      onStop={() => handleStop(session.networkId, session.environment)}
-                      compact={sessionsWithNetworks.length > 1}
-                    />
-                  ))}
+                  {sessionsWithNetworks.map(({ session, network }) =>
+                    isMiningSessionNode(session) ? (
+                      <NodeSessionPanel
+                        key={sessionListKey(session)}
+                        session={session}
+                        network={network}
+                        onStop={() => handleStopSession(session)}
+                        compact={sessionsWithNetworks.length > 1}
+                      />
+                    ) : (
+                      <MiningPanel
+                        key={sessionListKey(session)}
+                        session={session}
+                        network={network}
+                        onStop={() => handleStopSession(session)}
+                        compact={sessionsWithNetworks.length > 1}
+                      />
+                    )
+                  )}
                 </div>
               ) : (
                 <motion.div

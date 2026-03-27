@@ -96,6 +96,9 @@
           node_preset_id: nodePresetId != null && nodePresetId !== '' ? nodePresetId : null,
         });
       },
+      listRunningNodes: function () {
+        return invoke('list_running_nodes', {});
+      },
       onNodeDownloadProgress: function (cb) {
         return function () {};
       },

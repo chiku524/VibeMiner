@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import type { MiningSession as SessionType } from '@vibeminer/shared';
+import type { MiningSessionMining as SessionType } from '@vibeminer/shared';
 import type { BlockchainNetwork } from '@vibeminer/shared';
 import { FEE_CONFIG } from '@vibeminer/shared';
 import { Sparkline } from '@/components/ui/Sparkline';

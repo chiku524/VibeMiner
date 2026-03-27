@@ -16,8 +16,14 @@ import {
   isNetworkMineable,
   hasNodeConfig,
   type ResourceTier,
+  type MiningSession,
+  type MiningSessionMining,
+  isMiningSessionNode,
+  isMiningSessionMining,
+  sessionListKey,
 } from '@vibeminer/shared';
 import { MiningPanel } from '@/components/dashboard/MiningPanel';
+import { NodeSessionPanel } from '@/components/dashboard/NodeSessionPanel';
 import { useMining } from '@/contexts/MiningContext';
 import { getMiningWallet } from '@/components/MiningWalletSettings';
 import { useAuth } from '@/contexts/AuthContext';
@@ -241,7 +247,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
     return byMain ?? byDev ?? getNetworkById(preselectedId);
   }, [preselectedId, fetchedMainnet, fetchedDevnet]);
 
-  const { sessions, startMining, stopMining, isMining } = useMining();
+  const { sessions, startMining, stopSession, isMining } = useMining();
 
   const handleStart = useCallback(
     async (network: BlockchainNetwork) => {
@@ -257,12 +263,12 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
 
   useEffect(() => { if (sessions.length > 0) setStartingId(null); }, [sessions.length]);
 
-  const handleStop = useCallback(
-    (networkId: string, environment?: NetworkEnvironment) => {
-      addToast('Mining stopped');
-      stopMining(networkId, environment);
+  const handleStopSession = useCallback(
+    (session: MiningSession) => {
+      addToast(isMiningSessionNode(session) ? 'Node stopped' : 'Mining stopped');
+      stopSession(session);
     },
-    [stopMining, addToast]
+    [stopSession, addToast]
   );
 
   const sessionsWithNetworks = useMemo(() => {
@@ -276,11 +282,20 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
       .filter((item): item is typeof item & { network: NonNullable<typeof item.network> } => item.network != null);
   }, [sessions, fetchedMainnet, fetchedDevnet]);
 
+  const sessionsMiningOnly = useMemo(
+    () =>
+      sessionsWithNetworks.filter(
+        (row): row is typeof row & { session: MiningSessionMining } =>
+          isMiningSessionMining(row.session)
+      ),
+    [sessionsWithNetworks]
+  );
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         if (modalNetwork) setModalNetwork(null);
-        else if (sessions.length > 0) handleStop(sessions[0].networkId, sessions[0].environment);
+        else if (sessions.length > 0) handleStopSession(sessions[0]);
       }
       if (mode === 'mining' && e.key === 's' && !e.ctrlKey && !e.metaKey && sessions.length === 0 && !modalNetwork) {
         const first = filteredNetworks.find((n) => n.status === 'live');
@@ -289,7 +304,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [sessions, modalNetwork, filteredNetworks, handleStart, handleStop, mode]);
+  }, [sessions, modalNetwork, filteredNetworks, handleStart, handleStopSession, mode]);
 
   const title = mode === 'mining' ? 'Mining' : 'Run nodes';
   const description = mode === 'mining'
@@ -434,7 +449,16 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                 const isLive = network.status === 'live';
                 const mineable = isNetworkMineable(network);
                 const canRunNode = hasNodeConfig(network);
-                const isActive = isMining(network.id, network.environment);
+                const hasActiveNode = sessions.some(
+                  (s) =>
+                    isMiningSessionNode(s) &&
+                    s.networkId === network.id &&
+                    s.environment === network.environment
+                );
+                const isActive =
+                  mode === 'mining'
+                    ? isMining(network.id, network.environment)
+                    : hasActiveNode;
                 const isStarting = startingId === network.id;
                 const canStartMining = mode === 'mining' && isLive && mineable && !isActive && !isStarting;
                 const canOpenNodeModal = mode === 'nodes' && isLive && canRunNode;
@@ -561,7 +585,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                         <div className="min-w-0">
                           <p className="text-xs text-gray-500">Total hashrate</p>
                           <p className="font-mono text-lg font-semibold text-white">
-                            {sessionsWithNetworks.reduce((sum, { session }) => sum + session.hashrate, 0)} H/s
+                            {sessionsMiningOnly.reduce((sum, { session }) => sum + session.hashrate, 0)} H/s
                           </p>
                         </div>
                       </div>
@@ -572,46 +596,64 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                         <div className="min-w-0">
                           <p className="text-xs text-gray-500">Est. earnings</p>
                           <p className="font-mono text-lg font-semibold text-white truncate">
-                            {sessionsWithNetworks
-                              .reduce((acc, { session, network }) => acc + parseFloat(session.estimatedEarnings || '0'), 0)
+                            {sessionsMiningOnly
+                              .reduce((acc, { session }) => acc + parseFloat(session.estimatedEarnings || '0'), 0)
                               .toFixed(6)}{' '}
-                            {sessionsWithNetworks.length === 1 ? sessionsWithNetworks[0].network.symbol : '—'}
+                            {sessionsMiningOnly.length === 1 ? sessionsMiningOnly[0].network.symbol : '—'}
                           </p>
                         </div>
                       </div>
                     </div>
-                    <div className="mt-4 overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-white/10 text-left text-xs text-gray-500">
-                            <th className="pb-2 pr-3 font-medium">Network</th>
-                            <th className="pb-2 pr-3 font-medium">Hashrate</th>
-                            <th className="pb-2 pr-3 font-medium">Shares</th>
-                            <th className="pb-2 pr-3 font-medium">Est. earnings</th>
-                            <th className="pb-2 font-medium">Uptime</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sessionsWithNetworks.map(({ session, network }) => {
-                            const elapsed = session.startedAt ? Date.now() - session.startedAt : 0;
-                            return (
-                              <tr key={`${session.environment}-${session.networkId}`} className="border-b border-white/5">
-                                <td className="py-2.5 pr-3 font-medium text-white">{network.name}</td>
-                                <td className="py-2.5 pr-3 font-mono text-accent-cyan">{session.hashrate} H/s</td>
-                                <td className="py-2.5 pr-3 font-mono text-gray-300">{session.shares}</td>
-                                <td className="py-2.5 pr-3 font-mono text-accent-emerald">{session.estimatedEarnings} {network.symbol}</td>
-                                <td className="py-2.5 font-mono text-gray-400">{formatDuration(elapsed)}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                    {sessionsMiningOnly.length > 0 && (
+                      <div className="mt-4 overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-white/10 text-left text-xs text-gray-500">
+                              <th className="pb-2 pr-3 font-medium">Network</th>
+                              <th className="pb-2 pr-3 font-medium">Hashrate</th>
+                              <th className="pb-2 pr-3 font-medium">Shares</th>
+                              <th className="pb-2 pr-3 font-medium">Est. earnings</th>
+                              <th className="pb-2 font-medium">Uptime</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sessionsMiningOnly.map(({ session, network }) => {
+                              const elapsed = session.startedAt ? Date.now() - session.startedAt : 0;
+                              return (
+                                <tr key={sessionListKey(session)} className="border-b border-white/5">
+                                  <td className="py-2.5 pr-3 font-medium text-white">{network.name}</td>
+                                  <td className="py-2.5 pr-3 font-mono text-accent-cyan">{session.hashrate} H/s</td>
+                                  <td className="py-2.5 pr-3 font-mono text-gray-300">{session.shares}</td>
+                                  <td className="py-2.5 pr-3 font-mono text-accent-emerald">{session.estimatedEarnings} {network.symbol}</td>
+                                  <td className="py-2.5 font-mono text-gray-400">{formatDuration(elapsed)}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </motion.section>
                   <div className="space-y-3">
-                    {sessionsWithNetworks.map(({ session, network }) => (
-                      <MiningPanel key={`${session.environment}-${session.networkId}`} session={session} network={network} onStop={() => handleStop(session.networkId, session.environment)} compact={sessionsWithNetworks.length > 1} />
-                    ))}
+                    {sessionsWithNetworks.map(({ session, network }) =>
+                      isMiningSessionNode(session) ? (
+                        <NodeSessionPanel
+                          key={sessionListKey(session)}
+                          session={session}
+                          network={network}
+                          onStop={() => handleStopSession(session)}
+                          compact={sessionsWithNetworks.length > 1}
+                        />
+                      ) : (
+                        <MiningPanel
+                          key={sessionListKey(session)}
+                          session={session}
+                          network={network}
+                          onStop={() => handleStopSession(session)}
+                          compact={sessionsWithNetworks.length > 1}
+                        />
+                      )
+                    )}
                   </div>
                 </div>
               ) : (

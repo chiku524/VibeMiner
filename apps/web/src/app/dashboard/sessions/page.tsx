@@ -9,8 +9,13 @@ import {
   getDevnetNetworks,
   getNetworkById,
   type BlockchainNetwork,
+  isMiningSessionNode,
+  isMiningSessionMining,
+  sessionListKey,
+  type MiningSessionMining,
 } from '@vibeminer/shared';
 import { MiningPanel } from '@/components/dashboard/MiningPanel';
+import { NodeSessionPanel } from '@/components/dashboard/NodeSessionPanel';
 import { useMining } from '@/contexts/MiningContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
@@ -31,7 +36,7 @@ function findNetworkForSession(session: { networkId: string; environment: 'mainn
 export default function MiningSessionsPage() {
   const isDesktop = useIsDesktop();
   const { user, loading: authLoading } = useAuth();
-  const { sessions, stopMining } = useMining();
+  const { sessions, stopSession } = useMining();
 
   const sessionsWithNetworks = useMemo(() => {
     return sessions
@@ -40,6 +45,20 @@ export default function MiningSessionsPage() {
         item.network != null
       );
   }, [sessions]);
+
+  const miningRows = useMemo(
+    () =>
+      sessionsWithNetworks.filter(
+        (row): row is typeof row & { session: MiningSessionMining } =>
+          isMiningSessionMining(row.session)
+      ),
+    [sessionsWithNetworks]
+  );
+
+  const nodeRows = useMemo(
+    () => sessionsWithNetworks.filter((row) => isMiningSessionNode(row.session)),
+    [sessionsWithNetworks]
+  );
 
   if (authLoading || !user) {
     return (
@@ -72,9 +91,12 @@ export default function MiningSessionsPage() {
           </p>
           <p className="mt-2 text-sm text-gray-500">
             <Link href="/dashboard/mining" className="text-accent-cyan hover:underline">
-              Go to Mining
-            </Link>{' '}
-            to start mining or running nodes.
+              Mining
+            </Link>
+            {' · '}
+            <Link href="/dashboard/nodes" className="text-accent-cyan hover:underline">
+              Run nodes
+            </Link>
           </p>
         </motion.div>
 
@@ -99,6 +121,12 @@ export default function MiningSessionsPage() {
                   <div className="min-w-0">
                     <p className="text-xs text-gray-500">Active sessions</p>
                     <p className="font-mono text-lg font-semibold text-white">{sessionsWithNetworks.length}</p>
+                    <p className="mt-0.5 text-xs text-gray-500">
+                      {miningRows.length} mining
+                      {nodeRows.length > 0
+                        ? ` · ${nodeRows.length} node${nodeRows.length !== 1 ? 's' : ''}`
+                        : ''}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-surface-900/50 px-4 py-3">
@@ -106,9 +134,9 @@ export default function MiningSessionsPage() {
                     <Zap className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs text-gray-500">Total hashrate</p>
+                    <p className="text-xs text-gray-500">Mining hashrate</p>
                     <p className="font-mono text-lg font-semibold text-white">
-                      {sessionsWithNetworks.reduce((sum, { session }) => sum + session.hashrate, 0)} H/s
+                      {miningRows.reduce((sum, { session }) => sum + session.hashrate, 0)} H/s
                     </p>
                   </div>
                 </div>
@@ -117,26 +145,36 @@ export default function MiningSessionsPage() {
                     <Coins className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs text-gray-500">Est. earnings</p>
+                    <p className="text-xs text-gray-500">Est. mining earnings</p>
                     <p className="font-mono text-lg font-semibold text-white truncate">
-                      {sessionsWithNetworks
-                        .reduce((acc, { session, network }) => acc + parseFloat(session.estimatedEarnings || '0'), 0)
+                      {miningRows
+                        .reduce((acc, { session }) => acc + parseFloat(session.estimatedEarnings || '0'), 0)
                         .toFixed(6)}{' '}
-                      {sessionsWithNetworks.length === 1 ? sessionsWithNetworks[0].network.symbol : '—'}
+                      {miningRows.length === 1 ? miningRows[0].network.symbol : '—'}
                     </p>
                   </div>
                 </div>
               </motion.div>
               <div className="space-y-3">
-              {sessionsWithNetworks.map(({ session, network }) => (
-                <MiningPanel
-                  key={`${session.environment}-${session.networkId}`}
-                  session={session}
-                  network={network}
-                  onStop={() => stopMining(session.networkId, session.environment)}
-                  compact={sessionsWithNetworks.length > 1}
-                />
-              ))}
+                {sessionsWithNetworks.map(({ session, network }) =>
+                  isMiningSessionNode(session) ? (
+                    <NodeSessionPanel
+                      key={sessionListKey(session)}
+                      session={session}
+                      network={network}
+                      onStop={() => stopSession(session)}
+                      compact={sessionsWithNetworks.length > 1}
+                    />
+                  ) : (
+                    <MiningPanel
+                      key={sessionListKey(session)}
+                      session={session}
+                      network={network}
+                      onStop={() => stopSession(session)}
+                      compact={sessionsWithNetworks.length > 1}
+                    />
+                  )
+                )}
               </div>
             </motion.div>
           ) : (

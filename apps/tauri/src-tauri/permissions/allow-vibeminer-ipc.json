@@ -25,7 +25,8 @@
           "start_node",
           "stop_node",
           "get_node_status",
-          "is_node_running"
+          "is_node_running",
+          "list_running_nodes"
         ],
         "deny": []
       }

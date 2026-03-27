@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { site } from '@/lib/site';
 import type { BlockchainNetwork } from '@vibeminer/shared';
 import type { NetworkNodePreset } from '@vibeminer/shared';
@@ -15,9 +16,11 @@ import {
   resolveNodePresets,
   effectivePresetNodeBinarySha256,
   effectivePresetNodeDownloadUrl,
+  sanitizeNodePresetId,
 } from '@vibeminer/shared';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useToast } from '@/contexts/ToastContext';
+import { useMining } from '@/contexts/MiningContext';
 import { NetworkMark } from '@/components/ui/NetworkMark';
 
 interface NetworkModalProps {
@@ -62,10 +65,12 @@ function getFocusables(container: HTMLElement): HTMLElement[] {
 
 export function NetworkModal({ network, onClose }: NetworkModalProps) {
   const reduced = useReducedMotion() ?? false;
+  const router = useRouter();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const isDesktop = useIsDesktop();
   const { addToast } = useToast();
+  const { registerNodeSession, stopSession } = useMining();
   const [nodeRunning, setNodeRunning] = useState(false);
   const [nodeStarting, setNodeStarting] = useState(false);
   const [nodeStatus, setNodeStatus] = useState<string | null>(null);
@@ -332,12 +337,15 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                       {nodeStatus && <span className="text-xs text-gray-500">({nodeStatus})</span>}
                       <button
                         type="button"
-                        onClick={async () => {
-                          await window.desktopAPI?.stopNode?.(
-                            network.id,
-                            network.environment ?? 'mainnet',
-                            selectedPreset.presetId
-                          );
+                        onClick={() => {
+                          stopSession({
+                            kind: 'node',
+                            networkId: network.id,
+                            environment: network.environment ?? 'mainnet',
+                            presetId: sanitizeNodePresetId(selectedPreset.presetId),
+                            startedAt: 0,
+                            isActive: true,
+                          });
                           setNodeRunning(false);
                         }}
                         className="rounded-lg border border-red-500/30 px-3 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10"
@@ -380,7 +388,14 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                           });
                           if (result && typeof result === 'object' && 'ok' in result && result.ok) {
                             setNodeRunning(true);
+                            registerNodeSession({
+                              networkId: network.id,
+                              environment: network.environment ?? 'mainnet',
+                              presetId: selectedPreset.presetId,
+                            });
                             addToast(`${network.name} node started`);
+                            onClose();
+                            router.push('/dashboard/sessions');
                           } else {
                             const err =
                               result && typeof result === 'object' && 'error' in result && typeof result.error === 'string'
