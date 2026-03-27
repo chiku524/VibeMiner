@@ -44,6 +44,8 @@ type PresetRow = {
   label: string;
   description: string;
   commandTemplate: string;
+  nodeDownloadUrl: string;
+  nodeBinarySha256: string;
   nodeDiskGb: string;
   nodeRamMb: string;
 };
@@ -54,6 +56,8 @@ function emptyPresetRow(): PresetRow {
     label: '',
     description: '',
     commandTemplate: '',
+    nodeDownloadUrl: '',
+    nodeBinarySha256: '',
     nodeDiskGb: '',
     nodeRamMb: '',
   };
@@ -65,6 +69,8 @@ function presetRowFromApi(p: NetworkNodePreset): PresetRow {
     label: p.label,
     description: p.description ?? '',
     commandTemplate: p.commandTemplate,
+    nodeDownloadUrl: p.nodeDownloadUrl ?? '',
+    nodeBinarySha256: p.nodeBinarySha256 ?? '',
     nodeDiskGb: p.nodeDiskGb != null ? String(p.nodeDiskGb) : '',
     nodeRamMb: p.nodeRamMb != null ? String(p.nodeRamMb) : '',
   };
@@ -173,13 +179,13 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
       setErrorMsg('Please provide a clear description of your network and its use case (at least 20 characters).');
       return;
     }
-    const urlOk = !!nodeDownloadUrl.trim();
+    const baseUrlTrim = nodeDownloadUrl.trim();
     let hasNode = false;
     if (useMultiPresets) {
       const filled = presetRows.filter(
         (r) => r.presetId.trim() && r.label.trim() && r.commandTemplate.trim()
       );
-      if (urlOk && filled.length > 0) {
+      if (filled.length > 0) {
         for (const r of filled) {
           if (!PRESET_ID_PATTERN.test(r.presetId.trim())) {
             setStatus('error');
@@ -189,10 +195,31 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
             return;
           }
         }
+        if (!baseUrlTrim) {
+          for (const r of filled) {
+            if (!r.nodeDownloadUrl.trim()) {
+              setStatus('error');
+              setErrorMsg(
+                'When the shared node URL is empty, each mode must have its own HTTPS download URL (e.g. per OS).'
+              );
+              return;
+            }
+          }
+        }
+        for (const r of filled) {
+          const sha = r.nodeBinarySha256.trim();
+          if (sha && !/^[a-fA-F0-9]{64}$/.test(sha)) {
+            setStatus('error');
+            setErrorMsg(
+              `Invalid SHA256 for mode "${r.label.trim() || r.presetId.trim()}": use 64 hex characters or leave blank.`
+            );
+            return;
+          }
+        }
         hasNode = true;
       }
     } else {
-      hasNode = !!(urlOk && nodeCommandTemplate.trim());
+      hasNode = !!(baseUrlTrim && nodeCommandTemplate.trim());
     }
     const hasPool = !!(poolUrl.trim() && portNum != null && portNum >= 1 && portNum <= 65535);
     if (!hasPool && !hasNode) {
@@ -222,15 +249,19 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
       status: 'live',
       ...(!editId && requiresFee && { feeConfirmed }),
     };
-    if (urlOk && useMultiPresets) {
+    if (useMultiPresets) {
       const filled = presetRows.filter(
         (r) => r.presetId.trim() && r.label.trim() && r.commandTemplate.trim()
       );
       if (filled.length > 0) {
-        payload.nodeDownloadUrl = nodeDownloadUrl.trim();
+        if (baseUrlTrim) {
+          payload.nodeDownloadUrl = baseUrlTrim;
+        }
         const presets: NetworkNodePreset[] = filled.map((r) => {
           const disk = r.nodeDiskGb ? Number(r.nodeDiskGb) : undefined;
           const ram = r.nodeRamMb ? Number(r.nodeRamMb) : undefined;
+          const rowUrl = r.nodeDownloadUrl.trim();
+          const rowSha = r.nodeBinarySha256.trim();
           return {
             presetId: r.presetId.trim(),
             label: r.label.trim(),
@@ -238,6 +269,8 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
             commandTemplate: r.commandTemplate.trim(),
             ...(disk && disk >= 1 && disk <= 2000 ? { nodeDiskGb: disk } : {}),
             ...(ram && ram >= 256 && ram <= 65536 ? { nodeRamMb: ram } : {}),
+            ...(rowUrl ? { nodeDownloadUrl: rowUrl } : {}),
+            ...(rowSha && /^[a-fA-F0-9]{64}$/.test(rowSha) ? { nodeBinarySha256: rowSha } : {}),
           };
         });
         payload.nodePresets = presets;
@@ -245,8 +278,8 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
           payload.nodeBinarySha256 = nodeBinarySha256.trim();
         }
       }
-    } else if (urlOk && nodeCommandTemplate.trim()) {
-      payload.nodeDownloadUrl = nodeDownloadUrl.trim();
+    } else if (baseUrlTrim && nodeCommandTemplate.trim()) {
+      payload.nodeDownloadUrl = baseUrlTrim;
       payload.nodeCommandTemplate = nodeCommandTemplate.trim();
       payload.nodePresets = [];
       const disk = nodeDiskGb ? Number(nodeDiskGb) : undefined;
@@ -591,7 +624,11 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
         {showNodeSection && (
           <div className="mt-4 space-y-3">
             <div>
-              <label htmlFor="req-node-url" className="block text-xs font-medium text-gray-500">Node download URL (HTTPS)</label>
+              <label htmlFor="req-node-url" className="block text-xs font-medium text-gray-500">
+                {useMultiPresets
+                  ? 'Shared node download URL (HTTPS, optional if each mode has its own)'
+                  : 'Node download URL (HTTPS)'}
+              </label>
               <input
                 id="req-node-url"
                 type="url"
@@ -616,6 +653,8 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
                           label: 'Node',
                           description: '',
                           commandTemplate: nodeCommandTemplate,
+                          nodeDownloadUrl: '',
+                          nodeBinarySha256: '',
                           nodeDiskGb,
                           nodeRamMb,
                         },
@@ -634,7 +673,7 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
                 className="mt-1 rounded border-white/20"
               />
               <span>
-                Offer multiple node modes (users pick e.g. full node vs validator). Up to 8 modes; each has its own command and optional resource hints.
+                Offer multiple node modes (e.g. Windows / Linux / macOS builds or validator vs full node). Up to 8 modes; each has its own command. Use a shared URL above, or leave it blank and set a download URL per mode.
               </span>
             </label>
             {useMultiPresets ? (
@@ -721,6 +760,40 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
                         }}
                         placeholder="mychaind --data-dir {dataDir}"
                         maxLength={1024}
+                        className="mt-1 w-full rounded border border-white/10 bg-surface-950 px-2 py-1.5 font-mono text-sm text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500">
+                        Mode download URL (optional if shared URL is set)
+                      </label>
+                      <input
+                        type="url"
+                        value={row.nodeDownloadUrl}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setPresetRows((rows) =>
+                            rows.map((r, i) => (i === idx ? { ...r, nodeDownloadUrl: v } : r))
+                          );
+                        }}
+                        placeholder="https://… (per OS archive)"
+                        maxLength={512}
+                        className="mt-1 w-full rounded border border-white/10 bg-surface-950 px-2 py-1.5 font-mono text-sm text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500">Archive SHA256 (optional)</label>
+                      <input
+                        type="text"
+                        value={row.nodeBinarySha256}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setPresetRows((rows) =>
+                            rows.map((r, i) => (i === idx ? { ...r, nodeBinarySha256: v } : r))
+                          );
+                        }}
+                        placeholder="64 hex chars"
+                        maxLength={64}
                         className="mt-1 w-full rounded border border-white/10 bg-surface-950 px-2 py-1.5 font-mono text-sm text-white"
                       />
                     </div>
@@ -817,7 +890,11 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
               </>
             )}
             <div>
-              <label htmlFor="req-node-sha256" className="block text-xs font-medium text-gray-500">Binary SHA256 (optional, for integrity)</label>
+              <label htmlFor="req-node-sha256" className="block text-xs font-medium text-gray-500">
+                {useMultiPresets
+                  ? 'Default archive SHA256 (optional; presets can override)'
+                  : 'Binary SHA256 (optional, for integrity)'}
+              </label>
               <input
                 id="req-node-sha256"
                 type="text"

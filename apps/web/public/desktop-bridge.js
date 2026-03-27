@@ -24,6 +24,9 @@
       getAppVersion: function () {
         return invoke('get_app_version');
       },
+      getPlatform: function () {
+        return invoke('get_platform');
+      },
       reload: function () {
         return invoke('reload');
       },

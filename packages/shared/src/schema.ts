@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { NetworkNodePresetSchema } from './nodes';
+import { NetworkNodePresetSchema, isUrlHostAllowed } from './nodes';
 
 /**
  * Runtime schema for blockchain network integration.
@@ -78,9 +78,12 @@ export const BlockchainNetworkSchema = z.object({
   minPayout: z.string().max(MAX_STRING_LENGTHS.minPayout).optional(),
   requestedBy: z.string().max(MAX_STRING_LENGTHS.requestedBy).optional(),
   // Optional node config (for running full nodes via UI)
-  nodeDownloadUrl: z.string().url().max(512).optional(),
+  nodeDownloadUrl: z.preprocess(
+    (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
+    z.string().url().max(512).optional()
+  ),
   nodeCommandTemplate: z.string().max(1024).optional(),
-  /** Multiple node modes (validator, full node, etc.); same binary URL, different commands. */
+  /** Multiple node modes (OS-specific zips and/or run modes). Presets may override download URL per row. */
   nodePresets: z.array(NetworkNodePresetSchema).max(8).optional(),
   nodeDiskGb: z.number().int().min(1).max(2000).optional(),
   nodeRamMb: z.number().int().min(256).max(65536).optional(),
@@ -88,16 +91,59 @@ export const BlockchainNetworkSchema = z.object({
 })
   .superRefine((val, ctx) => {
     const url = val.nodeDownloadUrl?.trim();
-    if (!url) return;
-    const hasTpl = !!val.nodeCommandTemplate?.trim();
-    const hasP = Array.isArray(val.nodePresets) && val.nodePresets.length > 0;
-    if (!hasTpl && !hasP) {
+    const hasPresets = Array.isArray(val.nodePresets) && val.nodePresets.length > 0;
+
+    if (url && !isUrlHostAllowed(url)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Provide nodeCommandTemplate or at least one node preset',
-        path: ['nodeCommandTemplate'],
+        message: 'Download URL must be from an allowed host (e.g. GitHub)',
+        path: ['nodeDownloadUrl'],
       });
     }
+
+    if (hasPresets) {
+      val.nodePresets!.forEach((p, i) => {
+        if (!p.commandTemplate?.trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Each node preset needs a command template',
+            path: ['nodePresets', i, 'commandTemplate'],
+          });
+        }
+        const ownUrl = p.nodeDownloadUrl?.trim();
+        if (ownUrl && !isUrlHostAllowed(ownUrl)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Download URL must be from an allowed host',
+            path: ['nodePresets', i, 'nodeDownloadUrl'],
+          });
+        }
+      });
+      if (!url) {
+        val.nodePresets!.forEach((p, i) => {
+          if (!p.nodeDownloadUrl?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'Set a listing-level node URL or give each preset its own download URL',
+              path: ['nodePresets', i, 'nodeDownloadUrl'],
+            });
+          }
+        });
+      }
+    }
+
+    if (url) {
+      const hasTpl = !!val.nodeCommandTemplate?.trim();
+      const hasP = hasPresets;
+      if (!hasTpl && !hasP) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Provide nodeCommandTemplate or at least one node preset',
+          path: ['nodeCommandTemplate'],
+        });
+      }
+    }
+
     if (val.nodePresets && val.nodePresets.length > 1) {
       const ids = val.nodePresets.map((p) => p.presetId);
       if (new Set(ids).size !== ids.length) {

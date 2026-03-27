@@ -71,7 +71,7 @@ export const NODE_DOWNLOAD_ALLOWED_HOSTS = [
   'api.github.com',
 ] as const;
 
-function isUrlHostAllowed(urlStr: string): boolean {
+export function isUrlHostAllowed(urlStr: string): boolean {
   try {
     const u = new URL(urlStr);
     if (u.protocol !== 'https:') return false;
@@ -106,7 +106,7 @@ export function sanitizeCommandTemplate(template: string): { valid: boolean; san
 
 const PRESET_ID_REGEX = /^[a-z0-9]([a-z0-9-]{0,46}[a-z0-9])?$/;
 
-/** One runnable node mode (e.g. full node vs validator). Same binary; different command / resources. */
+/** One runnable node mode (e.g. OS-specific zip or full node vs validator). */
 export const NetworkNodePresetSchema = z
   .object({
     presetId: z
@@ -120,6 +120,17 @@ export const NetworkNodePresetSchema = z
       .string()
       .max(MAX_NODE_STRING_LENGTHS.nodeCommandTemplate)
       .refine((v) => sanitizeCommandTemplate(v).valid, 'Command contains disallowed characters or is invalid'),
+    /** When set, desktop downloads this archive for this preset; otherwise uses listing-level `nodeDownloadUrl`. */
+    nodeDownloadUrl: z
+      .string()
+      .url('Must be a valid HTTPS URL')
+      .max(MAX_NODE_STRING_LENGTHS.nodeDownloadUrl)
+      .refine(isUrlHostAllowed, 'Download URL must be from an allowed host (e.g. GitHub, official project)')
+      .optional(),
+    nodeBinarySha256: z
+      .string()
+      .regex(/^[a-fA-F0-9]{64}$/, 'Must be 64 hex chars (SHA256)')
+      .optional(),
     nodeDiskGb: z.number().int().min(1).max(2000).optional(),
     nodeRamMb: z.number().int().min(256).max(65536).optional(),
   })
@@ -164,15 +175,44 @@ export function validateNodeConfig(
   return { success: true, data: parsed.data };
 }
 
+/** Effective download URL for a preset (preset override, else listing base). */
+export function effectivePresetNodeDownloadUrl(
+  preset: Pick<NetworkNodePreset, 'nodeDownloadUrl' | 'commandTemplate'>,
+  listingBaseUrl?: string | null
+): string | null {
+  const own = preset.nodeDownloadUrl?.trim() ?? '';
+  const base = listingBaseUrl?.trim() ?? '';
+  const u = own || base;
+  return u || null;
+}
+
+/** Effective SHA256 for downloaded archive (preset override, else listing base). */
+export function effectivePresetNodeBinarySha256(
+  preset: Pick<NetworkNodePreset, 'nodeBinarySha256'>,
+  listingBaseSha?: string | null
+): string | undefined {
+  const own = preset.nodeBinarySha256?.trim();
+  if (own && /^[a-fA-F0-9]{64}$/.test(own)) return own;
+  const base = listingBaseSha?.trim();
+  if (base && /^[a-fA-F0-9]{64}$/.test(base)) return base;
+  return undefined;
+}
+
 /** Check if a network has runnable node config. */
 export function hasNodeConfig(network: {
   nodeDownloadUrl?: string | null;
   nodeCommandTemplate?: string | null;
   nodePresets?: NetworkNodePreset[] | null;
 }): boolean {
+  if (Array.isArray(network.nodePresets) && network.nodePresets.length > 0) {
+    const baseUrl = network.nodeDownloadUrl?.trim() ?? '';
+    return network.nodePresets.some((p) => {
+      const u = effectivePresetNodeDownloadUrl(p, baseUrl);
+      return !!u && !!p.commandTemplate?.trim();
+    });
+  }
   const url = network.nodeDownloadUrl?.trim();
   if (!url) return false;
-  if (Array.isArray(network.nodePresets) && network.nodePresets.length > 0) return true;
   return !!network.nodeCommandTemplate?.trim();
 }
 
@@ -185,6 +225,7 @@ export function resolveNodePresets(network: {
   nodeCommandTemplate?: string | null;
   nodeDiskGb?: number | null;
   nodeRamMb?: number | null;
+  nodeBinarySha256?: string | null;
 }): NetworkNodePreset[] {
   if (Array.isArray(network.nodePresets) && network.nodePresets.length > 0) {
     return network.nodePresets;
@@ -197,6 +238,7 @@ export function resolveNodePresets(network: {
         commandTemplate: network.nodeCommandTemplate.trim(),
         nodeDiskGb: network.nodeDiskGb ?? undefined,
         nodeRamMb: network.nodeRamMb ?? undefined,
+        nodeBinarySha256: network.nodeBinarySha256?.trim(),
       },
     ];
   }
@@ -222,29 +264,28 @@ export function normalizeNodeFieldsForListing(input: {
       nodePresetsJson: string | null;
     }
   | { ok: false; error: string } {
-  const url = input.nodeDownloadUrl?.trim() ?? '';
-  if (!url) {
-    return {
-      ok: true,
-      nodeDownloadUrl: null,
-      nodeCommandTemplate: null,
-      nodeDiskGb: null,
-      nodeRamMb: null,
-      nodeBinarySha256: null,
-      nodePresetsJson: null,
-    };
-  }
-  if (!isUrlHostAllowed(url)) {
-    return { ok: false, error: 'Download URL must be from an allowed host (e.g. GitHub)' };
-  }
-
-  const sha = input.nodeBinarySha256?.trim();
-  if (sha && !/^[a-fA-F0-9]{64}$/.test(sha)) {
+  const baseUrl = input.nodeDownloadUrl?.trim() ?? '';
+  const baseSha = input.nodeBinarySha256?.trim();
+  if (baseSha && !/^[a-fA-F0-9]{64}$/.test(baseSha)) {
     return { ok: false, error: 'Binary SHA256 must be 64 hex characters' };
   }
 
   const presets = input.nodePresets;
   if (Array.isArray(presets) && presets.length > 0) {
+    if (!baseUrl) {
+      for (const p of presets) {
+        if (!p.nodeDownloadUrl?.trim()) {
+          return {
+            ok: false,
+            error:
+              'When the listing-level node download URL is empty, each preset must include its own download URL',
+          };
+        }
+      }
+    } else if (!isUrlHostAllowed(baseUrl)) {
+      return { ok: false, error: 'Download URL must be from an allowed host (e.g. GitHub)' };
+    }
+
     const seen = new Set<string>();
     for (const p of presets) {
       if (seen.has(p.presetId)) {
@@ -255,17 +296,46 @@ export function normalizeNodeFieldsForListing(input: {
       if (!sc.valid) {
         return { ok: false, error: sc.error ?? `Invalid command for preset ${p.presetId}` };
       }
+      const effUrl = effectivePresetNodeDownloadUrl(p, baseUrl);
+      if (!effUrl) {
+        return { ok: false, error: `Preset ${p.presetId}: missing download URL` };
+      }
+      if (!isUrlHostAllowed(effUrl)) {
+        return { ok: false, error: `Preset ${p.presetId}: download URL must be from an allowed host` };
+      }
+      const pSha = p.nodeBinarySha256?.trim();
+      if (pSha && !/^[a-fA-F0-9]{64}$/.test(pSha)) {
+        return { ok: false, error: `Preset ${p.presetId}: binary SHA256 must be 64 hex characters` };
+      }
     }
     const first = presets[0];
+    const firstUrl = effectivePresetNodeDownloadUrl(first, baseUrl)!;
+    const firstSha =
+      effectivePresetNodeBinarySha256(first, baseSha ?? null) ?? (baseSha && /^[a-fA-F0-9]{64}$/.test(baseSha) ? baseSha : null);
     return {
       ok: true,
-      nodeDownloadUrl: url,
+      nodeDownloadUrl: firstUrl,
       nodeCommandTemplate: first.commandTemplate.trim(),
       nodeDiskGb: first.nodeDiskGb ?? input.nodeDiskGb ?? null,
       nodeRamMb: first.nodeRamMb ?? input.nodeRamMb ?? null,
-      nodeBinarySha256: sha ?? null,
+      nodeBinarySha256: firstSha ?? null,
       nodePresetsJson: JSON.stringify(presets),
     };
+  }
+
+  if (!baseUrl) {
+    return {
+      ok: true,
+      nodeDownloadUrl: null,
+      nodeCommandTemplate: null,
+      nodeDiskGb: null,
+      nodeRamMb: null,
+      nodeBinarySha256: null,
+      nodePresetsJson: null,
+    };
+  }
+  if (!isUrlHostAllowed(baseUrl)) {
+    return { ok: false, error: 'Download URL must be from an allowed host (e.g. GitHub)' };
   }
 
   const tpl = input.nodeCommandTemplate?.trim() ?? '';
@@ -278,11 +348,11 @@ export function normalizeNodeFieldsForListing(input: {
   }
   return {
     ok: true,
-    nodeDownloadUrl: url,
+    nodeDownloadUrl: baseUrl,
     nodeCommandTemplate: tpl,
     nodeDiskGb: input.nodeDiskGb ?? null,
     nodeRamMb: input.nodeRamMb ?? null,
-    nodeBinarySha256: sha ?? null,
+    nodeBinarySha256: baseSha && /^[a-fA-F0-9]{64}$/.test(baseSha) ? baseSha : null,
     nodePresetsJson: null,
   };
 }

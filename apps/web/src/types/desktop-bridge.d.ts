@@ -25,6 +25,8 @@ declare global {
       getAutoUpdateEnabled: () => Promise<boolean>;
       setAutoUpdateEnabled: (enabled: boolean) => Promise<boolean>;
       getAppVersion: () => Promise<string>;
+      /** OS string from Tauri (`windows` | `linux` | `macos` … same as `std::env::consts::OS`). */
+      getPlatform?: () => Promise<string>;
       reload?: () => Promise<void>;
       checkForUpdates?: () => Promise<{
         updateAvailable: boolean;

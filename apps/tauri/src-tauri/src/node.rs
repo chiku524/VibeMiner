@@ -60,6 +60,14 @@ fn sha256_bytes(bytes: &[u8]) -> String {
     format!("{:x}", hasher.finalize())
 }
 
+/// Stable subdirectory name for this download URL so different OS archives never share one `bin/`.
+fn node_download_cache_key(url: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(url.as_bytes());
+    let full: String = format!("{:x}", hasher.finalize());
+    full.chars().take(16).collect()
+}
+
 pub fn ensure_node_ready(
     network_id: &str,
     environment: &str,
@@ -73,21 +81,27 @@ pub fn ensure_node_ready(
     let node_dir = user_data_path.join("nodes").join(&key);
     let preset_safe = sanitize_preset_id(node_preset_id);
     let data_dir = node_dir.join("data").join(&preset_safe);
-    let ready_marker = node_dir.join("ready");
-    if ready_marker.exists() {
-        std::fs::create_dir_all(&data_dir).map_err(|e| e.to_string())?;
-        return Ok((node_dir.join("bin"), data_dir));
-    }
 
     if node_download_url.is_empty() {
         return Err("No node download URL".into());
     }
 
+    let url_key = node_download_cache_key(node_download_url);
+    let ready_dir = node_dir.join(".vm-ready");
+    let ready_marker = ready_dir.join(format!("{url_key}.ok"));
+    let bin_dir = node_dir.join("bin").join(&url_key);
+
+    if ready_marker.exists() && bin_dir.is_dir() {
+        std::fs::create_dir_all(&data_dir).map_err(|e| e.to_string())?;
+        return Ok((bin_dir, data_dir));
+    }
+
     on_progress("fetching", 0, "Downloading node…");
     std::fs::create_dir_all(&data_dir).map_err(|e| e.to_string())?;
-    let archive_path = node_dir.join("archive");
-    let extract_path = node_dir.join("extract");
-    std::fs::create_dir_all(&node_dir).map_err(|e| e.to_string())?;
+    let staging = node_dir.join(".staging").join(&url_key);
+    let archive_path = staging.join("archive");
+    let extract_path = staging.join("extract");
+    std::fs::create_dir_all(&staging).map_err(|e| e.to_string())?;
 
     let client = reqwest::blocking::Client::builder()
         .user_agent("VibeMiner/1.0")
@@ -151,13 +165,17 @@ pub fn ensure_node_ready(
     let src_dir = subdir
         .map(|e| e.path())
         .unwrap_or_else(|| extract_path.clone());
-    let bin_dir = node_dir.join("bin");
     if bin_dir.exists() {
         std::fs::remove_dir_all(&bin_dir).map_err(|e| e.to_string())?;
     }
+    if let Some(parent) = bin_dir.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
     std::fs::rename(&src_dir, &bin_dir).map_err(|e| e.to_string())?;
     let _ = std::fs::remove_dir_all(&extract_path);
+    std::fs::create_dir_all(&ready_dir).map_err(|e| e.to_string())?;
     std::fs::write(&ready_marker, "").map_err(|e| e.to_string())?;
+    let _ = std::fs::remove_dir_all(&staging);
     on_progress("ready", 100, "Node ready");
     Ok((bin_dir, data_dir))
 }

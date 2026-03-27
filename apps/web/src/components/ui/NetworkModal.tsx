@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
 import type { BlockchainNetwork } from '@vibeminer/shared';
+import type { NetworkNodePreset } from '@vibeminer/shared';
 import {
   INCENTIVIZED_TESTNET_IDS,
   getResourceTier,
@@ -11,6 +12,8 @@ import {
   RESOURCE_TIER_DESCRIPTIONS,
   hasNodeConfig,
   resolveNodePresets,
+  effectivePresetNodeBinarySha256,
+  effectivePresetNodeDownloadUrl,
 } from '@vibeminer/shared';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useToast } from '@/contexts/ToastContext';
@@ -19,6 +22,34 @@ import { NetworkMark } from '@/components/ui/NetworkMark';
 interface NetworkModalProps {
   network: BlockchainNetwork | null;
   onClose: () => void;
+}
+
+function pickPresetIdForPlatform(presets: NetworkNodePreset[], platform: string): string {
+  if (presets.length === 0) return 'default';
+  const os = platform.toLowerCase();
+  const token =
+    os === 'windows'
+      ? 'windows'
+      : os === 'macos' || os === 'darwin'
+        ? 'macos'
+        : os === 'linux'
+          ? 'linux'
+          : null;
+  if (!token) return presets[0].presetId;
+  const hit = presets.find((p) => {
+    const id = p.presetId.toLowerCase();
+    const label = p.label.toLowerCase();
+    if (token === 'macos') {
+      return (
+        id.includes('mac') ||
+        id.includes('darwin') ||
+        label.includes('mac') ||
+        label.includes('darwin')
+      );
+    }
+    return id.includes(token) || label.includes(token);
+  });
+  return hit?.presetId ?? presets[0].presetId;
 }
 
 function getFocusables(container: HTMLElement): HTMLElement[] {
@@ -51,8 +82,15 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
   useEffect(() => {
     if (!network) return;
     const list = resolveNodePresets(network);
-    setSelectedPresetId(list[0]?.presetId ?? 'default');
-  }, [network]);
+    const fallback = list[0]?.presetId ?? 'default';
+    if (isDesktop && window.desktopAPI?.getPlatform) {
+      void window.desktopAPI.getPlatform().then((plat) => {
+        setSelectedPresetId(pickPresetIdForPlatform(list, plat));
+      });
+    } else {
+      setSelectedPresetId(fallback);
+    }
+  }, [network, isDesktop]);
 
   const displayDiskGb = network ? selectedPreset?.nodeDiskGb ?? network.nodeDiskGb : undefined;
   const displayRamMb = network ? selectedPreset?.nodeRamMb ?? network.nodeRamMb : undefined;
@@ -301,13 +339,25 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                         }
                         setNodeStarting(true);
                         try {
+                          const effUrl = effectivePresetNodeDownloadUrl(
+                            selectedPreset,
+                            network.nodeDownloadUrl
+                          );
+                          const effSha = effectivePresetNodeBinarySha256(
+                            selectedPreset,
+                            network.nodeBinarySha256
+                          );
+                          if (!effUrl?.trim()) {
+                            addToast('No download URL for this node mode.', 'error');
+                            return;
+                          }
                           const result = await window.desktopAPI.startNode({
                             network: {
                               id: network.id,
                               environment: network.environment ?? 'mainnet',
-                              nodeDownloadUrl: network.nodeDownloadUrl,
+                              nodeDownloadUrl: effUrl,
                               nodeCommandTemplate: selectedPreset.commandTemplate,
-                              nodeBinarySha256: network.nodeBinarySha256,
+                              nodeBinarySha256: effSha,
                               nodePresetId: selectedPreset.presetId,
                             },
                           });
