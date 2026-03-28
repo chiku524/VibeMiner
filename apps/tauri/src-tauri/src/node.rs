@@ -33,7 +33,21 @@ lazy_static::lazy_static! {
     static ref NODE_STATS: Mutex<HashMap<String, NodeStatus>> = Mutex::new(HashMap::new());
 }
 
+/// Folder name under `nodes/`. Cannot contain `:` — Windows rejects it in a path component (os error 123).
 fn node_dir_key(network_id: &str, environment: &str) -> String {
+    let sanitize = |s: &str| {
+        s.chars()
+            .map(|c| match c {
+                '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*' => '-',
+                c if c.is_control() => '-',
+                c => c,
+            })
+            .collect::<String>()
+    };
+    format!("{}__{}", sanitize(environment), sanitize(network_id))
+}
+
+fn legacy_node_dir_key(network_id: &str, environment: &str) -> String {
     format!("{}:{}", environment, network_id)
 }
 
@@ -88,6 +102,12 @@ pub fn ensure_node_ready(
 ) -> Result<(std::path::PathBuf, std::path::PathBuf), String> {
     let key = node_dir_key(network_id, environment);
     let node_dir = user_data_path.join("nodes").join(&key);
+    let legacy_dir = user_data_path
+        .join("nodes")
+        .join(legacy_node_dir_key(network_id, environment));
+    if !node_dir.exists() && legacy_dir.exists() {
+        let _ = std::fs::rename(&legacy_dir, &node_dir);
+    }
     let preset_safe = sanitize_preset_id(node_preset_id);
     let data_dir = node_dir.join("data").join(&preset_safe);
 

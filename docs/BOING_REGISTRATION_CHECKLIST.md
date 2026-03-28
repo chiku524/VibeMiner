@@ -145,6 +145,7 @@ node scripts/network-listings-release-sql.mjs <new-tag> --apply
 | Duplicate / conflict | Use network name **Boing** (→ **`boing-devnet`**) to replace the static row; Linux/macOS use separate names (→ **`boing-linux-devnet`**, etc.) |
 | Mixed OS in one listing | Use **multiple node modes** with a **Mode download URL** per OS (shared URL can be empty), or use **section C** for separate listing ids |
 | **Run node** / IPC errors | Confirm SHA256 matches the **downloaded file** (the zip). On Windows the binary is `boing-node-windows-x86_64.exe` inside the zip; the app may resolve `boing-node` → `.exe` when needed |
+| Windows **“filename, directory name, or volume label syntax is incorrect” (os error 123)** | Fixed in the **desktop app** (VibeMiner ≥ **1.0.77**): node cache folders no longer use `:` in the path (`devnet__boing-devnet` instead of `devnet:boing-devnet`). **No change to your D1 listing** is required for Boing—command template and URLs stay as documented above. |
 | API / probe failures | `GET` and `HEAD` are implemented for [https://boing.network/api/networks](https://boing.network/api/networks) |
 
 ## URL Allowlist
