@@ -58,7 +58,8 @@
         return function () {};
       },
       startRealMining: function (opts) {
-        return invoke('start_real_mining', opts);
+        // Tauri 2: command args must use the Rust parameter name (`opts`).
+        return invoke('start_real_mining', { opts: opts });
       },
       stopRealMining: function (networkId, environment) {
         return invoke('stop_real_mining', { network_id: networkId, environment: environment });
@@ -73,7 +74,7 @@
         return function () {};
       },
       startNode: function (opts) {
-        return invoke('start_node', opts);
+        return invoke('start_node', { opts: opts });
       },
       stopNode: function (networkId, environment, nodePresetId) {
         return invoke('stop_node', {

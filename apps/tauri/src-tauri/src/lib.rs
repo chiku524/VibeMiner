@@ -261,6 +261,7 @@ struct MiningNetwork {
     environment: Option<String>,
 }
 
+// Tauri 2 maps invoke JSON to Rust args by name; the webview must send `{ opts: StartMiningOpts }` (see `apps/web/public/desktop-bridge.js`).
 #[tauri::command]
 async fn start_real_mining(
     window: tauri::Window,
@@ -342,6 +343,7 @@ struct NodeNetwork {
     node_preset_id: Option<String>,
 }
 
+// Same `opts` wrapper as `start_real_mining` — required for `invoke('start_node', { opts: { network: … } })`.
 #[tauri::command]
 async fn start_node(
     window: tauri::Window,

@@ -211,9 +211,6 @@ export function Nav() {
                 <Link href="/register?returnTo=/dashboard" className="rounded-lg bg-accent-cyan/20 px-4 py-2 text-sm font-medium text-accent-cyan transition hover:bg-accent-cyan/30">
                   Register
                 </Link>
-                <Link href="/dashboard" className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-gray-300 transition hover:bg-white/5">
-                  Start mining
-                </Link>
               </>
             )
           )}
