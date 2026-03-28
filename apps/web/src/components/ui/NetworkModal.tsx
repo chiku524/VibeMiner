@@ -63,6 +63,21 @@ function getFocusables(container: HTMLElement): HTMLElement[] {
   );
 }
 
+/** Tauri returns `serde_json::Value`; tolerate odd shapes and verify with `isNodeRunning` if needed. */
+function parseStartNodeResult(raw: unknown): { ok: true } | { ok: false; error: string } {
+  if (raw == null) return { ok: false, error: 'No response from desktop' };
+  if (typeof raw === 'object' && raw !== null && 'ok' in raw) {
+    const o = raw as { ok?: unknown; error?: unknown };
+    if (o.ok === true) return { ok: true };
+    const err =
+      typeof o.error === 'string' && o.error.trim()
+        ? o.error
+        : 'Could not start node';
+    return { ok: false, error: err };
+  }
+  return { ok: false, error: 'Unexpected response from desktop' };
+}
+
 export function NetworkModal({ network, onClose }: NetworkModalProps) {
   const reduced = useReducedMotion() ?? false;
   const router = useRouter();
@@ -76,6 +91,7 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
   /** Shown while Rust downloads/extracts the node (IPC event `node-download-progress`). */
   const [nodeProgressText, setNodeProgressText] = useState<string | null>(null);
   const [nodeStatus, setNodeStatus] = useState<string | null>(null);
+  const [lastNodeError, setLastNodeError] = useState<string | null>(null);
   const [selectedPresetId, setSelectedPresetId] = useState<string>('default');
 
   const nodePresets = useMemo(
@@ -91,14 +107,18 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
     if (!network) return;
     const list = resolveNodePresets(network);
     const fallback = list[0]?.presetId ?? 'default';
+    // Apply a valid preset id immediately so <select value> matches an option (avoids layout jump / wrong IPC).
+    setSelectedPresetId(fallback);
     if (isDesktop && window.desktopAPI?.getPlatform) {
       void window.desktopAPI.getPlatform().then((plat) => {
         setSelectedPresetId(pickPresetIdForPlatform(list, plat));
       });
-    } else {
-      setSelectedPresetId(fallback);
     }
   }, [network, isDesktop]);
+
+  useEffect(() => {
+    if (!network) setLastNodeError(null);
+  }, [network]);
 
   const displayDiskGb = network ? selectedPreset?.nodeDiskGb ?? network.nodeDiskGb : undefined;
   const displayRamMb = network ? selectedPreset?.nodeRamMb ?? network.nodeRamMb : undefined;
@@ -366,9 +386,13 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                       disabled={nodeStarting}
                       onClick={async () => {
                         if (!window.desktopAPI?.startNode) {
-                          addToast('Desktop bridge not ready. Close this window and try again, or restart the app.', 'error');
+                          const msg =
+                            'Desktop bridge not ready. Close this window and try again, or restart the app.';
+                          setLastNodeError(msg);
+                          addToast(msg, 'error');
                           return;
                         }
+                        setLastNodeError(null);
                         setNodeStarting(true);
                         setNodeProgressText('Preparing node…');
                         let unlistenProgress: (() => void) | undefined;
@@ -401,10 +425,12 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                             network.nodeBinarySha256
                           );
                           if (!effUrl?.trim()) {
-                            addToast('No download URL for this node mode.', 'error');
+                            const msg = 'No download URL for this node mode.';
+                            setLastNodeError(msg);
+                            addToast(msg, 'error');
                             return;
                           }
-                          const result = await window.desktopAPI.startNode({
+                          const rawResult = await window.desktopAPI.startNode({
                             network: {
                               id: network.id,
                               environment: network.environment ?? 'mainnet',
@@ -414,7 +440,20 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                               nodePresetId: selectedPreset.presetId,
                             },
                           });
-                          if (result && typeof result === 'object' && 'ok' in result && result.ok) {
+                          let parsed = parseStartNodeResult(rawResult);
+                          if (!parsed.ok && window.desktopAPI?.isNodeRunning) {
+                            try {
+                              const running = await window.desktopAPI.isNodeRunning(
+                                network.id,
+                                network.environment ?? 'mainnet',
+                                selectedPreset.presetId
+                              );
+                              if (running) parsed = { ok: true };
+                            } catch {
+                              void 0;
+                            }
+                          }
+                          if (parsed.ok) {
                             setNodeRunning(true);
                             registerNodeSession({
                               networkId: network.id,
@@ -425,11 +464,8 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                             onClose();
                             router.push('/dashboard/sessions');
                           } else {
-                            const err =
-                              result && typeof result === 'object' && 'error' in result && typeof result.error === 'string'
-                                ? result.error
-                                : 'Could not start node';
-                            addToast(err, 'error');
+                            setLastNodeError(parsed.error);
+                            addToast(parsed.error, 'error');
                           }
                         } catch (e) {
                           const raw = e instanceof Error ? e.message : String(e);
@@ -437,7 +473,9 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                             /permission|not allowed|forbidden|capabilit/i.test(raw)
                               ? `${raw} Update to the latest VibeMiner release if you have not yet — the desktop shell must allow Run node over the remote UI.`
                               : raw;
-                          addToast(msg || 'Could not start node', 'error');
+                          const out = msg || 'Could not start node';
+                          setLastNodeError(out);
+                          addToast(out, 'error');
                         } finally {
                           unlistenProgress?.();
                           setNodeStarting(false);
@@ -455,6 +493,11 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                     ) : (
                       <p className="max-w-md text-xs text-gray-500">
                         The desktop app runs the node process directly (no bundled PowerShell or Command Prompt window). First run downloads and extracts the binary and can take several minutes on a slow connection.
+                      </p>
+                    )}
+                    {lastNodeError && !nodeStarting && (
+                      <p className="max-w-md rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200" role="alert">
+                        {lastNodeError}
                       </p>
                     )}
                     </div>

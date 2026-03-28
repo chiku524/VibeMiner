@@ -353,11 +353,13 @@ pub fn is_node_running(network_id: &str, environment: &str, node_preset_id: &str
 }
 
 pub fn list_running_nodes() -> Vec<RunningNodeDescriptor> {
-    let Ok(nodes) = ACTIVE_NODES.lock() else {
-        return vec![];
+    let nodes = match ACTIVE_NODES.lock() {
+        Ok(g) => g,
+        Err(p) => p.into_inner(),
     };
-    let Ok(stats) = NODE_STATS.lock() else {
-        return vec![];
+    let stats = match NODE_STATS.lock() {
+        Ok(g) => g,
+        Err(p) => p.into_inner(),
     };
     nodes
         .values()

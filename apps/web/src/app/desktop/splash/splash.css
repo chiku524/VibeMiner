@@ -40,13 +40,14 @@
     rgba(16, 185, 129, 0.18) 100%
   );
   border-radius: 1.25rem;
-  animation: splashSymbolFade 0.8s ease-out;
+  /* Stay visible on first paint; avoid several seconds of “empty” while the mark image loads. */
+  animation: splashSymbolFade 0.35s ease-out;
 }
 
 @keyframes splashSymbolFade {
   from {
-    opacity: 0;
-    transform: scale(0.96);
+    opacity: 0.88;
+    transform: scale(0.98);
   }
   to {
     opacity: 1;
@@ -62,13 +63,13 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: splashNameFade 0.6s ease-out 0.15s both;
+  animation: splashNameFade 0.35s ease-out 0.02s both;
 }
 
 @keyframes splashNameFade {
   from {
-    opacity: 0;
-    transform: scale(0.96);
+    opacity: 0.75;
+    transform: scale(0.99);
   }
   to {
     opacity: 1;
@@ -80,7 +81,7 @@
   margin-top: 0.35rem;
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.5);
-  animation: splashTaglineFade 0.5s ease-out 0.3s both;
+  animation: splashTaglineFade 0.3s ease-out 0.05s both;
 }
 
 .splash-screen__loader {
@@ -101,11 +102,11 @@
 
 @keyframes splashTaglineFade {
   from {
-    opacity: 0;
-    transform: scale(0.96);
+    opacity: 0.65;
+    transform: translateY(2px);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
   }
 }

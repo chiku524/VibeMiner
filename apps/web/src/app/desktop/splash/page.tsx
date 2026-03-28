@@ -125,7 +125,7 @@ export default function DesktopSplashPage() {
       <div className="splash-screen splash-screen--intro">
         <div className="splash-screen__content">
           <div className="splash-screen__symbol" aria-hidden>
-            <BrandMark className="h-[72px] w-[72px]" />
+            <BrandMark className="h-[72px] w-[72px]" fetchPriority="high" />
           </div>
           <h1 className="splash-screen__name">{site.name}</h1>
           <p className="splash-screen__tagline">{site.slogan}</p>
