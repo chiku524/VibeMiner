@@ -417,9 +417,16 @@ async fn start_node(
 }
 
 #[tauri::command]
-fn stop_node(network_id: String, environment: String, node_preset_id: Option<String>) {
+fn stop_node(
+    app: tauri::AppHandle,
+    network_id: String,
+    environment: String,
+    node_preset_id: Option<String>,
+) {
     let pid = node_preset_id.as_deref().unwrap_or("default");
-    node::stop_node(&network_id, &environment, pid);
+    let user_data = app.path().app_data_dir().ok();
+    let ud = user_data.as_ref().map(|p| p.as_path());
+    node::stop_node(ud, &network_id, &environment, pid);
 }
 
 #[tauri::command]
@@ -574,8 +581,11 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 
-    app.run(|_app_handle, event| {
+    app.run(|app_handle, event| {
         if let RunEvent::Exit = event {
+            if let Ok(dir) = app_handle.path().app_data_dir() {
+                node::shutdown_all_node_processes(&dir);
+            }
             tunnel::stop_cloudflare_tunnel();
         }
         if let RunEvent::ExitRequested { api, code, .. } = event {

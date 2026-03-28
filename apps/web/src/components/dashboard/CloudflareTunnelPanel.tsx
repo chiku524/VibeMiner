@@ -137,50 +137,28 @@ export function CloudflareTunnelPanel() {
   }
 
   return (
-    <section className="mb-6 rounded-2xl border border-orange-500/25 bg-surface-900/40 p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className="font-display flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-orange-200/90">
-            <Globe className="h-4 w-4 shrink-0" aria-hidden />
-            Public RPC (Cloudflare Tunnel)
+    <section className="mb-4 rounded-xl border border-orange-500/25 bg-surface-900/40 p-3 sm:p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Globe className="h-4 w-4 shrink-0 text-orange-200/90" aria-hidden />
+          <h2 className="font-display text-xs font-semibold uppercase tracking-wider text-orange-200/90">
+            Public RPC tunnel
           </h2>
-          <p className="mt-1 text-xs text-gray-400">
-            Run <code className="rounded bg-white/10 px-1 py-0.5 font-mono text-[11px]">cloudflared</code> to expose
-            local JSON-RPC (port from your node template, often <strong>8545</strong>) at your public hostname — e.g.{' '}
-            <code className="font-mono text-[11px] text-gray-300">testnet-rpc.boing.network</code>. Start the node first,
-            then start the tunnel. Configure paths and tunnel name in{' '}
-            <a href="/dashboard/settings" className="text-accent-cyan hover:underline">
-              Settings
-            </a>
-            .
-          </p>
-          <p className="mt-2 text-xs text-gray-500">
-            If logs show{' '}
-            <code className="rounded bg-white/5 px-1 font-mono text-[10px] text-gray-400">
-              Failed to initialize DNS local resolver
-            </code>{' '}
-            or timeouts resolving{' '}
-            <code className="font-mono text-[10px] text-gray-400">region1.v2.argotunnel.com</code>, your PC cannot reach a
-            resolver (VPN split-DNS, corporate firewall, or ISP DNS). Try setting DNS to Cloudflare (
-            <code className="font-mono text-[10px]">1.1.1.1</code>) or temporarily disabling the VPN. That message is
-            separate from the Boing node: if the node stops after a few seconds, open <strong>Node output</strong> on the
-            running-node panel for the real exit reason.
-          </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           {running ? (
             <>
-              <span className="flex items-center gap-1.5 text-xs text-emerald-400">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+              <span className="flex items-center gap-1.5 text-[11px] text-emerald-400">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
                 Running
               </span>
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => void handleStop()}
-                className="rounded-lg border border-red-500/40 bg-red-500/15 px-3 py-1.5 text-xs font-medium text-red-300 hover:bg-red-500/25 disabled:opacity-50"
+                className="rounded-md border border-red-500/40 bg-red-500/15 px-2.5 py-1 text-[11px] font-medium text-red-300 hover:bg-red-500/25 disabled:opacity-50"
               >
-                {busy ? '…' : 'Stop tunnel'}
+                {busy ? '…' : 'Stop'}
               </button>
             </>
           ) : (
@@ -188,22 +166,41 @@ export function CloudflareTunnelPanel() {
               type="button"
               disabled={busy}
               onClick={() => void handleStart()}
-              className="flex items-center gap-2 rounded-lg border border-orange-500/40 bg-orange-500/15 px-3 py-1.5 text-xs font-medium text-orange-200 hover:bg-orange-500/25 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-md border border-orange-500/40 bg-orange-500/15 px-2.5 py-1 text-[11px] font-medium text-orange-200 hover:bg-orange-500/25 disabled:opacity-50"
             >
-              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-              {busy ? 'Starting…' : 'Start tunnel'}
+              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+              {busy ? 'Starting…' : 'Start'}
             </button>
           )}
         </div>
       </div>
+      <p className="mt-2 text-[11px] leading-snug text-gray-500">
+        <code className="rounded bg-white/10 px-1 font-mono text-[10px]">cloudflared</code> exposes local RPC (e.g.{' '}
+        <strong className="font-medium text-gray-400">8545</strong>) — start the node first. Paths &amp; tunnel name:{' '}
+        <a href="/dashboard/settings" className="text-accent-cyan hover:underline">
+          Settings
+        </a>
+        .
+      </p>
 
-      <details className="mt-4 border-t border-white/5 pt-3">
-        <summary className="cursor-pointer select-none text-xs text-gray-500 hover:text-gray-400">
-          Tunnel log (cloudflared stdout/stderr)
+      <details className="mt-2 border-t border-white/5 pt-2">
+        <summary className="cursor-pointer select-none text-[11px] text-gray-500 hover:text-gray-400">
+          DNS / tunnel errors (e.g. region1.v2.argotunnel.com timeout)
+        </summary>
+        <p className="mt-1.5 text-[11px] leading-snug text-gray-500">
+          Usually VPN split-DNS, firewall, or ISP resolver. Try DNS <code className="font-mono text-[10px]">1.1.1.1</code> or
+          VPN off. Unrelated to the Boing node — use <strong className="font-medium text-gray-400">Node output</strong> for
+          node crashes.
+        </p>
+      </details>
+
+      <details className="mt-1 border-t border-white/5 pt-2">
+        <summary className="cursor-pointer select-none text-[11px] text-gray-500 hover:text-gray-400">
+          Tunnel log
         </summary>
         <pre
           ref={preRef}
-          className="mt-2 max-h-48 overflow-auto rounded-lg border border-white/10 bg-black/40 p-3 font-mono text-[11px] leading-relaxed text-gray-300"
+          className="mt-1.5 max-h-32 overflow-auto rounded-md border border-white/10 bg-black/40 p-2 font-mono text-[10px] leading-relaxed text-gray-300"
         >
           {lines.length === 0 ? (
             <span className="text-gray-600">No output yet.</span>

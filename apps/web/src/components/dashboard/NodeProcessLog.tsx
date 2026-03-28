@@ -177,11 +177,9 @@ export function NodeProcessLog({
         <div className="min-w-0">
           <p className="text-xs font-medium text-sky-300/90">Node output</p>
           <p className="mt-0.5 text-[11px] leading-snug text-gray-500">
-            Read-only log from this network&apos;s node process. This is{' '}
-            <strong className="font-medium text-gray-400">not</strong> a system shell — you cannot run
-            other programs or commands here. Use <strong className="font-medium text-gray-400">Stop</strong>{' '}
-            when you want to end the node. If a line looks like a long chunk with no newlines, the node may be
-            block-buffering stdout when piped (we flush large buffers so you still see progress).
+            Read-only output from the node process (not a shell). If you only see an exit code, copy the command
+            above and run it in PowerShell — often <strong className="font-medium text-gray-400">port 8545 in use</strong>, a
+            missing runtime DLL, or a bad flag. Block-buffered stdout may appear as one long line until flushed.
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-1.5 self-start">

@@ -147,6 +147,8 @@ node scripts/network-listings-release-sql.mjs <new-tag> --apply
 | **Run node** / IPC errors | Confirm SHA256 matches the **downloaded file** (the zip). On Windows the binary is `boing-node-windows-x86_64.exe` inside the zip; the app may resolve `boing-node` → `.exe` when needed |
 | Windows **“filename, directory name, or volume label syntax is incorrect” (os error 123)** | Fixed in the **desktop app** (VibeMiner ≥ **1.0.77**): node cache folders no longer use `:` in the path (`devnet__boing-devnet` instead of `devnet:boing-devnet`). **No change to your D1 listing** is required for Boing—command template and URLs stay as documented above. |
 | API / probe failures | `GET` and `HEAD` are implemented for [https://boing.network/api/networks](https://boing.network/api/networks) |
+| Node exits in ~1s with **code 1** (often no stderr in UI) | Boing binds JSON-RPC on **`0.0.0.0:{--rpc-port}`** (default **8545**). If that port is taken (second node, Hardhat, Docker, etc.), the process exits immediately. Free the port or change `--rpc-port` in the template. The VibeMiner desktop app preflight-checks that port before spawn and returns a clear error if it is busy. |
+| `TESTNET.md` shows `--p2p_listen` | **Clap** exposes that Rust field as **`--p2p-listen`** (kebab-case). VibeMiner templates should use hyphens (`--p2p-listen`, `--data-dir`, …). |
 
 ## URL Allowlist
 

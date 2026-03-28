@@ -2,9 +2,12 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::collections::{HashMap, VecDeque};
 use std::io::Read;
+use std::net::{Ipv4Addr, SocketAddrV4, TcpListener};
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
+use std::time::Duration;
+use sysinfo::System;
 use tauri::{AppHandle, Emitter, Manager};
 
 #[derive(Clone, Debug, Serialize)]
@@ -209,6 +212,9 @@ fn reap_exited_node_children() {
     nodes.retain(|key, entry| {
         match entry._child.try_wait() {
             Ok(Some(status)) => {
+                // Pipe reader threads may still be draining OS buffers; fast exits can otherwise race
+                // and the UI only shows the exit meta line with no stderr context.
+                std::thread::sleep(Duration::from_millis(450));
                 let exit_msg = if let Some(code) = status.code() {
                     format!("Process exited with code {code}")
                 } else {
@@ -233,6 +239,67 @@ fn reap_exited_node_children() {
             }
         }
     });
+}
+
+/// Kill processes whose executable lives under `dir` (VibeMiner node cache layout: `.../nodes/<key>/bin/.../*.exe`).
+/// Catches orphans when the in-memory [`Child`] handle was lost (app restart, UI desync) but the binary keeps running.
+fn kill_processes_executables_under(dir: &Path) -> u32 {
+    if !sysinfo::IS_SUPPORTED_SYSTEM {
+        return 0;
+    }
+    let Ok(canonical) = dir.canonicalize() else {
+        return 0;
+    };
+    let prefix = canonical.to_string_lossy().to_lowercase();
+    let mut system = System::new_all();
+    system.refresh_all();
+    let mut killed = 0u32;
+    for process in system.processes().values() {
+        let Some(exe) = process.exe() else {
+            continue;
+        };
+        let p = exe.to_string_lossy().to_lowercase();
+        if p.starts_with(&prefix) && process.kill() {
+            killed += 1;
+        }
+    }
+    killed
+}
+
+/// On app exit: stop every node binary still running from our `nodes/` download cache.
+pub fn stop_all_cached_node_processes(user_data: &Path) {
+    let nodes_root = user_data.join("nodes");
+    let Ok(entries) = std::fs::read_dir(&nodes_root) else {
+        return;
+    };
+    for entry in entries.filter_map(|e| e.ok()) {
+        let path = entry.path();
+        if path.is_dir() {
+            kill_processes_executables_under(&path);
+        }
+    }
+}
+
+/// Stop tracked nodes (normal path) then sweep the cache for any remaining executables (orphans).
+pub fn shutdown_all_node_processes(user_data: &Path) {
+    let snapshot: Vec<(String, String, String)> = if let Ok(nodes) = ACTIVE_NODES.lock() {
+        nodes
+            .values()
+            .map(|e| {
+                (
+                    e.network_id.clone(),
+                    e.environment.clone(),
+                    e.node_preset_id.clone(),
+                )
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+    for (network_id, environment, preset) in snapshot {
+        stop_node(Some(user_data), &network_id, &environment, &preset);
+    }
+    stop_all_cached_node_processes(user_data);
 }
 
 /// Folder name under `nodes/`. Cannot contain `:` — Windows rejects it in a path component (os error 123).
@@ -452,6 +519,45 @@ fn unquote_token(s: &str) -> String {
     }
 }
 
+/// Parse `--rpc-port` / `--rpc-port=NN` from argv (matches common node CLIs, including Boing).
+fn rpc_port_from_args(args: &[String]) -> Option<u16> {
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        if let Some(rest) = a.strip_prefix("--rpc-port=") {
+            return rest.parse().ok();
+        }
+        if a == "--rpc-port" {
+            return it.next().and_then(|s| s.parse().ok());
+        }
+    }
+    None
+}
+
+/// Boing node defaults JSON-RPC to 8545 when `--rpc-port` is omitted (`main.rs` `default_value = "8545"`).
+fn effective_rpc_port_for_preflight(network_id: &str, args: &[String]) -> Option<u16> {
+    if let Some(p) = rpc_port_from_args(args) {
+        return Some(p);
+    }
+    if network_id.to_lowercase().contains("boing") {
+        return Some(8545);
+    }
+    None
+}
+
+/// Fail fast with a clear message when the RPC port cannot be bound (Boing exits with code 1 almost immediately).
+fn preflight_rpc_listen_port(port: u16) -> Result<(), String> {
+    let addr = SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, port);
+    match TcpListener::bind(addr) {
+        Ok(l) => drop(l),
+        Err(e) => {
+            return Err(format!(
+                "RPC port {port} is not available ({e}). Another process is probably using it (another Boing node, Hardhat, Anvil, etc.). Stop it or change --rpc-port in the network command template."
+            ));
+        }
+    }
+    Ok(())
+}
+
 fn resolve_node_executable(bin_dir: &Path, exe_token: &str) -> Result<std::path::PathBuf, String> {
     let clean = unquote_token(exe_token);
     let p = if Path::new(&clean).is_absolute() {
@@ -511,6 +617,9 @@ pub fn start_node(
     let parts = split_command_args(&cmd_str);
     let exe = parts.first().ok_or("Empty command template")?;
     let args: Vec<String> = parts.iter().skip(1).cloned().collect();
+    if let Some(port) = effective_rpc_port_for_preflight(&network_id, &args) {
+        preflight_rpc_listen_port(port)?;
+    }
     let exe_path = resolve_node_executable(bin_dir, exe)?;
     let cwd = exe_path.parent().ok_or("Invalid path")?;
     let mut cmd = Command::new(&exe_path);
@@ -518,7 +627,9 @@ pub fn start_node(
         .current_dir(cwd)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+        .stderr(Stdio::piped())
+        // If the node is a Rust binary, panics may otherwise omit a backtrace when stderr is a pipe.
+        .env("RUST_BACKTRACE", "1");
     #[cfg(unix)]
     {
         use std::os::unix::process::CommandExt;
@@ -608,7 +719,12 @@ pub fn start_node(
     Ok(())
 }
 
-pub fn stop_node(network_id: &str, environment: &str, node_preset_id: &str) {
+pub fn stop_node(
+    user_data_dir: Option<&Path>,
+    network_id: &str,
+    environment: &str,
+    node_preset_id: &str,
+) {
     reap_exited_node_children();
     let key = process_key(network_id, environment, node_preset_id);
     let removed = if let Ok(mut nodes) = ACTIVE_NODES.lock() {
@@ -647,6 +763,11 @@ pub fn stop_node(network_id: &str, environment: &str, node_preset_id: &str) {
         let _ = entry._child.wait();
     }
     mark_node_stats_inactive(&key);
+    // Orphans: process still running but no Child in ACTIVE_NODES (e.g. session closed without stop, app restart).
+    if let Some(root) = user_data_dir {
+        let node_cache = root.join("nodes").join(node_dir_key(network_id, environment));
+        kill_processes_executables_under(&node_cache);
+    }
 }
 
 pub fn get_node_status(network_id: &str, environment: &str, node_preset_id: &str) -> Option<NodeStatus> {
