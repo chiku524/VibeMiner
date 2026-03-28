@@ -1,6 +1,6 @@
 [package]
 name = "vibeminer-tauri"
-version = "1.0.77"
+version = "1.0.78"
 description = "VibeMiner desktop app"
 authors = ["nico.builds"]
 edition = "2021"
@@ -31,6 +31,9 @@ sha2 = "0.10"
 regex = "1"
 chrono = "0.4"
 lazy_static = "1"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
 
 [features]
 default = ["custom-protocol"]

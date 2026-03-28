@@ -25,6 +25,29 @@ type DesktopRunningNodeRow = {
   startedAt: number;
 };
 
+function mergeDesktopNodeRowsIntoSessions(
+  prev: MiningSession[],
+  rows: DesktopRunningNodeRow[]
+): MiningSession[] {
+  const mining = prev.filter((s) => !isMiningSessionNode(s));
+  const nodes: MiningSessionNode[] = rows.map((d) => ({
+    kind: 'node',
+    networkId: d.networkId,
+    environment: d.environment as NetworkEnvironment,
+    presetId: d.nodePresetId,
+    startedAt: d.startedAt > 0 ? Number(d.startedAt) : Date.now(),
+    isActive: true,
+  }));
+  const withStatus = nodes.map((n) => {
+    const old = prev.find(
+      (s): s is MiningSessionNode =>
+        isMiningSessionNode(s) && sessionListKey(s) === sessionListKey(n)
+    );
+    return old?.nodeStatus != null ? { ...n, nodeStatus: old.nodeStatus } : n;
+  });
+  return [...mining, ...withStatus];
+}
+
 type MiningContextValue = {
   sessions: MiningSession[];
   startMining: (network: BlockchainNetwork, walletAddress?: string) => Promise<{ ok: boolean; error?: string }>;
@@ -139,21 +162,42 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const stopSession = useCallback(
-    (session: MiningSession) => {
-      if (isMiningSessionNode(session)) {
-        window.desktopAPI?.stopNode?.(session.networkId, session.environment, session.presetId);
-      } else {
-        const key = networkKey(session.networkId, session.environment);
-        if (realKeysRef.current.has(key) && window.desktopAPI?.stopRealMining) {
-          window.desktopAPI.stopRealMining(session.networkId, session.environment);
-          realKeysRef.current.delete(key);
+  const stopSession = useCallback((session: MiningSession) => {
+    if (isMiningSessionNode(session)) {
+      void (async () => {
+        try {
+          await window.desktopAPI?.stopNode?.(
+            session.networkId,
+            session.environment,
+            sanitizeNodePresetId(session.presetId)
+          );
+        } catch (e) {
+          console.warn('stopNode failed', e);
         }
-      }
-      setSessions((prev) => prev.filter((s) => sessionListKey(s) !== sessionListKey(session)));
-    },
-    []
-  );
+        const listFn = window.desktopAPI?.listRunningNodes;
+        if (listFn) {
+          try {
+            const list = await listFn();
+            if (Array.isArray(list)) {
+              setSessions((prev) => mergeDesktopNodeRowsIntoSessions(prev, list as DesktopRunningNodeRow[]));
+            }
+          } catch (e) {
+            console.warn('listRunningNodes failed', e);
+            setSessions((prev) => prev.filter((s) => sessionListKey(s) !== sessionListKey(session)));
+          }
+        } else {
+          setSessions((prev) => prev.filter((s) => sessionListKey(s) !== sessionListKey(session)));
+        }
+      })();
+      return;
+    }
+    const key = networkKey(session.networkId, session.environment);
+    if (realKeysRef.current.has(key) && window.desktopAPI?.stopRealMining) {
+      window.desktopAPI.stopRealMining(session.networkId, session.environment);
+      realKeysRef.current.delete(key);
+    }
+    setSessions((prev) => prev.filter((s) => sessionListKey(s) !== sessionListKey(session)));
+  }, []);
 
   const registerNodeSession = useCallback(
     (args: { networkId: string; environment: NetworkEnvironment; presetId: string; startedAt?: number }) => {
@@ -199,25 +243,7 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
         const list = (await listFn()) as unknown;
         if (cancelled || !Array.isArray(list)) return;
         const rows = list as DesktopRunningNodeRow[];
-        setSessions((prev) => {
-          const mining = prev.filter((s) => !isMiningSessionNode(s));
-          const nodes: MiningSessionNode[] = rows.map((d) => ({
-            kind: 'node',
-            networkId: d.networkId,
-            environment: d.environment as NetworkEnvironment,
-            presetId: d.nodePresetId,
-            startedAt: d.startedAt > 0 ? Number(d.startedAt) : Date.now(),
-            isActive: true,
-          }));
-          const withStatus = nodes.map((n) => {
-            const old = prev.find(
-              (s): s is MiningSessionNode =>
-                isMiningSessionNode(s) && sessionListKey(s) === sessionListKey(n)
-            );
-            return old?.nodeStatus != null ? { ...n, nodeStatus: old.nodeStatus } : n;
-          });
-          return [...mining, ...withStatus];
-        });
+        setSessions((prev) => mergeDesktopNodeRowsIntoSessions(prev, rows));
       } catch {
         /* desktop IPC unavailable */
       }

@@ -404,6 +404,7 @@ async fn start_node(
     .await
     .map_err(|e| e.to_string())??;
     node::start_node(
+        &app,
         network_id,
         env,
         &preset_raw,
@@ -443,6 +444,16 @@ fn list_running_nodes() -> Vec<node::RunningNodeDescriptor> {
     node::list_running_nodes()
 }
 
+#[tauri::command]
+fn get_node_log_snapshot(
+    network_id: String,
+    environment: String,
+    node_preset_id: Option<String>,
+) -> Vec<node::NodeLogLineEntry> {
+    let pid = node_preset_id.as_deref().unwrap_or("default");
+    node::get_node_log_snapshot(&network_id, &environment, pid)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut builder = tauri::Builder::default()
@@ -471,6 +482,7 @@ pub fn run() {
             get_node_status,
             is_node_running,
             list_running_nodes,
+            get_node_log_snapshot,
         ]);
 
     #[cfg(desktop)]

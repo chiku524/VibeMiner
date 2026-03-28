@@ -100,6 +100,13 @@
       listRunningNodes: function () {
         return invoke('list_running_nodes', {});
       },
+      getNodeLogSnapshot: function (networkId, environment, nodePresetId) {
+        return invoke('get_node_log_snapshot', {
+          network_id: networkId,
+          environment: environment,
+          node_preset_id: nodePresetId != null && nodePresetId !== '' ? nodePresetId : null,
+        });
+      },
       onNodeDownloadProgress: function (cb) {
         return function () {};
       },

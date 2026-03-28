@@ -275,13 +275,19 @@ pub fn start_mining(
         wallet_address.trim(),
         algorithm.as_deref(),
     );
-    let mut child = Command::new(&miner_path)
-        .args(&args)
+    let mut cmd = Command::new(&miner_path);
+    cmd.args(&args)
         .current_dir(cwd)
+        .stdin(Stdio::null())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| e.to_string())?;
+        .stderr(Stdio::piped());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    let mut child = cmd.spawn().map_err(|e| e.to_string())?;
 
     let started_at = chrono::Utc::now().timestamp_millis() as u64;
     let stdout = child.stdout.take().ok_or("No stdout")?;

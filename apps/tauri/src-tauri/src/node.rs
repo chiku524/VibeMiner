@@ -1,9 +1,11 @@
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
+use std::io::Read;
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
+use tauri::{AppHandle, Emitter, Manager};
 
 #[derive(Clone, Debug, Serialize)]
 pub struct NodeStatus {
@@ -31,6 +33,191 @@ struct NodeEntry {
 lazy_static::lazy_static! {
     static ref ACTIVE_NODES: Mutex<HashMap<String, NodeEntry>> = Mutex::new(HashMap::new());
     static ref NODE_STATS: Mutex<HashMap<String, NodeStatus>> = Mutex::new(HashMap::new());
+    static ref NODE_LOG_RING: Mutex<HashMap<String, VecDeque<NodeLogLineEntry>>> = Mutex::new(HashMap::new());
+}
+
+const NODE_LOG_LINE_MAX: usize = 8192;
+const NODE_LOG_RING_MAX: usize = 500;
+/// Flush a partial line when the pipe stays block-buffered (no newline) for this many bytes.
+const NODE_LOG_CARRY_FLUSH_MAX: usize = 48 * 1024;
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NodeLogLineEntry {
+    pub stream: String,
+    pub line: String,
+}
+
+fn truncate_log_line(s: &str) -> String {
+    if s.len() <= NODE_LOG_LINE_MAX {
+        s.to_string()
+    } else {
+        format!("{}…", &s[..NODE_LOG_LINE_MAX.saturating_sub(3)])
+    }
+}
+
+fn push_node_log_ring(ring_key: &str, stream: &str, line: String) {
+    let entry = NodeLogLineEntry {
+        stream: stream.to_string(),
+        line,
+    };
+    if let Ok(mut m) = NODE_LOG_RING.lock() {
+        let dq = m
+            .entry(ring_key.to_string())
+            .or_insert_with(|| VecDeque::with_capacity(NODE_LOG_RING_MAX));
+        dq.push_back(entry);
+        while dq.len() > NODE_LOG_RING_MAX {
+            dq.pop_front();
+        }
+    }
+}
+
+fn clear_node_log_ring(ring_key: &str) {
+    if let Ok(mut m) = NODE_LOG_RING.lock() {
+        m.remove(ring_key);
+    }
+}
+
+fn emit_node_log_to_main(app: &AppHandle, payload: serde_json::Value) {
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.emit("node-process-output", &payload);
+    } else {
+        let _ = app.emit("node-process-output", payload);
+    }
+}
+
+fn emit_and_store_node_log_line(
+    app: &AppHandle,
+    ring_key: &str,
+    network_id: &str,
+    environment: &str,
+    node_preset_id: &str,
+    stream: &str,
+    line: String,
+) {
+    let t = truncate_log_line(&line);
+    push_node_log_ring(ring_key, stream, t.clone());
+    emit_node_log_to_main(
+        app,
+        serde_json::json!({
+            "networkId": network_id,
+            "environment": environment,
+            "nodePresetId": node_preset_id,
+            "stream": stream,
+            "line": t,
+        }),
+    );
+}
+
+/// Recent log lines for the main webview (remote URL loads miss early `listen` events).
+pub fn get_node_log_snapshot(
+    network_id: &str,
+    environment: &str,
+    node_preset_id: &str,
+) -> Vec<NodeLogLineEntry> {
+    let key = process_key(network_id, environment, node_preset_id);
+    NODE_LOG_RING
+        .lock()
+        .ok()
+        .map(|m| {
+            m.get(&key)
+                .map(|dq| dq.iter().cloned().collect())
+                .unwrap_or_default()
+        })
+        .unwrap_or_default()
+}
+
+/// Read stdout/stderr in chunks so block-buffered binaries still produce output before a newline.
+fn forward_pipe_to_logs<R: Read + Send + 'static>(
+    app: AppHandle,
+    ring_key: String,
+    network_id: String,
+    environment: String,
+    node_preset_id: String,
+    stream: &'static str,
+    mut reader: R,
+) {
+    std::thread::spawn(move || {
+        let mut carry = String::new();
+        let mut buf = [0u8; 4096];
+        loop {
+            match reader.read(&mut buf) {
+                Ok(0) => break,
+                Ok(n) => {
+                    carry.push_str(&String::from_utf8_lossy(&buf[..n]));
+                    while let Some(pos) = carry.find('\n') {
+                        let mut line = carry[..pos].to_string();
+                        carry.drain(..=pos);
+                        if line.ends_with('\r') {
+                            line.pop();
+                        }
+                        emit_and_store_node_log_line(
+                            &app,
+                            &ring_key,
+                            &network_id,
+                            &environment,
+                            &node_preset_id,
+                            stream,
+                            line,
+                        );
+                    }
+                    if carry.len() > NODE_LOG_CARRY_FLUSH_MAX {
+                        let chunk = std::mem::take(&mut carry);
+                        emit_and_store_node_log_line(
+                            &app,
+                            &ring_key,
+                            &network_id,
+                            &environment,
+                            &node_preset_id,
+                            stream,
+                            chunk,
+                        );
+                    }
+                }
+                Err(_) => break,
+            }
+        }
+        let tail = carry.trim_end_matches(['\r', '\n']).to_string();
+        if !tail.is_empty() {
+            emit_and_store_node_log_line(
+                &app,
+                &ring_key,
+                &network_id,
+                &environment,
+                &node_preset_id,
+                stream,
+                tail,
+            );
+        }
+    });
+}
+
+fn mark_node_stats_inactive(key: &str) {
+    if let Ok(mut stats) = NODE_STATS.lock() {
+        if let Some(s) = stats.get_mut(key) {
+            s.is_active = false;
+        }
+    }
+}
+
+/// Drop finished children so `list_running_nodes` / UI match reality (e.g. user closed an external console).
+fn reap_exited_node_children() {
+    let Ok(mut nodes) = ACTIVE_NODES.lock() else {
+        return;
+    };
+    nodes.retain(|key, entry| {
+        match entry._child.try_wait() {
+            Ok(Some(_)) => {
+                mark_node_stats_inactive(key);
+                false
+            }
+            Ok(None) => true,
+            Err(_) => {
+                mark_node_stats_inactive(key);
+                false
+            }
+        }
+    });
 }
 
 /// Folder name under `nodes/`. Cannot contain `:` — Windows rejects it in a path component (os error 123).
@@ -277,6 +464,7 @@ fn resolve_node_executable(bin_dir: &Path, exe_token: &str) -> Result<std::path:
 }
 
 pub fn start_node(
+    app: &AppHandle,
     network_id: String,
     environment: String,
     node_preset_id: &str,
@@ -284,6 +472,7 @@ pub fn start_node(
     bin_dir: &Path,
     data_dir: &Path,
 ) -> Result<(), String> {
+    let preset_stored = sanitize_preset_id(node_preset_id);
     let key = process_key(&network_id, &environment, node_preset_id);
     {
         let nodes = ACTIVE_NODES.lock().map_err(|e| e.to_string())?;
@@ -309,16 +498,74 @@ pub fn start_node(
     let args: Vec<String> = parts.iter().skip(1).cloned().collect();
     let exe_path = resolve_node_executable(bin_dir, exe)?;
     let cwd = exe_path.parent().ok_or("Invalid path")?;
-    let child = Command::new(&exe_path)
-        .args(&args)
+    let mut cmd = Command::new(&exe_path);
+    cmd.args(&args)
         .current_dir(cwd)
+        .stdin(Stdio::null())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| e.to_string())?;
+        .stderr(Stdio::piped());
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        // Own process group so `stop_node` can kill the tree with `kill(-pid, SIGKILL)` (like Windows /T).
+        unsafe {
+            cmd.pre_exec(|| {
+                if libc::setpgid(0, 0) != 0 {
+                    return Err(std::io::Error::last_os_error());
+                }
+                Ok(())
+            });
+        }
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        // No extra conhost window when spawning console binaries from the Tauri GUI.
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    let mut child = cmd.spawn().map_err(|e| e.to_string())?;
+
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| "Failed to pipe node stdout".to_string())?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| "Failed to pipe node stderr".to_string())?;
+
+    let ring_key = key.clone();
+    clear_node_log_ring(&ring_key);
+    emit_and_store_node_log_line(
+        app,
+        &ring_key,
+        &network_id,
+        &environment,
+        &preset_stored,
+        "meta",
+        format!("$ {}", cmd_str),
+    );
+    forward_pipe_to_logs(
+        app.clone(),
+        ring_key.clone(),
+        network_id.clone(),
+        environment.clone(),
+        preset_stored.clone(),
+        "stdout",
+        stdout,
+    );
+    forward_pipe_to_logs(
+        app.clone(),
+        ring_key,
+        network_id.clone(),
+        environment.clone(),
+        preset_stored.clone(),
+        "stderr",
+        stderr,
+    );
 
     let started_at = chrono::Utc::now().timestamp_millis() as u64;
-    let preset_stored = sanitize_preset_id(node_preset_id);
     NODE_STATS
         .lock()
         .map_err(|e| e.to_string())?
@@ -346,25 +593,54 @@ pub fn start_node(
 }
 
 pub fn stop_node(network_id: &str, environment: &str, node_preset_id: &str) {
+    reap_exited_node_children();
     let key = process_key(network_id, environment, node_preset_id);
-    if let Ok(mut nodes) = ACTIVE_NODES.lock() {
-        if let Some(mut entry) = nodes.remove(&key) {
+    let removed = if let Ok(mut nodes) = ACTIVE_NODES.lock() {
+        nodes.remove(&key)
+    } else {
+        None
+    };
+    if let Some(mut entry) = removed {
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            let pid = entry._child.id();
+            let _ = Command::new("taskkill")
+                .args(["/F", "/T", "/PID", &pid.to_string()])
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .creation_flags(0x0800_0000)
+                .status();
+        }
+        #[cfg(unix)]
+        {
+            let raw = entry._child.id();
+            if raw > 0 {
+                if let Ok(pid) = i32::try_from(raw) {
+                    unsafe {
+                        let _ = libc::kill(-pid, libc::SIGKILL);
+                    }
+                }
+            }
+        }
+        #[cfg(all(not(windows), not(unix)))]
+        {
             let _ = entry._child.kill();
         }
+        let _ = entry._child.wait();
     }
-    if let Ok(mut stats) = NODE_STATS.lock() {
-        if let Some(s) = stats.get_mut(&key) {
-            s.is_active = false;
-        }
-    }
+    mark_node_stats_inactive(&key);
 }
 
 pub fn get_node_status(network_id: &str, environment: &str, node_preset_id: &str) -> Option<NodeStatus> {
+    reap_exited_node_children();
     let key = process_key(network_id, environment, node_preset_id);
     NODE_STATS.lock().ok().and_then(|m| m.get(&key).cloned())
 }
 
 pub fn is_node_running(network_id: &str, environment: &str, node_preset_id: &str) -> bool {
+    reap_exited_node_children();
     let key = process_key(network_id, environment, node_preset_id);
     ACTIVE_NODES
         .lock()
@@ -373,6 +649,7 @@ pub fn is_node_running(network_id: &str, environment: &str, node_preset_id: &str
 }
 
 pub fn list_running_nodes() -> Vec<RunningNodeDescriptor> {
+    reap_exited_node_children();
     let nodes = match ACTIVE_NODES.lock() {
         Ok(g) => g,
         Err(p) => p.into_inner(),

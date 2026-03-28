@@ -26,7 +26,8 @@
           "stop_node",
           "get_node_status",
           "is_node_running",
-          "list_running_nodes"
+          "list_running_nodes",
+          "get_node_log_snapshot"
         ],
         "deny": []
       }

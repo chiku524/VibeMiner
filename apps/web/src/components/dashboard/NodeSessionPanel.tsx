@@ -6,6 +6,7 @@ import type { MiningSessionNode } from '@vibeminer/shared';
 import type { BlockchainNetwork } from '@vibeminer/shared';
 import { resolveNodePresets, sanitizeNodePresetId } from '@vibeminer/shared';
 import { NetworkMark } from '@/components/ui/NetworkMark';
+import { NodeProcessLog } from '@/components/dashboard/NodeProcessLog';
 import { Server } from 'lucide-react';
 
 interface NodeSessionPanelProps {
@@ -113,6 +114,18 @@ export function NodeSessionPanel({ session, network, onStop, compact = false }: 
             )}
           </div>
         </div>
+        <details className="border-t border-white/5 px-4 py-2">
+          <summary className="cursor-pointer select-none text-xs text-gray-500 hover:text-gray-400">
+            Node output (read-only)
+          </summary>
+          <div className="mt-2 pb-2">
+            <NodeProcessLog
+              networkId={session.networkId}
+              environment={session.environment}
+              nodePresetId={sanitizeNodePresetId(session.presetId)}
+            />
+          </div>
+        </details>
       </motion.div>
     );
   }
@@ -158,6 +171,15 @@ export function NodeSessionPanel({ session, network, onStop, compact = false }: 
           <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Status</p>
           <p className="mt-0.5 text-sm text-gray-300">{session.nodeStatus?.trim() || '—'}</p>
         </div>
+      </div>
+
+      <div className="border-t border-white/5 px-5 pb-5">
+        <p className="mb-2 text-xs font-medium text-gray-500">Process log</p>
+        <NodeProcessLog
+          networkId={session.networkId}
+          environment={session.environment}
+          nodePresetId={sanitizeNodePresetId(session.presetId)}
+        />
       </div>
 
       <div className="border-t border-white/5 px-5 py-3">
