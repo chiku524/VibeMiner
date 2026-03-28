@@ -27,7 +27,13 @@
           "get_node_status",
           "is_node_running",
           "list_running_nodes",
-          "get_node_log_snapshot"
+          "get_node_log_snapshot",
+          "get_tunnel_settings",
+          "set_tunnel_settings",
+          "start_cloudflare_tunnel",
+          "stop_cloudflare_tunnel",
+          "is_cloudflare_tunnel_running",
+          "get_cloudflare_tunnel_log_snapshot"
         ],
         "deny": []
       }

@@ -89,6 +89,23 @@ declare global {
       ) => Promise<Array<{ stream: string; line: string }>>;
       onMinerDownloadProgress?: (cb: unknown) => () => void;
       onNodeDownloadProgress?: (cb: unknown) => () => void;
+      getTunnelSettings?: () => Promise<{
+        cloudflaredPath?: string | null;
+        cloudflareTunnelName?: string;
+        cloudflareConfigPath?: string | null;
+        effectiveConfigPath?: string;
+        /** Resolved binary (settings, BOING_NETWORK_ROOT, sibling boing.network, PATH, …). */
+        resolvedCloudflaredPath?: string | null;
+      }>;
+      setTunnelSettings?: (patch: {
+        cloudflaredPath?: string;
+        cloudflareTunnelName?: string;
+        cloudflareConfigPath?: string;
+      }) => Promise<void>;
+      startCloudflareTunnel?: () => Promise<{ ok?: boolean }>;
+      stopCloudflareTunnel?: () => Promise<void>;
+      isCloudflareTunnelRunning?: () => Promise<boolean>;
+      getCloudflareTunnelLogSnapshot?: () => Promise<Array<{ stream: string; line: string }>>;
     };
   }
 }

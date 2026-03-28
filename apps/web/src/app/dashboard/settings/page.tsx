@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { useDesktopCheck } from '@/hooks/useIsDesktop';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { DesktopAppSettings } from '@/components/DesktopAppSettings';
+import { CloudflareTunnelSettings } from '@/components/CloudflareTunnelSettings';
 import { MiningWalletSettings } from '@/components/MiningWalletSettings';
 import { NetworkListingsSection } from '@/components/NetworkListingsSection';
 import { ProfileSettings } from '@/components/ProfileSettings';
@@ -119,14 +120,18 @@ export default function SettingsPage() {
             {!isNetworkAccount && (
               <>
                 <section>
-                  <h2 className="font-display text-lg font-semibold text-white mb-3">Desktop app</h2>
+                  <h2 className="font-display mb-3 text-lg font-semibold text-white">Desktop app</h2>
                   <DesktopAppSettings />
-              <p className="mt-2 text-xs text-gray-500">
-                These options only apply when you’re using the VibeMiner desktop app. In the browser they are hidden.
-              </p>
-            </section>
+                  <p className="mt-2 text-xs text-gray-500">
+                    These options only apply when you’re using the VibeMiner desktop app. In the browser they are hidden.
+                  </p>
+                </section>
                 <section>
-                  <h2 className="font-display text-lg font-semibold text-white mb-3">Mining</h2>
+                  <h2 className="font-display mb-3 text-lg font-semibold text-white">Public RPC tunnel</h2>
+                  <CloudflareTunnelSettings />
+                </section>
+                <section>
+                  <h2 className="font-display mb-3 text-lg font-semibold text-white">Mining</h2>
                   <MiningWalletSettings />
                 </section>
               </>

@@ -8,6 +8,15 @@ const SETTINGS_FILENAME: &str = "settings.json";
 pub struct Settings {
     #[serde(default = "default_auto_update")]
     pub auto_update: bool,
+    /// Full path to `cloudflared` when not on PATH / Boing layout / default install dirs.
+    #[serde(default)]
+    pub cloudflared_path: Option<String>,
+    /// Tunnel name from Cloudflare config (e.g. `boing-testnet-rpc`).
+    #[serde(default)]
+    pub cloudflare_tunnel_name: Option<String>,
+    /// Override for `config.yml` (default: `%USERPROFILE%\.cloudflared\config.yml` / `~/.cloudflared/config.yml`).
+    #[serde(default)]
+    pub cloudflare_config_path: Option<String>,
 }
 
 fn default_auto_update() -> bool {
@@ -18,6 +27,9 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             auto_update: true,
+            cloudflared_path: None,
+            cloudflare_tunnel_name: None,
+            cloudflare_config_path: None,
         }
     }
 }

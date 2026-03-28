@@ -3,6 +3,7 @@
 mod mining;
 mod node;
 mod settings;
+mod tunnel;
 
 use serde::Serialize;
 use serde_json::json;
@@ -454,6 +455,63 @@ fn get_node_log_snapshot(
     node::get_node_log_snapshot(&network_id, &environment, pid)
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TunnelSettingsPatch {
+    cloudflared_path: Option<String>,
+    cloudflare_tunnel_name: Option<String>,
+    cloudflare_config_path: Option<String>,
+}
+
+#[tauri::command]
+fn get_tunnel_settings(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let path = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let s = settings::load(&path);
+    Ok(tunnel::settings_snapshot_json(&s))
+}
+
+#[tauri::command]
+fn set_tunnel_settings(app: tauri::AppHandle, patch: TunnelSettingsPatch) -> Result<(), String> {
+    let path = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let mut s = settings::load(&path);
+    if let Some(v) = patch.cloudflared_path {
+        let t = v.trim();
+        s.cloudflared_path = if t.is_empty() { None } else { Some(t.to_string()) };
+    }
+    if let Some(v) = patch.cloudflare_tunnel_name {
+        let t = v.trim();
+        s.cloudflare_tunnel_name = if t.is_empty() { None } else { Some(t.to_string()) };
+    }
+    if let Some(v) = patch.cloudflare_config_path {
+        let t = v.trim();
+        s.cloudflare_config_path = if t.is_empty() { None } else { Some(t.to_string()) };
+    }
+    settings::save(&path, &s)
+}
+
+#[tauri::command]
+fn start_cloudflare_tunnel(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let path = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let s = settings::load(&path);
+    tunnel::start_cloudflare_tunnel(&app, &s)?;
+    Ok(serde_json::json!({ "ok": true }))
+}
+
+#[tauri::command]
+fn stop_cloudflare_tunnel() {
+    tunnel::stop_cloudflare_tunnel();
+}
+
+#[tauri::command]
+fn is_cloudflare_tunnel_running() -> bool {
+    tunnel::is_cloudflare_tunnel_running()
+}
+
+#[tauri::command]
+fn get_cloudflare_tunnel_log_snapshot() -> Vec<tunnel::TunnelLogLine> {
+    tunnel::get_cloudflare_tunnel_log_snapshot()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut builder = tauri::Builder::default()
@@ -483,6 +541,12 @@ pub fn run() {
             is_node_running,
             list_running_nodes,
             get_node_log_snapshot,
+            get_tunnel_settings,
+            set_tunnel_settings,
+            start_cloudflare_tunnel,
+            stop_cloudflare_tunnel,
+            is_cloudflare_tunnel_running,
+            get_cloudflare_tunnel_log_snapshot,
         ]);
 
     #[cfg(desktop)]
@@ -511,6 +575,9 @@ pub fn run() {
         .expect("error while building tauri application");
 
     app.run(|_app_handle, event| {
+        if let RunEvent::Exit = event {
+            tunnel::stop_cloudflare_tunnel();
+        }
         if let RunEvent::ExitRequested { api, code, .. } = event {
             if code.is_none() {
                 api.prevent_exit();

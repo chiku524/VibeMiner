@@ -110,6 +110,24 @@
       onNodeDownloadProgress: function (cb) {
         return function () {};
       },
+      getTunnelSettings: function () {
+        return invoke('get_tunnel_settings', {});
+      },
+      setTunnelSettings: function (patch) {
+        return invoke('set_tunnel_settings', { patch: patch });
+      },
+      startCloudflareTunnel: function () {
+        return invoke('start_cloudflare_tunnel', {});
+      },
+      stopCloudflareTunnel: function () {
+        return invoke('stop_cloudflare_tunnel', {});
+      },
+      isCloudflareTunnelRunning: function () {
+        return invoke('is_cloudflare_tunnel_running', {});
+      },
+      getCloudflareTunnelLogSnapshot: function () {
+        return invoke('get_cloudflare_tunnel_log_snapshot', {});
+      },
     };
 
     try {
