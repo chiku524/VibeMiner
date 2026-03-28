@@ -4,6 +4,8 @@ node_modules/
 # Build outputs
 .next/
 .open-next/
+# Windows rename fallback from apps/web/scripts/opennext-clean.mjs
+**/.open-next.trash.*
 .wrangler/
 out/
 dist/

@@ -55,7 +55,7 @@ jobs:
 
       - name: Build and deploy from apps/web
         run: |
-          cd apps/web && npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy -- --keep-vars
+          cd apps/web && node ./scripts/opennext-clean.mjs && npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy -- --keep-vars
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
