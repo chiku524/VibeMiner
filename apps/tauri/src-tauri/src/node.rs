@@ -24,6 +24,7 @@ pub struct RunningNodeDescriptor {
 }
 
 struct NodeEntry {
+    app: AppHandle,
     _child: Child,
     network_id: String,
     environment: String,
@@ -207,7 +208,21 @@ fn reap_exited_node_children() {
     };
     nodes.retain(|key, entry| {
         match entry._child.try_wait() {
-            Ok(Some(_)) => {
+            Ok(Some(status)) => {
+                let exit_msg = if let Some(code) = status.code() {
+                    format!("Process exited with code {code}")
+                } else {
+                    "Process exited".to_string()
+                };
+                emit_and_store_node_log_line(
+                    &entry.app,
+                    key,
+                    &entry.network_id,
+                    &entry.environment,
+                    &entry.node_preset_id,
+                    "meta",
+                    exit_msg,
+                );
                 mark_node_stats_inactive(key);
                 false
             }
@@ -583,6 +598,7 @@ pub fn start_node(
         .insert(
             key,
             NodeEntry {
+                app: app.clone(),
                 _child: child,
                 network_id,
                 environment,

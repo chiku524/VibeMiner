@@ -12,6 +12,7 @@ import {
   isMiningSessionNode,
   isMiningSessionMining,
   sessionListKey,
+  sessionRowIsActive,
   type MiningSessionMining,
 } from '@vibeminer/shared';
 import { MiningPanel } from '@/components/dashboard/MiningPanel';
@@ -36,7 +37,7 @@ function findNetworkForSession(session: { networkId: string; environment: 'mainn
 export default function MiningSessionsPage() {
   const isDesktop = useIsDesktop();
   const { user, loading: authLoading } = useAuth();
-  const { sessions, stopSession } = useMining();
+  const { sessions, stopSession, dismissNodeSession } = useMining();
 
   const sessionsWithNetworks = useMemo(() => {
     return sessions
@@ -57,6 +58,11 @@ export default function MiningSessionsPage() {
 
   const nodeRows = useMemo(
     () => sessionsWithNetworks.filter((row) => isMiningSessionNode(row.session)),
+    [sessionsWithNetworks]
+  );
+
+  const activeSessionRowCount = useMemo(
+    () => sessionsWithNetworks.filter(({ session }) => sessionRowIsActive(session)).length,
     [sessionsWithNetworks]
   );
 
@@ -87,7 +93,8 @@ export default function MiningSessionsPage() {
         >
           <h1 className="font-display text-2xl font-bold sm:text-3xl">Sessions</h1>
           <p className="mt-1 text-gray-400">
-            Active mining and node sessions. Multiple networks at once.
+            Active mining and node sessions. If a node exits, its card stays so you can read the log — use Dismiss when
+            you are done.
           </p>
           <p className="mt-2 text-sm text-gray-500">
             <Link href="/dashboard/mining" className="text-accent-cyan hover:underline">
@@ -120,7 +127,7 @@ export default function MiningSessionsPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs text-gray-500">Active sessions</p>
-                    <p className="font-mono text-lg font-semibold text-white">{sessionsWithNetworks.length}</p>
+                    <p className="font-mono text-lg font-semibold text-white">{activeSessionRowCount}</p>
                     <p className="mt-0.5 text-xs text-gray-500">
                       {miningRows.length} mining
                       {nodeRows.length > 0
@@ -163,6 +170,7 @@ export default function MiningSessionsPage() {
                       session={session}
                       network={network}
                       onStop={() => stopSession(session)}
+                      onDismiss={() => dismissNodeSession(session)}
                       compact={sessionsWithNetworks.length > 1}
                     />
                   ) : (

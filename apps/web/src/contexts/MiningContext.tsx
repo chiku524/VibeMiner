@@ -25,27 +25,56 @@ type DesktopRunningNodeRow = {
   startedAt: number;
 };
 
+function desktopNodeRowKey(d: DesktopRunningNodeRow): string {
+  return sessionListKey({
+    kind: 'node',
+    networkId: d.networkId,
+    environment: d.environment as NetworkEnvironment,
+    presetId: sanitizeNodePresetId(d.nodePresetId),
+    startedAt: 0,
+    isActive: true,
+  });
+}
+
+/** Sync running nodes from the desktop; keep ended node rows (with logs) until dismissed. */
 function mergeDesktopNodeRowsIntoSessions(
   prev: MiningSession[],
   rows: DesktopRunningNodeRow[]
 ): MiningSession[] {
   const mining = prev.filter((s) => !isMiningSessionNode(s));
-  const nodes: MiningSessionNode[] = rows.map((d) => ({
-    kind: 'node',
-    networkId: d.networkId,
-    environment: d.environment as NetworkEnvironment,
-    presetId: d.nodePresetId,
-    startedAt: d.startedAt > 0 ? Number(d.startedAt) : Date.now(),
-    isActive: true,
-  }));
-  const withStatus = nodes.map((n) => {
-    const old = prev.find(
-      (s): s is MiningSessionNode =>
-        isMiningSessionNode(s) && sessionListKey(s) === sessionListKey(n)
-    );
-    return old?.nodeStatus != null ? { ...n, nodeStatus: old.nodeStatus } : n;
+  const prevNodes = prev.filter(isMiningSessionNode);
+  const desktopKeys = new Set(rows.map((d) => desktopNodeRowKey(d)));
+  const now = Date.now();
+
+  const runningNodes: MiningSessionNode[] = rows.map((d) => {
+    const key = desktopNodeRowKey(d);
+    const old = prevNodes.find((s) => sessionListKey(s) === key);
+    const presetId = sanitizeNodePresetId(d.nodePresetId);
+    return {
+      kind: 'node' as const,
+      networkId: d.networkId,
+      environment: d.environment as NetworkEnvironment,
+      presetId,
+      startedAt: d.startedAt > 0 ? Number(d.startedAt) : old?.startedAt ?? now,
+      isActive: true,
+      nodeStatus: old?.nodeStatus,
+    };
   });
-  return [...mining, ...withStatus];
+
+  const retained: MiningSessionNode[] = [];
+  for (const n of prevNodes) {
+    const key = sessionListKey(n);
+    if (desktopKeys.has(key)) {
+      continue;
+    }
+    if (n.nodeProcessExitedAt != null) {
+      retained.push(n);
+    } else {
+      retained.push({ ...n, nodeProcessExitedAt: now });
+    }
+  }
+
+  return [...mining, ...runningNodes, ...retained];
 }
 
 type MiningContextValue = {
@@ -59,6 +88,7 @@ type MiningContextValue = {
     presetId: string;
     startedAt?: number;
   }) => void;
+  dismissNodeSession: (session: MiningSessionNode) => void;
   isMining: (networkId: string, environment?: NetworkEnvironment) => boolean;
 };
 
@@ -220,6 +250,11 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const dismissNodeSession = useCallback((session: MiningSessionNode) => {
+    const k = sessionListKey(session);
+    setSessions((prev) => prev.filter((s) => sessionListKey(s) !== k));
+  }, []);
+
   const isMining = useCallback(
     (networkId: string, environment?: NetworkEnvironment) =>
       sessions.some(
@@ -252,7 +287,7 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
     void syncNodesFromDesktop();
     const id = setInterval(() => {
       void syncNodesFromDesktop();
-    }, 5000);
+    }, 2500);
     const onFocus = () => {
       void syncNodesFromDesktop();
     };
@@ -265,7 +300,7 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const nodeKeysSerialized = sessions
-    .filter(isMiningSessionNode)
+    .filter((s) => isMiningSessionNode(s) && s.nodeProcessExitedAt == null)
     .map(sessionListKey)
     .sort()
     .join('|');
@@ -277,7 +312,9 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
     async function tick() {
       const getNodeStatus = window.desktopAPI?.getNodeStatus;
       if (!getNodeStatus) return;
-      const nodeSessions = sessionsRef.current.filter(isMiningSessionNode);
+      const nodeSessions = sessionsRef.current
+        .filter(isMiningSessionNode)
+        .filter((s) => s.nodeProcessExitedAt == null);
       if (nodeSessions.length === 0) return;
       const updates: Array<{ key: string; status: string | null }> = [];
       for (const s of nodeSessions) {
@@ -373,6 +410,7 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
     stopMining,
     stopSession,
     registerNodeSession,
+    dismissNodeSession,
     isMining,
   };
 

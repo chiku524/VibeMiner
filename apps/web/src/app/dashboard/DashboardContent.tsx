@@ -18,6 +18,7 @@ import {
   type ResourceTier,
   type MiningSession,
   isMiningSessionNode,
+  isLiveNodeSession,
   sessionListKey,
 } from '@vibeminer/shared';
 import { MiningPanel } from '@/components/dashboard/MiningPanel';
@@ -240,7 +241,7 @@ export function DashboardContent() {
     return getNetworkById(preselectedId);
   }, [preselectedId, fetchedMainnet, fetchedDevnet]);
 
-  const { sessions, startMining, stopSession, isMining } = useMining();
+  const { sessions, startMining, stopSession, dismissNodeSession, isMining } = useMining();
 
   const handleStart = useCallback(
     async (network: BlockchainNetwork) => {
@@ -490,7 +491,7 @@ export function DashboardContent() {
                 const canRunNode = hasNodeConfig(network);
                 const hasActiveNode = sessions.some(
                   (s) =>
-                    isMiningSessionNode(s) &&
+                    isLiveNodeSession(s) &&
                     s.networkId === network.id &&
                     s.environment === network.environment
                 );
@@ -522,7 +523,7 @@ export function DashboardContent() {
                         whileTap={(canStartMining || (isLive && canRunNode)) ? { scale: 0.99 } : undefined}
                         transition={{ duration: 0.15 }}
                         title={!mineable && canRunNode ? 'Run node' : undefined}
-                        className={`flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-2 rounded-l-xl border px-4 py-3 text-left transition-colors ${
+                        className={`flex min-w-0 flex-1 items-center gap-3 rounded-l-xl border px-4 py-3 text-left transition-colors ${
                           isActive
                             ? 'border-accent-cyan/50 bg-accent-cyan/10'
                             : isStarting
@@ -537,7 +538,7 @@ export function DashboardContent() {
                         <NetworkMark
                           icon={network.icon}
                           label={network.name}
-                          className="h-9 w-9 text-xl"
+                          className="h-9 w-9 shrink-0 text-xl"
                         />
                         <div className="min-w-0 flex-1">
                           {isStarting ? (
@@ -547,15 +548,18 @@ export function DashboardContent() {
                             </p>
                           ) : (
                             <>
-                              <p className="flex min-w-0 items-center gap-2 font-medium text-white">
-                                <span className="min-w-0 truncate">{network.name}</span>
+                              <div className="flex min-w-0 items-center gap-2">
+                                <p className="min-w-0 flex-1 truncate font-medium text-white">{network.name}</p>
                                 {isNewlyListed && (
                                   <span className="shrink-0 rounded bg-accent-cyan/20 px-1.5 py-0.5 text-xs font-medium text-accent-cyan">
                                     New
                                   </span>
                                 )}
-                              </p>
-                              <p className="min-w-0 break-words text-xs text-gray-500">
+                                {isActive && (
+                                  <span className="h-2 w-2 shrink-0 rounded-full bg-accent-emerald animate-pulse" aria-hidden />
+                                )}
+                              </div>
+                              <p className="mt-0.5 min-w-0 text-xs text-gray-500">
                                 {network.symbol} · {network.algorithm}
                                 {isNetworkMineable(network) && (
                                   <span className="ml-1.5 rounded bg-emerald-500/20 px-1 py-0.5 text-emerald-300">Mineable</span>
@@ -572,25 +576,25 @@ export function DashboardContent() {
                                   </span>
                                 )}
                               </p>
+                              <div className="mt-1.5 flex flex-wrap gap-1">
+                                {network.environment === 'devnet' && (
+                                  <span className="rounded bg-violet-500/20 px-1.5 py-0.5 text-xs text-violet-300">Test</span>
+                                )}
+                                {INCENTIVIZED_TESTNET_IDS.includes(network.id) && (
+                                  <span
+                                    className="rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-medium text-amber-300"
+                                    title="Incentivized testnet"
+                                  >
+                                    Incentivized
+                                  </span>
+                                )}
+                                {network.status === 'coming-soon' && (
+                                  <span className="text-xs text-gray-500">Soon</span>
+                                )}
+                              </div>
                             </>
                           )}
                         </div>
-                        {!isStarting && network.environment === 'devnet' && (
-                          <span className="shrink-0 rounded bg-violet-500/20 px-1.5 py-0.5 text-xs text-violet-300">
-                            Test
-                          </span>
-                        )}
-                        {INCENTIVIZED_TESTNET_IDS.includes(network.id) && (
-                          <span className="shrink-0 rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-medium text-amber-300">
-                            Incentivized testnet
-                          </span>
-                        )}
-                        {!isStarting && network.status === 'coming-soon' && (
-                          <span className="shrink-0 text-xs text-gray-500">Soon</span>
-                        )}
-                        {isActive && (
-                          <span className="h-2 w-2 shrink-0 rounded-full bg-accent-emerald animate-pulse" aria-hidden />
-                        )}
                       </motion.button>
                       <button
                         onClick={(e) => {
@@ -635,6 +639,7 @@ export function DashboardContent() {
                         session={session}
                         network={network}
                         onStop={() => handleStopSession(session)}
+                        onDismiss={() => dismissNodeSession(session)}
                         compact={sessionsWithNetworks.length > 1}
                       />
                     ) : (

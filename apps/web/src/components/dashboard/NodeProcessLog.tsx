@@ -32,10 +32,13 @@ export function NodeProcessLog({
   networkId,
   environment,
   nodePresetId,
+  /** When set (e.g. process exit time), pull the full ring from the desktop again so nothing is missed. */
+  snapshotRefreshAt,
 }: {
   networkId: string;
   environment: string;
   nodePresetId: string;
+  snapshotRefreshAt?: number;
 }) {
   const isDesktop = useIsDesktop();
   const preRef = useRef<HTMLPreElement>(null);
@@ -99,6 +102,25 @@ export function NodeProcessLog({
       unlisten?.();
     };
   }, [isDesktop, networkId, environment, nodePresetId]);
+
+  useEffect(() => {
+    if (snapshotRefreshAt == null || !isDesktop || typeof window === 'undefined') return;
+    const snap = window.desktopAPI?.getNodeLogSnapshot;
+    if (!snap) return;
+    let cancelled = false;
+    void snap(networkId, environment, nodePresetId).then((rows) => {
+      if (cancelled || !Array.isArray(rows)) return;
+      setLines(
+        rows.map((r) => ({
+          stream: asStreamKind(typeof r.stream === 'string' ? r.stream : 'stdout'),
+          text: typeof r.line === 'string' ? r.line : String(r.line ?? ''),
+        }))
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [snapshotRefreshAt, isDesktop, networkId, environment, nodePresetId]);
 
   useEffect(() => {
     const el = preRef.current;

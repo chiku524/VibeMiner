@@ -30,6 +30,10 @@ export interface MiningSessionNode {
   presetId: string;
   /** Last status line from desktop getNodeStatus, if any */
   nodeStatus?: string | null;
+  /**
+   * When the desktop process exits, this is set so the session row (and log) stay until the user dismisses.
+   */
+  nodeProcessExitedAt?: number;
 }
 
 export type MiningSession = MiningSessionMining | MiningSessionNode;
@@ -48,4 +52,15 @@ export function sessionListKey(session: MiningSession): string {
     return `node:${session.environment}:${session.networkId}:${session.presetId}`;
   }
   return `mining:${session.environment}:${session.networkId}`;
+}
+
+/** Node session whose desktop process is still running (not exited / retained for logs). */
+export function isLiveNodeSession(session: MiningSession): session is MiningSessionNode {
+  return isMiningSessionNode(session) && session.nodeProcessExitedAt == null;
+}
+
+/** Mining or live node row — excludes ended node sessions kept for log review. */
+export function sessionRowIsActive(session: MiningSession): boolean {
+  if (isMiningSessionNode(session)) return session.nodeProcessExitedAt == null;
+  return session.isActive;
 }

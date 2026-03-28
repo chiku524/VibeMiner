@@ -154,6 +154,18 @@ export function CloudflareTunnelPanel() {
             </a>
             .
           </p>
+          <p className="mt-2 text-xs text-gray-500">
+            If logs show{' '}
+            <code className="rounded bg-white/5 px-1 font-mono text-[10px] text-gray-400">
+              Failed to initialize DNS local resolver
+            </code>{' '}
+            or timeouts resolving{' '}
+            <code className="font-mono text-[10px] text-gray-400">region1.v2.argotunnel.com</code>, your PC cannot reach a
+            resolver (VPN split-DNS, corporate firewall, or ISP DNS). Try setting DNS to Cloudflare (
+            <code className="font-mono text-[10px]">1.1.1.1</code>) or temporarily disabling the VPN. That message is
+            separate from the Boing node: if the node stops after a few seconds, open <strong>Node output</strong> on the
+            running-node panel for the real exit reason.
+          </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           {running ? (

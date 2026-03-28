@@ -20,7 +20,9 @@ import {
   type MiningSessionMining,
   isMiningSessionNode,
   isMiningSessionMining,
+  isLiveNodeSession,
   sessionListKey,
+  sessionRowIsActive,
 } from '@vibeminer/shared';
 import { MiningPanel } from '@/components/dashboard/MiningPanel';
 import { NodeSessionPanel } from '@/components/dashboard/NodeSessionPanel';
@@ -248,7 +250,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
     return byMain ?? byDev ?? getNetworkById(preselectedId);
   }, [preselectedId, fetchedMainnet, fetchedDevnet]);
 
-  const { sessions, startMining, stopSession, isMining } = useMining();
+  const { sessions, startMining, stopSession, dismissNodeSession, isMining } = useMining();
 
   const handleStart = useCallback(
     async (network: BlockchainNetwork) => {
@@ -289,6 +291,11 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
         (row): row is typeof row & { session: MiningSessionMining } =>
           isMiningSessionMining(row.session)
       ),
+    [sessionsWithNetworks]
+  );
+
+  const activeSessionRowCount = useMemo(
+    () => sessionsWithNetworks.filter(({ session }) => sessionRowIsActive(session)).length,
     [sessionsWithNetworks]
   );
 
@@ -453,7 +460,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                 const canRunNode = hasNodeConfig(network);
                 const hasActiveNode = sessions.some(
                   (s) =>
-                    isMiningSessionNode(s) &&
+                    isLiveNodeSession(s) &&
                     s.networkId === network.id &&
                     s.environment === network.environment
                 );
@@ -479,7 +486,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                         whileTap={(canStartMining || canOpenNodeModal) ? { scale: 0.99 } : undefined}
                         transition={{ duration: 0.15 }}
                         title={canOpenNodeModal ? 'Run node' : undefined}
-                        className={`flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-2 rounded-l-xl border px-4 py-3 text-left transition-colors ${
+                        className={`flex min-w-0 flex-1 items-center gap-3 rounded-l-xl border px-4 py-3 text-left transition-colors ${
                           isActive ? 'border-accent-cyan/50 bg-accent-cyan/10' :
                           isStarting ? 'border-accent-cyan/30 bg-accent-cyan/5' :
                           (canStartMining || canOpenNodeModal) ? 'border-white/10 hover:border-white/20 hover:bg-white/5' :
@@ -490,7 +497,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                         <NetworkMark
                           icon={network.icon}
                           label={network.name}
-                          className="h-9 w-9 text-xl"
+                          className="h-9 w-9 shrink-0 text-xl"
                         />
                         <div className="min-w-0 flex-1">
                           {isStarting ? (
@@ -499,15 +506,18 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                             </p>
                           ) : (
                             <>
-                              <p className="flex min-w-0 items-center gap-2 font-medium text-white">
-                                <span className="min-w-0 truncate">{network.name}</span>
+                              <div className="flex min-w-0 items-center gap-2">
+                                <p className="min-w-0 flex-1 truncate font-medium text-white">{network.name}</p>
                                 {isNewlyListed && (
                                   <span className="shrink-0 rounded bg-accent-cyan/20 px-1.5 py-0.5 text-xs font-medium text-accent-cyan">
                                     New
                                   </span>
                                 )}
-                              </p>
-                              <p className="min-w-0 break-words text-xs text-gray-500">
+                                {isActive && (
+                                  <span className="h-2 w-2 shrink-0 rounded-full bg-accent-emerald animate-pulse" aria-hidden />
+                                )}
+                              </div>
+                              <p className="mt-0.5 min-w-0 text-xs text-gray-500">
                                 {network.symbol} · {network.algorithm}
                                 {isNetworkMineable(network) && (
                                   <span className="ml-1.5 rounded bg-emerald-500/20 px-1 py-0.5 text-emerald-300">Mineable</span>
@@ -524,23 +534,25 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                                   </span>
                                 )}
                               </p>
+                              <div className="mt-1.5 flex flex-wrap gap-1">
+                                {network.environment === 'devnet' && (
+                                  <span className="rounded bg-violet-500/20 px-1.5 py-0.5 text-xs text-violet-300">Test</span>
+                                )}
+                                {INCENTIVIZED_TESTNET_IDS.includes(network.id) && (
+                                  <span
+                                    className="rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-medium text-amber-300"
+                                    title="Incentivized testnet"
+                                  >
+                                    Incentivized
+                                  </span>
+                                )}
+                                {network.status === 'coming-soon' && (
+                                  <span className="text-xs text-gray-500">Soon</span>
+                                )}
+                              </div>
                             </>
                           )}
                         </div>
-                        {!isStarting && network.environment === 'devnet' && (
-                          <span className="shrink-0 rounded bg-violet-500/20 px-1.5 py-0.5 text-xs text-violet-300">Test</span>
-                        )}
-                        {INCENTIVIZED_TESTNET_IDS.includes(network.id) && (
-                          <span className="shrink-0 rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-medium text-amber-300">
-                            Incentivized testnet
-                          </span>
-                        )}
-                        {!isStarting && network.status === 'coming-soon' && (
-                          <span className="shrink-0 text-xs text-gray-500">Soon</span>
-                        )}
-                        {isActive && (
-                          <span className="h-2 w-2 shrink-0 rounded-full bg-accent-emerald animate-pulse" aria-hidden />
-                        )}
                       </motion.button>
                       <button onClick={(e) => { modalTriggerRef.current = e.currentTarget as HTMLButtonElement; setModalNetwork(network); }} className="rounded-r-xl border border-white/10 bg-surface-850/80 px-3 py-2 text-xs text-gray-400 transition hover:border-white/20 hover:bg-white/5 hover:text-white" title="Learn more">ℹ</button>
                     </div>
@@ -568,7 +580,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                   >
                     <h2 className="font-display flex min-w-0 flex-wrap items-center gap-2 text-sm font-semibold uppercase tracking-wider text-gray-500">
                       <BarChart3 className="h-4 w-4 shrink-0" />
-                      {mode === 'mining' ? 'Current mining statistics' : 'Current node running'}
+                      {mode === 'mining' ? 'Current mining statistics' : 'Node sessions'}
                     </h2>
                     <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                       <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-surface-900/50 px-4 py-3">
@@ -577,7 +589,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs text-gray-500">Active {mode === 'mining' ? 'sessions' : 'nodes'}</p>
-                          <p className="font-mono text-lg font-semibold text-white">{sessionsWithNetworks.length}</p>
+                          <p className="font-mono text-lg font-semibold text-white">{activeSessionRowCount}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-surface-900/50 px-4 py-3">
@@ -644,6 +656,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                           session={session}
                           network={network}
                           onStop={() => handleStopSession(session)}
+                          onDismiss={() => dismissNodeSession(session)}
                           compact={sessionsWithNetworks.length > 1}
                         />
                       ) : (
