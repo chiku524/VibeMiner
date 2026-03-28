@@ -2,7 +2,8 @@ import { ImageResponse } from 'next/og';
 import { BRAND_MARK_PNG } from '@/lib/brand';
 import { site } from '@/lib/site';
 
-export const runtime = 'edge';
+// OpenNext rejects edge for this route in the default server bundle (Cloudflare deploy).
+export const runtime = 'nodejs';
 export const alt = `VibeMiner — ${site.slogan}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
