@@ -47,15 +47,17 @@ Use **Offer multiple node modes**, clear the **shared** node URL if you want onl
 
 Use this when you are **not** enabling **Offer multiple node modes**. One download URL, one command. This **overrides** the static `boing-devnet` row in `@vibeminer/shared` so **Run node** uses your release.
 
-**Current GitHub release tag:** `testnet-v0.1.2`  
-**Repository:** [chiku524/boing.network](https://github.com/chiku524/boing.network) (release workflow uploads `release-<platform>.zip` with the binary at the **root** of each zip)
+**Current GitHub release tag:** `testnet-v0.1.3` (includes `boing_getQaRegistry` and related RPC; supersedes `testnet-v0.1.2`)  
+**Repository:** [chiku524/boing.network](https://github.com/chiku524/boing.network) (push tag `testnet-v0.1.3` → CI builds zips → finish the **draft** GitHub Release)
+
+**QA / explorer RPC:** Boing adds read-only methods over time (e.g. **`boing_getQaRegistry`** for [boing.observer/qa](https://boing.observer/qa)). VibeMiner only runs whatever is inside your zip — **no app update can add RPC methods**. When you ship a new `boing-node` with additional JSON-RPC, **tag a new release** (e.g. `testnet-v0.1.4`), update every download URL in this checklist and in `@vibeminer/shared` defaults (`BOING_TESTNET_DEFAULT_DOWNLOAD_TAG`, `networks.ts`), then redeploy VibeMiner. Details: **[BOING_QA_RPC_AND_RELEASES.md](./BOING_QA_RPC_AND_RELEASES.md)**.
 
 | Field | Value |
 |-------|-------|
 | **Network name** | **Boing** (slug `boing` → stored id **`boing-devnet`** — required to merge with static Boing testnet) |
-| **Node download URL** | `https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.2/release-windows-x86_64.zip` |
+| **Node download URL** | `https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.3/release-windows-x86_64.zip` |
 | **Command template** | `boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
-| **Binary SHA256** (optional, of the **zip** file) | `2e767306eb58947ab40e8c3d17034a7b0b42140bdfa6479513826d24a78ea669` |
+| **Binary SHA256** (optional, of the **zip** file) | *After the release is published, `sha256sum` the downloaded zip and paste here; omit until then.* |
 | **Disk (GB)** | e.g. `5` |
 | **RAM (MB)** | e.g. `2048` |
 
@@ -82,12 +84,12 @@ Register **additional** networks if you want one listing id per platform instead
 
 | Platform | Suggested network name (form) | Resulting VibeMiner listing id | Node download URL | Command template |
 |----------|------------------------------|----------------------------------|-------------------|------------------|
-| **Linux x86_64** | `Boing Linux` | `boing-linux-devnet` | `https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.2/release-linux-x86_64.zip` | `boing-node-linux-x86_64 --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
-| **macOS Apple Silicon** | `Boing macOS aarch64` | `boing-macos-aarch64-devnet` | `https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.2/release-macos-aarch64.zip` | `boing-node-macos-aarch64 --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
+| **Linux x86_64** | `Boing Linux` | `boing-linux-devnet` | `https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.3/release-linux-x86_64.zip` | `boing-node-linux-x86_64 --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
+| **macOS Apple Silicon** | `Boing macOS aarch64` | `boing-macos-aarch64-devnet` | `https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.3/release-macos-aarch64.zip` | `boing-node-macos-aarch64 --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
 
-| Field | Linux zip SHA256 (optional) | macOS zip SHA256 (optional) |
-|-------|------------------------------|-----------------------------|
-| **Binary SHA256** | `8f80d3bae42980f1fa3c8378dc87591dd991e624f9570a9d2ee19ad6258cfe66` | `4926dacf1d1061323d96979e324b086a65febfe0c2a21a90fddd7c1ff8300501` |
+| Field | Linux / macOS zip SHA256 (optional) |
+|-------|-------------------------------------|
+| **Binary SHA256** | *Compute from published `testnet-v0.1.3` zips after CI finishes; omit until then.* |
 
 These listings **do not** replace the static **`boing-devnet`** row; they show up as **extra** devnet networks. The primary **Boing (Testnet)** entry remains the Windows (or multi-preset Windows) registration with **`boing-devnet`**.
 
@@ -99,31 +101,12 @@ These listings **do not** replace the static **`boing-devnet`** row; they show u
 
 **Command notes:**
 
-- Flags use **hyphens** as in the released binary (`--data-dir`, `--p2p-listen`, `--bootnodes`, `--rpc-port`, `--faucet-enable`). Do not use underscore forms in the template.
+- Flags use **hyphens** as in the released binary (`--data-dir`, `--p2p-listen`, `--bootnodes`, `--rpc-port`). Do not use underscore forms in the template.
 - `{dataDir}` / `{data_dir}` are supported placeholders; the app quotes them when paths contain spaces.
 - The zip layout matches the template: binaries sit at the **root** of each zip (`boing-node-windows-x86_64.exe`, etc.).
 - **Validator (block production):** append `--validator` to the template if you want the default registration to start a validator; the templates above start a **full node** with P2P + RPC (same as [boing.network](https://boing.network/api/networks) D1 listing).
 
-**Public RPC operator checklist (faucet + CORS + tunnel):**
-
-- **Faucet:** VibeMiner’s static **`boing-devnet`** defaults, `/api/networks` responses, and “my listings” JSON all **ensure** `--faucet-enable` is present on Boing command templates (and inject it if an older D1 row omitted it). You still need a **`boing-node` binary** that supports the flag and, for browser sites, one with **CORS** updated in the Boing repo.
-- **Tunnel target:** Cloudflare must forward to the **same** host that runs the node you intend (e.g. not a secondary full node while the bootnode+faucet runs elsewhere).
-- **Browser vs `curl`:** `boing_chainHeight` can succeed from anywhere, but **`curl` does not run CORS**. If [boing.finance](https://boing.finance) shows “Testnet RPC unreachable” while `curl` works, the RPC must return `Access-Control-Allow-Origin` for that site—handled in `boing-node` (e.g. allow `https://boing.finance` / `https://www.boing.finance`). After changing CORS in the Boing repo, **rebuild `boing-node` and restart** the process behind the tunnel.
-- **Quick checks** (public URL):
-
-  ```bash
-  curl -s -X POST https://testnet-rpc.boing.network/ \
-    -H "Content-Type: application/json" \
-    -d '{"jsonrpc":"2.0","id":1,"method":"boing_chainHeight","params":[]}'
-
-  curl -s -X POST https://testnet-rpc.boing.network/ \
-    -H "Content-Type: application/json" \
-    -d '{"jsonrpc":"2.0","id":1,"method":"boing_faucetRequest","params":["0x0000000000000000000000000000000000000000000000000000000000000001"]}'
-  ```
-
-  You want a normal JSON-RPC **result** (or rate-limit / balance errors), not the faucet-disabled message.
-
-**Docs:** [Join testnet](https://boing.network/network/testnet), [TESTNET.md (repo)](https://github.com/chiku524/boing.network/blob/main/docs/TESTNET.md), [INFRASTRUCTURE-SETUP.md](https://github.com/chiku524/boing.network/blob/main/docs/INFRASTRUCTURE-SETUP.md) (faucet / tunnel / CORS).
+**Docs:** [Join testnet](https://boing.network/network/testnet), [TESTNET.md (repo)](https://github.com/chiku524/boing.network/blob/main/docs/TESTNET.md).
 
 **Regenerating URLs + SHA256 after a new tag** (Boing repo, from `website/`):
 
@@ -166,8 +149,6 @@ node scripts/network-listings-release-sql.mjs <new-tag> --apply
 | **Run node** / IPC errors | Confirm SHA256 matches the **downloaded file** (the zip). On Windows the binary is `boing-node-windows-x86_64.exe` inside the zip; the app may resolve `boing-node` → `.exe` when needed |
 | Windows **“filename, directory name, or volume label syntax is incorrect” (os error 123)** | Fixed in the **desktop app** (VibeMiner ≥ **1.0.77**): node cache folders no longer use `:` in the path (`devnet__boing-devnet` instead of `devnet:boing-devnet`). **No change to your D1 listing** is required for Boing—command template and URLs stay as documented above. |
 | API / probe failures | `GET` and `HEAD` are implemented for [https://boing.network/api/networks](https://boing.network/api/networks) |
-| Node exits in ~1s with **code 1** (often no stderr in UI) | Boing binds JSON-RPC on **`0.0.0.0:{--rpc-port}`** (default **8545**). If that port is taken (second node, Hardhat, Docker, etc.), the process exits immediately. Free the port or change `--rpc-port` in the template. The VibeMiner desktop app preflight-checks that port before spawn and returns a clear error if it is busy. |
-| `TESTNET.md` shows `--p2p_listen` | **Clap** exposes that Rust field as **`--p2p-listen`** (kebab-case). VibeMiner templates should use hyphens (`--p2p-listen`, `--data-dir`, …). |
 
 ## URL Allowlist
 

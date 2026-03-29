@@ -42,6 +42,12 @@ When requesting a listing, networks can optionally add **Node support**:
 - **Disk (GB)** / **RAM (MB)** — Resource requirements
 - **Binary SHA256** — Optional integrity check
 
+## Boing node version vs JSON-RPC
+
+VibeMiner runs the **downloaded** `boing-node` binary; it does not proxy or filter RPC methods. Features such as read-only **`boing_getQaRegistry`** (used by [boing.observer/qa](https://boing.observer/qa) for QA transparency) appear only if that binary was built from a Boing release that includes the method. If tools report **Method not found**, publish a newer `boing-node` zip, update the network’s **node download URL** (and tag defaults in the repo if you maintain them), and have users restart the node so a fresh binary is used.
+
+See **[BOING_QA_RPC_AND_RELEASES.md](./BOING_QA_RPC_AND_RELEASES.md)** for a full maintainer checklist.
+
 ## Database
 
 Run the migration for existing D1 databases:

@@ -2,10 +2,18 @@
  * Boing testnet node policy: align VibeMiner-offered commands with public RPC + faucet expectations
  * (--faucet-enable, bootnodes). CORS for boing.finance is enforced in boing-node itself; users need a
  * recent binary from boing.network releases.
+ *
+ * **New RPC methods:** VibeMiner only runs whatever is inside the downloaded zip. Read-only methods such as
+ * `boing_getQaRegistry` (QA transparency / boing.observer) require a boing-node build that includes them.
+ * After you publish a new GitHub release with updated binaries, bump {@link BOING_TESTNET_DEFAULT_DOWNLOAD_TAG}
+ * and matching URLs in `networks.ts` + docs. See `docs/BOING_QA_RPC_AND_RELEASES.md`.
  */
 
+/** JSON-RPC method for live rule registry (Boing Observer / transparency). Requires recent boing-node. */
+export const BOING_RPC_METHOD_GET_QA_REGISTRY = 'boing_getQaRegistry';
+
 /** Pinned release for default Windows download when no listing overrides exist. */
-export const BOING_TESTNET_DEFAULT_DOWNLOAD_TAG = 'testnet-v0.1.2';
+export const BOING_TESTNET_DEFAULT_DOWNLOAD_TAG = 'testnet-v0.1.3';
 
 export const BOING_TESTNET_DEFAULT_WINDOWS_DOWNLOAD_URL = `https://github.com/chiku524/boing.network/releases/download/${BOING_TESTNET_DEFAULT_DOWNLOAD_TAG}/release-windows-x86_64.zip`;
 

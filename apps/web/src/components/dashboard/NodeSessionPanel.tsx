@@ -4,7 +4,12 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import type { MiningSessionNode } from '@vibeminer/shared';
 import type { BlockchainNetwork } from '@vibeminer/shared';
-import { resolveNodePresets, sanitizeNodePresetId } from '@vibeminer/shared';
+import {
+  BOING_RPC_METHOD_GET_QA_REGISTRY,
+  isBoingNetworkId,
+  resolveNodePresets,
+  sanitizeNodePresetId,
+} from '@vibeminer/shared';
 import { NetworkMark } from '@/components/ui/NetworkMark';
 import { NodeProcessLog } from '@/components/dashboard/NodeProcessLog';
 import { Server } from 'lucide-react';
@@ -23,6 +28,33 @@ function formatDuration(ms: number) {
   const m = Math.floor(ms / 60000) % 60;
   const h = Math.floor(ms / 3600000);
   return [h, m, s].map((n) => n.toString().padStart(2, '0')).join(':');
+}
+
+/** Explains that newer Boing RPC (e.g. QA registry read) depends on the downloaded boing-node version. */
+function BoingRpcTransparencyHint() {
+  return (
+    <div className="rounded-lg border border-sky-500/25 bg-sky-500/5 px-3 py-2.5 text-left">
+      <p className="text-xs font-medium text-sky-200">Boing RPC &amp; public transparency</p>
+      <p className="mt-1 text-[11px] leading-relaxed text-gray-400">
+        Read-only{' '}
+        <code className="rounded bg-black/40 px-1 py-0.5 font-mono text-gray-300">{BOING_RPC_METHOD_GET_QA_REGISTRY}</code>{' '}
+        powers{' '}
+        <a
+          href="https://boing.observer/qa"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sky-400 underline-offset-2 hover:underline"
+        >
+          boing.observer/qa
+        </a>
+        . If tools return <span className="text-gray-300">Method not found</span>, this binary predates that RPC — build a
+        current <span className="text-gray-300">boing-node</span>, publish a new GitHub release, update the network&apos;s
+        download URL in the listing, then stop and restart the node here. See VibeMiner{' '}
+        <code className="rounded bg-black/40 px-1 font-mono text-[10px] text-gray-500">docs/BOING_QA_RPC_AND_RELEASES.md</code>
+        .
+      </p>
+    </div>
+  );
 }
 
 export function NodeSessionPanel({ session, network, onStop, onDismiss, compact = false }: NodeSessionPanelProps) {
@@ -146,6 +178,11 @@ export function NodeSessionPanel({ session, network, onStop, onDismiss, compact 
             )}
           </div>
         </div>
+        {isBoingNetworkId(network.id) && (
+          <div className="px-4 pb-2">
+            <BoingRpcTransparencyHint />
+          </div>
+        )}
         <details
           className="border-t border-white/5 px-4 py-2"
           open={compactLogOpen}
@@ -225,6 +262,12 @@ export function NodeSessionPanel({ session, network, onStop, onDismiss, compact 
           </p>
         </div>
       </div>
+
+      {isBoingNetworkId(network.id) && (
+        <div className="px-5 pb-4">
+          <BoingRpcTransparencyHint />
+        </div>
+      )}
 
       <div className="border-t border-white/5 px-5 pb-5">
         <p className="mb-2 text-xs font-medium text-gray-500">Process log</p>
