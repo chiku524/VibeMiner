@@ -12,6 +12,9 @@ const sharp = require('sharp');
 const root = path.join(__dirname, '..');
 const brandDir = path.join(root, 'public', 'brand');
 const srcPath = path.join(brandDir, 'logo-source.png');
+
+/** Opaque square backing for favicons, SEO tiles, and Tauri icons (pickaxe visible on any OS chrome). Matches brand surface-950 #0a0f14. */
+const ICON_SQUARE_BG = { r: 10, g: 15, b: 20, alpha: 1 };
 const seoDir = path.join(root, 'public', 'seo');
 const appDir = path.join(root, 'src', 'app');
 const tauriIconSource = path.join(root, '..', 'tauri', 'icon-source');
@@ -130,28 +133,28 @@ async function main() {
     { name: 'logo-180.png', w: 180 },
   ];
   for (const { name, w } of seoSizes) {
-    const buf = await fitOnSquareCanvas(transparentBuf, w, { r: 0, g: 0, b: 0, alpha: 0 });
+    const buf = await fitOnSquareCanvas(transparentBuf, w, ICON_SQUARE_BG);
     const out = path.join(seoDir, name);
     await sharp(buf).png().toFile(out);
     console.log('Wrote', out);
   }
 
-  const icon32 = await fitOnSquareCanvas(transparentBuf, 32, { r: 0, g: 0, b: 0, alpha: 0 });
+  const icon32 = await fitOnSquareCanvas(transparentBuf, 32, ICON_SQUARE_BG);
   await sharp(icon32).toFile(path.join(appDir, 'icon.png'));
   console.log('Wrote', path.join(appDir, 'icon.png'));
 
-  const apple = await fitOnSquareCanvas(transparentBuf, 180, { r: 0, g: 0, b: 0, alpha: 0 });
+  const apple = await fitOnSquareCanvas(transparentBuf, 180, ICON_SQUARE_BG);
   await sharp(apple).toFile(path.join(appDir, 'apple-icon.png'));
   console.log('Wrote', path.join(appDir, 'apple-icon.png'));
 
   if (fs.existsSync(tauriIconSource)) {
-    const tauri1024 = await fitOnSquareCanvas(transparentBuf, 1024, { r: 0, g: 0, b: 0, alpha: 0 });
+    const tauri1024 = await fitOnSquareCanvas(transparentBuf, 1024, ICON_SQUARE_BG);
     const tauriOut = path.join(tauriIconSource, 'app-icon-1024.png');
     await sharp(tauri1024).png().toFile(tauriOut);
     console.log('Wrote', tauriOut);
   }
 
-  const sm128 = await fitOnSquareCanvas(transparentBuf, 128, { r: 0, g: 0, b: 0, alpha: 0 });
+  const sm128 = await fitOnSquareCanvas(transparentBuf, 128, ICON_SQUARE_BG);
   await sharp(sm128).toFile(path.join(brandDir, 'logo-mark-128.png'));
   console.log('Wrote', path.join(brandDir, 'logo-mark-128.png'));
 }

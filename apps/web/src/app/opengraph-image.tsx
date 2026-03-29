@@ -24,13 +24,27 @@ export default async function OpenGraphImage() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 32 }}>
-          <img
-            src={`${site.baseUrl}${BRAND_MARK_PNG}`}
-            width={72}
-            height={72}
-            alt=""
-            style={{ objectFit: 'contain' }}
-          />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 88,
+              height: 88,
+              borderRadius: 20,
+              background: '#0a0f14',
+              border: '1px solid rgba(148, 163, 184, 0.35)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.45)',
+            }}
+          >
+            <img
+              src={`${site.baseUrl}${BRAND_MARK_PNG}`}
+              width={64}
+              height={64}
+              alt=""
+              style={{ objectFit: 'contain' }}
+            />
+          </div>
           <span
             style={{
               fontSize: 64,
