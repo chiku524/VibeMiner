@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { parseStoredNodePresetsJson } from '@vibeminer/shared';
+import { parseStoredNodePresetsJson, patchBlockchainNetworkJsonForBoing } from '@vibeminer/shared';
 import { getEnv, getSessionCookie, getUserIdFromSession } from '@/lib/auth-server';
 
 function rowToNetwork(row: Record<string, unknown>, stats?: { minerCount: number; totalBalanceRaw: string; currency: string } | null) {
   const env = (row.environment as string) === 'mainnet' ? 'mainnet' : 'devnet';
-  return {
+  const base: Record<string, unknown> = {
     id: row.id,
     name: row.name,
     symbol: row.symbol,
@@ -27,8 +27,9 @@ function rowToNetwork(row: Record<string, unknown>, stats?: { minerCount: number
       typeof row.node_presets_json === 'string' ? row.node_presets_json : undefined
     ),
     listedAt: typeof row.created_at === 'string' ? row.created_at : undefined,
-    ...(stats && { minerCount: stats.minerCount, totalBalanceRaw: stats.totalBalanceRaw, currency: stats.currency }),
+    ...(stats ? { minerCount: stats.minerCount, totalBalanceRaw: stats.totalBalanceRaw, currency: stats.currency } : {}),
   };
+  return patchBlockchainNetworkJsonForBoing(base);
 }
 
 /** GET: List networks listed by the current user (network account). */

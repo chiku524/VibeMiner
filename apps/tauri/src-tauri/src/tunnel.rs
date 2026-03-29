@@ -6,6 +6,7 @@ use std::collections::VecDeque;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
@@ -19,6 +20,8 @@ struct TunnelEntry {
 lazy_static::lazy_static! {
     static ref ACTIVE_TUNNEL: Mutex<Option<TunnelEntry>> = Mutex::new(None);
     static ref TUNNEL_LOG: Mutex<VecDeque<TunnelLogLine>> = Mutex::new(VecDeque::new());
+    /// True when this app started the tunnel via `try_start_cloudflare_tunnel_for_boing_node` (stop Boing node stops it).
+    static ref TUNNEL_LINKED_TO_BOING_NODE: AtomicBool = AtomicBool::new(false);
 }
 
 const TUNNEL_LOG_MAX: usize = 400;
@@ -271,15 +274,8 @@ fn forward_tunnel_pipe<R: Read + Send + 'static>(
     });
 }
 
-pub fn start_cloudflare_tunnel(app: &AppHandle, settings: &Settings) -> Result<(), String> {
-    reap_exited_tunnel();
-    {
-        let guard = ACTIVE_TUNNEL.lock().map_err(|e| e.to_string())?;
-        if guard.is_some() {
-            return Err("Cloudflare tunnel is already running".into());
-        }
-    }
-
+/// Spawn `cloudflared`; caller must hold no lock and slot must be empty.
+fn start_cloudflare_tunnel_impl(app: &AppHandle, settings: &Settings) -> Result<(), String> {
     let exe = resolve_cloudflared_exe(settings)?;
     let config_path = effective_config_path(settings)?;
     if !config_path.is_file() {
@@ -338,6 +334,53 @@ pub fn start_cloudflare_tunnel(app: &AppHandle, settings: &Settings) -> Result<(
     }
 
     Ok(())
+}
+
+/// User-started tunnel: not tied to Boing node lifecycle.
+pub fn start_cloudflare_tunnel(app: &AppHandle, settings: &Settings) -> Result<(), String> {
+    reap_exited_tunnel();
+    {
+        let guard = ACTIVE_TUNNEL.lock().map_err(|e| e.to_string())?;
+        if guard.is_some() {
+            return Err("Cloudflare tunnel is already running".into());
+        }
+    }
+    TUNNEL_LINKED_TO_BOING_NODE.store(false, Ordering::SeqCst);
+    start_cloudflare_tunnel_impl(app, settings)
+}
+
+/// After Boing node starts: start tunnel if idle; mark linked so `stop_node` can stop it.
+pub fn try_start_cloudflare_tunnel_for_boing_node(app: &AppHandle, settings: &Settings) {
+    reap_exited_tunnel();
+    {
+        let Ok(guard) = ACTIVE_TUNNEL.lock() else {
+            return;
+        };
+        if guard.is_some() {
+            emit_tunnel_log(
+                app,
+                "meta",
+                "Tunnel already running; leaving it unchanged (not linked to this node).".to_string(),
+            );
+            return;
+        }
+    }
+    match start_cloudflare_tunnel_impl(app, settings) {
+        Ok(()) => {
+            TUNNEL_LINKED_TO_BOING_NODE.store(true, Ordering::SeqCst);
+            emit_tunnel_log(
+                app,
+                "meta",
+                "Cloudflare tunnel started automatically with Boing node (disable in Public RPC tunnel settings if undesired)."
+                    .to_string(),
+            );
+        }
+        Err(e) => emit_tunnel_log(
+            app,
+            "meta",
+            format!("Auto tunnel skipped: {e}"),
+        ),
+    }
 }
 
 fn wait_child_exit_gracefully(child: &mut Child, timeout: Duration) -> bool {
@@ -400,7 +443,7 @@ fn stop_tunnel_process_unix(child: &mut Child) {
     }
 }
 
-pub fn stop_cloudflare_tunnel() {
+fn stop_cloudflare_tunnel_inner() {
     reap_exited_tunnel();
     let removed = if let Ok(mut guard) = ACTIVE_TUNNEL.lock() {
         guard.take()
@@ -416,6 +459,18 @@ pub fn stop_cloudflare_tunnel() {
         let _ = entry._child.wait();
     }
     mark_inactive();
+}
+
+pub fn stop_cloudflare_tunnel() {
+    TUNNEL_LINKED_TO_BOING_NODE.store(false, Ordering::SeqCst);
+    stop_cloudflare_tunnel_inner();
+}
+
+/// Stop tunnel only if we auto-started it with a Boing node (does not stop a user-started tunnel).
+pub fn stop_cloudflare_tunnel_if_linked_to_boing_node() {
+    if TUNNEL_LINKED_TO_BOING_NODE.swap(false, Ordering::SeqCst) {
+        stop_cloudflare_tunnel_inner();
+    }
 }
 
 pub fn is_cloudflare_tunnel_running() -> bool {
@@ -445,6 +500,7 @@ pub fn settings_snapshot_json(settings: &Settings) -> serde_json::Value {
         "cloudflaredPath": settings.cloudflared_path.clone(),
         "cloudflareTunnelName": tunnel_name(settings),
         "cloudflareConfigPath": settings.cloudflare_config_path.clone(),
+        "linkTunnelWithBoingNode": settings.link_tunnel_with_boing_node,
         "effectiveConfigPath": eff_cfg,
         "resolvedCloudflaredPath": resolved_exe,
     })

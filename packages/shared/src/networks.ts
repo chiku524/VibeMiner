@@ -150,7 +150,8 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
     id: 'boing-devnet',
     name: 'Boing (Testnet)',
     symbol: 'BOING',
-    description: 'Boing testnet: run a validator or full node (boing-node) with one click. JSON-RPC on port 8545; testnet faucet available. PoS chain—stake BOING to validate.',
+    description:
+      'Boing testnet: run a validator or full node (boing-node) with one click. JSON-RPC on port 8545 with --faucet-enable for testnet faucet; use a current boing.network release for browser CORS (e.g. boing.finance). PoS chain—stake BOING to validate.',
     icon: '◎',
     algorithm: 'PoS',
     environment: 'devnet',
@@ -158,6 +159,12 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
     status: 'live',
     rewardRate: 'Test only',
     minPayout: 'N/A',
+    nodeDownloadUrl:
+      'https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.2/release-windows-x86_64.zip',
+    nodeCommandTemplate:
+      'boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable',
+    nodeDiskGb: 5,
+    nodeRamMb: 2048,
   },
 ];
 

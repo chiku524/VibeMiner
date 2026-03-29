@@ -17,9 +17,16 @@ pub struct Settings {
     /// Override for `config.yml` (default: `%USERPROFILE%\.cloudflared\config.yml` / `~/.cloudflared/config.yml`).
     #[serde(default)]
     pub cloudflare_config_path: Option<String>,
+    /// When true, starting a Boing node starts `cloudflared` if idle; stopping that node stops a tunnel we started.
+    #[serde(default = "default_link_tunnel_with_boing_node")]
+    pub link_tunnel_with_boing_node: bool,
 }
 
 fn default_auto_update() -> bool {
+    true
+}
+
+fn default_link_tunnel_with_boing_node() -> bool {
     true
 }
 
@@ -30,6 +37,7 @@ impl Default for Settings {
             cloudflared_path: None,
             cloudflare_tunnel_name: None,
             cloudflare_config_path: None,
+            link_tunnel_with_boing_node: true,
         }
     }
 }

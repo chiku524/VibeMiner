@@ -93,6 +93,7 @@ declare global {
         cloudflaredPath?: string | null;
         cloudflareTunnelName?: string;
         cloudflareConfigPath?: string | null;
+        linkTunnelWithBoingNode?: boolean;
         effectiveConfigPath?: string;
         /** Resolved binary (settings, BOING_NETWORK_ROOT, sibling boing.network, PATH, …). */
         resolvedCloudflaredPath?: string | null;
@@ -101,6 +102,7 @@ declare global {
         cloudflaredPath?: string;
         cloudflareTunnelName?: string;
         cloudflareConfigPath?: string;
+        linkTunnelWithBoingNode?: boolean;
       }) => Promise<void>;
       startCloudflareTunnel?: () => Promise<{ ok?: boolean }>;
       stopCloudflareTunnel?: () => Promise<void>;

@@ -388,7 +388,7 @@ export function NetworksShowcase() {
               <div className="mb-12 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6">
                 <h3 className="font-display text-lg font-semibold text-amber-200">Incentivized testnet</h3>
                 <p className="mt-1 text-sm text-gray-400">
-                  Try the Boing testnet—run a validator or full node with one click. Testnet faucet available.
+                  Try the Boing testnet—run a validator or full node with one click. JSON-RPC includes testnet faucet support when you use the bundled command template.
                 </p>
                 <Link
                   href="/dashboard/nodes?env=devnet&network=boing-devnet"

@@ -406,13 +406,19 @@ async fn start_node(
     .map_err(|e| e.to_string())??;
     node::start_node(
         &app,
-        network_id,
-        env,
+        network_id.clone(),
+        env.clone(),
         &preset_raw,
         &template,
         &bin_dir,
         &data_dir,
     )?;
+    if let Ok(path) = app.path().app_data_dir() {
+        let s = settings::load(&path);
+        if s.link_tunnel_with_boing_node && network_id.to_lowercase().contains("boing") {
+            tunnel::try_start_cloudflare_tunnel_for_boing_node(&app, &s);
+        }
+    }
     Ok(serde_json::json!({ "ok": true }))
 }
 
@@ -427,6 +433,12 @@ fn stop_node(
     let user_data = app.path().app_data_dir().ok();
     let ud = user_data.as_ref().map(|p| p.as_path());
     node::stop_node(ud, &network_id, &environment, pid);
+    if let Some(ref path) = user_data {
+        let s = settings::load(path);
+        if s.link_tunnel_with_boing_node && network_id.to_lowercase().contains("boing") {
+            tunnel::stop_cloudflare_tunnel_if_linked_to_boing_node();
+        }
+    }
 }
 
 #[tauri::command]
@@ -468,6 +480,7 @@ struct TunnelSettingsPatch {
     cloudflared_path: Option<String>,
     cloudflare_tunnel_name: Option<String>,
     cloudflare_config_path: Option<String>,
+    link_tunnel_with_boing_node: Option<bool>,
 }
 
 #[tauri::command]
@@ -492,6 +505,9 @@ fn set_tunnel_settings(app: tauri::AppHandle, patch: TunnelSettingsPatch) -> Res
     if let Some(v) = patch.cloudflare_config_path {
         let t = v.trim();
         s.cloudflare_config_path = if t.is_empty() { None } else { Some(t.to_string()) };
+    }
+    if let Some(v) = patch.link_tunnel_with_boing_node {
+        s.link_tunnel_with_boing_node = v;
     }
     settings::save(&path, &s)
 }

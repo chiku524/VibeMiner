@@ -7,6 +7,7 @@ type TunnelSettingsState = {
   cloudflaredPath: string;
   cloudflareTunnelName: string;
   cloudflareConfigPath: string;
+  linkTunnelWithBoingNode: boolean;
   effectiveConfigPath: string;
   resolvedCloudflaredPath: string;
 };
@@ -15,6 +16,7 @@ const emptyState: TunnelSettingsState = {
   cloudflaredPath: '',
   cloudflareTunnelName: 'boing-testnet-rpc',
   cloudflareConfigPath: '',
+  linkTunnelWithBoingNode: true,
   effectiveConfigPath: '',
   resolvedCloudflaredPath: '',
 };
@@ -42,6 +44,8 @@ export function CloudflareTunnelSettings() {
               ? s.cloudflareTunnelName
               : 'boing-testnet-rpc',
           cloudflareConfigPath: typeof s.cloudflareConfigPath === 'string' ? s.cloudflareConfigPath : '',
+          linkTunnelWithBoingNode:
+            typeof s.linkTunnelWithBoingNode === 'boolean' ? s.linkTunnelWithBoingNode : true,
           effectiveConfigPath: typeof s.effectiveConfigPath === 'string' ? s.effectiveConfigPath : '',
           resolvedCloudflaredPath:
             typeof s.resolvedCloudflaredPath === 'string' ? s.resolvedCloudflaredPath : '',
@@ -63,6 +67,7 @@ export function CloudflareTunnelSettings() {
         cloudflaredPath: form.cloudflaredPath.trim(),
         cloudflareTunnelName: form.cloudflareTunnelName.trim() || 'boing-testnet-rpc',
         cloudflareConfigPath: form.cloudflareConfigPath.trim(),
+        linkTunnelWithBoingNode: form.linkTunnelWithBoingNode,
       });
       const s = await window.desktopAPI.getTunnelSettings!();
       setForm((f) => ({
@@ -84,7 +89,7 @@ export function CloudflareTunnelSettings() {
     <div className="rounded-xl border border-orange-500/20 bg-surface-900/30 px-4 py-3">
       <p className="text-sm font-medium text-white">Public RPC tunnel (Cloudflare)</p>
       <p className="mt-1 text-xs text-gray-500">
-        Optional. Exposes local JSON-RPC (e.g. Boing testnet on :8545). Same layout as{' '}
+        Optional. Exposes local JSON-RPC (e.g. Boing testnet on :8545). When enabled below, starting a Boing node starts this tunnel if it is not already running; stopping the node stops a tunnel the app started for you. Same layout as{' '}
         <code className="rounded bg-white/10 px-1">boing.network/scripts/start-cloudflare-tunnel.bat</code>: credentials in{' '}
         <code className="rounded bg-white/10 px-1">%USERPROFILE%\.cloudflared\config.yml</code> (or{' '}
         <code className="rounded bg-white/10 px-1">~/.cloudflared/config.yml</code>), binary often at{' '}
@@ -96,6 +101,17 @@ export function CloudflareTunnelSettings() {
         <p className="mt-3 text-xs text-gray-500">Loading…</p>
       ) : (
         <div className="mt-4 space-y-3">
+          <label className="flex cursor-pointer items-start gap-2 text-xs text-gray-300">
+            <input
+              type="checkbox"
+              checked={form.linkTunnelWithBoingNode}
+              onChange={(e) => setForm((f) => ({ ...f, linkTunnelWithBoingNode: e.target.checked }))}
+              className="mt-0.5 rounded border-white/20 bg-surface-850 text-orange-500 focus:ring-orange-500/40"
+            />
+            <span>
+              Start/stop Cloudflare tunnel with Boing node (recommended if this PC serves the public testnet RPC).
+            </span>
+          </label>
           <div>
             <label htmlFor="cf-tunnel-name" className="block text-xs font-medium text-gray-400">
               Tunnel name

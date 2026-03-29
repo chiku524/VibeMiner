@@ -176,7 +176,9 @@ export function CloudflareTunnelPanel() {
       </div>
       <p className="mt-2 text-[11px] leading-snug text-gray-500">
         <code className="rounded bg-white/10 px-1 font-mono text-[10px]">cloudflared</code> exposes local RPC (e.g.{' '}
-        <strong className="font-medium text-gray-400">8545</strong>) — start the node first. Paths &amp; tunnel name:{' '}
+        <strong className="font-medium text-gray-400">8545</strong>). By default, starting a Boing node starts this tunnel if it
+        is not already running; stopping the node stops a tunnel the app started. You can still start or stop manually here.
+        Paths, tunnel name, and the pairing toggle:{' '}
         <a href="/dashboard/settings" className="text-accent-cyan hover:underline">
           Settings
         </a>

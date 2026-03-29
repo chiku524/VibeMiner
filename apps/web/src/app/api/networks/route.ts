@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getMainnetNetworksListed, getDevnetNetworks, parseStoredNodePresetsJson } from '@vibeminer/shared';
+import {
+  getMainnetNetworksListed,
+  getDevnetNetworks,
+  parseStoredNodePresetsJson,
+  patchBlockchainNetworkJsonForBoing,
+} from '@vibeminer/shared';
 import { getEnv } from '@/lib/auth-server';
 
 /** Returns mainnet and devnet networks: static list + dynamic listings from D1. Excludes placeholder "Your Network". */
@@ -40,8 +45,12 @@ export async function GET(request: Request) {
       for (const n of dynamicList) (n as { id?: string }).id && byId.set((n as { id: string }).id, n);
       return Array.from(byId.values());
     };
-    const mainnet = mergeById(staticMainnet, dynamicMainnet as typeof staticMainnet);
-    const devnet = mergeById(staticDevnet, dynamicDevnet as typeof staticDevnet);
+    const mainnet = mergeById(staticMainnet, dynamicMainnet as typeof staticMainnet).map((n) =>
+      patchBlockchainNetworkJsonForBoing(n as Record<string, unknown>)
+    );
+    const devnet = mergeById(staticDevnet, dynamicDevnet as typeof staticDevnet).map((n) =>
+      patchBlockchainNetworkJsonForBoing(n as Record<string, unknown>)
+    );
 
     if (env === 'mainnet') {
       return NextResponse.json({ mainnet });

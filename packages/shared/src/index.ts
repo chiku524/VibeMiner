@@ -13,5 +13,6 @@ export {
   type BlockchainNetworkValidated,
 } from './schema';
 export * from './networks';
+export * from './boing-testnet-node';
 export * from './mining';
 export * from './nodes';

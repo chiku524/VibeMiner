@@ -54,7 +54,7 @@ Use this when you are **not** enabling **Offer multiple node modes**. One downlo
 |-------|-------|
 | **Network name** | **Boing** (slug `boing` → stored id **`boing-devnet`** — required to merge with static Boing testnet) |
 | **Node download URL** | `https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.2/release-windows-x86_64.zip` |
-| **Command template** | `boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545` |
+| **Command template** | `boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
 | **Binary SHA256** (optional, of the **zip** file) | `2e767306eb58947ab40e8c3d17034a7b0b42140bdfa6479513826d24a78ea669` |
 | **Disk (GB)** | e.g. `5` |
 | **RAM (MB)** | e.g. `2048` |
@@ -67,8 +67,8 @@ Example presets (illustrative — adjust labels/descriptions as you like):
 
 | Mode id | Label | Command template |
 |---------|-------|------------------|
-| `full-node` | Full node (Windows) | `boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545` |
-| `validator` | Validator (Windows) | `boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --validator` |
+| `full-node` | Full node (Windows) | `boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
+| `validator` | Validator (Windows) | `boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable --validator` |
 
 Use the **same** download URL and zip SHA as in section A for the listing (**shared** URL), or give each mode its **own** URL + optional SHA in the preset row (leave shared URL empty when every mode has a URL). Disk/RAM can be set per preset or inherited from the first row.
 
@@ -82,8 +82,8 @@ Register **additional** networks if you want one listing id per platform instead
 
 | Platform | Suggested network name (form) | Resulting VibeMiner listing id | Node download URL | Command template |
 |----------|------------------------------|----------------------------------|-------------------|------------------|
-| **Linux x86_64** | `Boing Linux` | `boing-linux-devnet` | `https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.2/release-linux-x86_64.zip` | `boing-node-linux-x86_64 --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545` |
-| **macOS Apple Silicon** | `Boing macOS aarch64` | `boing-macos-aarch64-devnet` | `https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.2/release-macos-aarch64.zip` | `boing-node-macos-aarch64 --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545` |
+| **Linux x86_64** | `Boing Linux` | `boing-linux-devnet` | `https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.2/release-linux-x86_64.zip` | `boing-node-linux-x86_64 --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
+| **macOS Apple Silicon** | `Boing macOS aarch64` | `boing-macos-aarch64-devnet` | `https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.2/release-macos-aarch64.zip` | `boing-node-macos-aarch64 --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
 
 | Field | Linux zip SHA256 (optional) | macOS zip SHA256 (optional) |
 |-------|------------------------------|-----------------------------|
@@ -99,12 +99,31 @@ These listings **do not** replace the static **`boing-devnet`** row; they show u
 
 **Command notes:**
 
-- Flags use **hyphens** as in the released binary (`--data-dir`, `--p2p-listen`, `--bootnodes`, `--rpc-port`). Do not use underscore forms in the template.
+- Flags use **hyphens** as in the released binary (`--data-dir`, `--p2p-listen`, `--bootnodes`, `--rpc-port`, `--faucet-enable`). Do not use underscore forms in the template.
 - `{dataDir}` / `{data_dir}` are supported placeholders; the app quotes them when paths contain spaces.
 - The zip layout matches the template: binaries sit at the **root** of each zip (`boing-node-windows-x86_64.exe`, etc.).
 - **Validator (block production):** append `--validator` to the template if you want the default registration to start a validator; the templates above start a **full node** with P2P + RPC (same as [boing.network](https://boing.network/api/networks) D1 listing).
 
-**Docs:** [Join testnet](https://boing.network/network/testnet), [TESTNET.md (repo)](https://github.com/chiku524/boing.network/blob/main/docs/TESTNET.md).
+**Public RPC operator checklist (faucet + CORS + tunnel):**
+
+- **Faucet:** VibeMiner’s static **`boing-devnet`** defaults, `/api/networks` responses, and “my listings” JSON all **ensure** `--faucet-enable` is present on Boing command templates (and inject it if an older D1 row omitted it). You still need a **`boing-node` binary** that supports the flag and, for browser sites, one with **CORS** updated in the Boing repo.
+- **Tunnel target:** Cloudflare must forward to the **same** host that runs the node you intend (e.g. not a secondary full node while the bootnode+faucet runs elsewhere).
+- **Browser vs `curl`:** `boing_chainHeight` can succeed from anywhere, but **`curl` does not run CORS**. If [boing.finance](https://boing.finance) shows “Testnet RPC unreachable” while `curl` works, the RPC must return `Access-Control-Allow-Origin` for that site—handled in `boing-node` (e.g. allow `https://boing.finance` / `https://www.boing.finance`). After changing CORS in the Boing repo, **rebuild `boing-node` and restart** the process behind the tunnel.
+- **Quick checks** (public URL):
+
+  ```bash
+  curl -s -X POST https://testnet-rpc.boing.network/ \
+    -H "Content-Type: application/json" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"boing_chainHeight","params":[]}'
+
+  curl -s -X POST https://testnet-rpc.boing.network/ \
+    -H "Content-Type: application/json" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"boing_faucetRequest","params":["0x0000000000000000000000000000000000000000000000000000000000000001"]}'
+  ```
+
+  You want a normal JSON-RPC **result** (or rate-limit / balance errors), not the faucet-disabled message.
+
+**Docs:** [Join testnet](https://boing.network/network/testnet), [TESTNET.md (repo)](https://github.com/chiku524/boing.network/blob/main/docs/TESTNET.md), [INFRASTRUCTURE-SETUP.md](https://github.com/chiku524/boing.network/blob/main/docs/INFRASTRUCTURE-SETUP.md) (faucet / tunnel / CORS).
 
 **Regenerating URLs + SHA256 after a new tag** (Boing repo, from `website/`):
 
