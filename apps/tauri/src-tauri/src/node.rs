@@ -241,8 +241,23 @@ fn reap_exited_node_children() {
     });
 }
 
+/// Lowercase path string comparable across `canonicalize()` (`\\?\` on Windows) vs `Process::exe()` forms.
+fn normalize_path_for_prefix_match(p: &Path) -> String {
+    let mut s = p.to_string_lossy().to_lowercase().replace('/', "\\");
+    if let Some(rest) = s.strip_prefix("\\\\?\\") {
+        s = rest.to_string();
+        if let Some(unc) = s.strip_prefix("unc\\") {
+            s = format!("\\\\{unc}");
+        }
+    }
+    s
+}
+
 /// Kill processes whose executable lives under `dir` (VibeMiner node cache layout: `.../nodes/<key>/bin/.../*.exe`).
 /// Catches orphans when the in-memory [`Child`] handle was lost (app restart, UI desync) but the binary keeps running.
+///
+/// On Windows, `Process::exe()` is sometimes empty until refreshed or differs from `canonicalize()` prefixes;
+/// we also match the command line against the cache folder name (e.g. `devnet__boing-devnet`).
 fn kill_processes_executables_under(dir: &Path) -> u32 {
     if !sysinfo::IS_SUPPORTED_SYSTEM {
         return 0;
@@ -250,16 +265,31 @@ fn kill_processes_executables_under(dir: &Path) -> u32 {
     let Ok(canonical) = dir.canonicalize() else {
         return 0;
     };
-    let prefix = canonical.to_string_lossy().to_lowercase();
+    let prefix = normalize_path_for_prefix_match(&canonical);
+    let dir_marker = dir
+        .file_name()
+        .and_then(|n| n.to_str())
+        .map(|s| s.to_lowercase())
+        .filter(|s| s.len() >= 4)
+        .unwrap_or_default();
     let mut system = System::new_all();
     system.refresh_all();
     let mut killed = 0u32;
     for process in system.processes().values() {
-        let Some(exe) = process.exe() else {
-            continue;
-        };
-        let p = exe.to_string_lossy().to_lowercase();
-        if p.starts_with(&prefix) && process.kill() {
+        let mut matched = false;
+        if let Some(exe) = process.exe() {
+            let p = normalize_path_for_prefix_match(exe);
+            if p.starts_with(&prefix) {
+                matched = true;
+            }
+        }
+        if !matched && !dir_marker.is_empty() {
+            let cmd = process.cmd().join(" ").to_lowercase();
+            if cmd.contains(&dir_marker) {
+                matched = true;
+            }
+        }
+        if matched && process.kill() {
             killed += 1;
         }
     }
@@ -733,25 +763,28 @@ pub fn stop_node(
         None
     };
     if let Some(mut entry) = removed {
+        let pid = entry._child.id();
         #[cfg(windows)]
         {
+            // Terminate the handle we hold (TerminateProcess), then taskkill /T for any detached children.
+            let _ = entry._child.kill();
             use std::os::windows::process::CommandExt;
-            let pid = entry._child.id();
-            let _ = Command::new("taskkill")
-                .args(["/F", "/T", "/PID", &pid.to_string()])
-                .stdin(Stdio::null())
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
-                .creation_flags(0x0800_0000)
-                .status();
+            if pid > 0 {
+                let _ = Command::new("taskkill")
+                    .args(["/F", "/T", "/PID", &pid.to_string()])
+                    .stdin(Stdio::null())
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .creation_flags(0x0800_0000)
+                    .status();
+            }
         }
         #[cfg(unix)]
         {
-            let raw = entry._child.id();
-            if raw > 0 {
-                if let Ok(pid) = i32::try_from(raw) {
+            if pid > 0 {
+                if let Ok(p) = i32::try_from(pid) {
                     unsafe {
-                        let _ = libc::kill(-pid, libc::SIGKILL);
+                        let _ = libc::kill(-p, libc::SIGKILL);
                     }
                 }
             }
