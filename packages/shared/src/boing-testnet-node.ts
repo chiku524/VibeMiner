@@ -12,14 +12,27 @@
 /** JSON-RPC method for live rule registry (Boing Observer / transparency). Requires recent boing-node. */
 export const BOING_RPC_METHOD_GET_QA_REGISTRY = 'boing_getQaRegistry';
 
-/** Pinned release for default Windows download when no listing overrides exist. */
+/** Pinned release for default downloads when no listing overrides exist (includes `boing_getQaRegistry`). */
 export const BOING_TESTNET_DEFAULT_DOWNLOAD_TAG = 'testnet-v0.1.3';
+
+const BOING_TESTNET_NODE_ARGS =
+  '--p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable';
 
 export const BOING_TESTNET_DEFAULT_WINDOWS_DOWNLOAD_URL = `https://github.com/chiku524/boing.network/releases/download/${BOING_TESTNET_DEFAULT_DOWNLOAD_TAG}/release-windows-x86_64.zip`;
 
+export const BOING_TESTNET_DEFAULT_LINUX_DOWNLOAD_URL = `https://github.com/chiku524/boing.network/releases/download/${BOING_TESTNET_DEFAULT_DOWNLOAD_TAG}/release-linux-x86_64.zip`;
+
+export const BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL = `https://github.com/chiku524/boing.network/releases/download/${BOING_TESTNET_DEFAULT_DOWNLOAD_TAG}/release-macos-aarch64.zip`;
+
 /** Matches bootnode-style Boing testnet full node + JSON-RPC faucet (see boing.network scripts). */
 export const BOING_TESTNET_DEFAULT_WINDOWS_COMMAND_TEMPLATE =
-  'boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable';
+  `boing-node-windows-x86_64.exe --data-dir {dataDir} ${BOING_TESTNET_NODE_ARGS}`;
+
+export const BOING_TESTNET_DEFAULT_LINUX_COMMAND_TEMPLATE =
+  `boing-node-linux-x86_64 --data-dir {dataDir} ${BOING_TESTNET_NODE_ARGS}`;
+
+export const BOING_TESTNET_DEFAULT_MACOS_AARCH64_COMMAND_TEMPLATE =
+  `boing-node-macos-aarch64 --data-dir {dataDir} ${BOING_TESTNET_NODE_ARGS}`;
 
 export function isBoingNetworkId(id: string): boolean {
   return id.toLowerCase().includes('boing');

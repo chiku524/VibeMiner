@@ -1,6 +1,14 @@
 import type { BlockchainNetwork } from './types';
 import type { NetworkEnvironment } from './schema';
 import { parseNetwork, parseNetworkList } from './schema';
+import {
+  BOING_TESTNET_DEFAULT_LINUX_COMMAND_TEMPLATE,
+  BOING_TESTNET_DEFAULT_LINUX_DOWNLOAD_URL,
+  BOING_TESTNET_DEFAULT_MACOS_AARCH64_COMMAND_TEMPLATE,
+  BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL,
+  BOING_TESTNET_DEFAULT_WINDOWS_COMMAND_TEMPLATE,
+  BOING_TESTNET_DEFAULT_WINDOWS_DOWNLOAD_URL,
+} from './boing-testnet-node';
 
 /** Raw mainnet networks (production). Miners and networks stay in sync here. */
 const MAINNET_NETWORKS_RAW: unknown[] = [
@@ -155,16 +163,34 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
     icon: '◎',
     algorithm: 'PoS',
     environment: 'devnet',
-    website: 'https://github.com/boing-network/boing-network',
+    website: 'https://boing.network',
     status: 'live',
     rewardRate: 'Test only',
     minPayout: 'N/A',
-    nodeDownloadUrl:
-      'https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.3/release-windows-x86_64.zip',
-    nodeCommandTemplate:
-      'boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable',
+    nodeDownloadUrl: BOING_TESTNET_DEFAULT_WINDOWS_DOWNLOAD_URL,
+    nodeCommandTemplate: BOING_TESTNET_DEFAULT_WINDOWS_COMMAND_TEMPLATE,
     nodeDiskGb: 5,
     nodeRamMb: 2048,
+    nodePresets: [
+      {
+        presetId: 'windows',
+        label: 'Windows (x86_64)',
+        description: 'Uses the listing download URL (testnet release zip).',
+        commandTemplate: BOING_TESTNET_DEFAULT_WINDOWS_COMMAND_TEMPLATE,
+      },
+      {
+        presetId: 'linux',
+        label: 'Linux (x86_64)',
+        nodeDownloadUrl: BOING_TESTNET_DEFAULT_LINUX_DOWNLOAD_URL,
+        commandTemplate: BOING_TESTNET_DEFAULT_LINUX_COMMAND_TEMPLATE,
+      },
+      {
+        presetId: 'macos-arm64',
+        label: 'macOS (Apple Silicon)',
+        nodeDownloadUrl: BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL,
+        commandTemplate: BOING_TESTNET_DEFAULT_MACOS_AARCH64_COMMAND_TEMPLATE,
+      },
+    ],
   },
 ];
 
