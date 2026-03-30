@@ -81,7 +81,8 @@ type MiningContextValue = {
   sessions: MiningSession[];
   startMining: (network: BlockchainNetwork, walletAddress?: string) => Promise<{ ok: boolean; error?: string }>;
   stopMining: (networkId: string, environment?: NetworkEnvironment) => void;
-  stopSession: (session: MiningSession) => void;
+  /** Resolves after desktop stop + session list sync for node sessions. */
+  stopSession: (session: MiningSession) => Promise<void>;
   registerNodeSession: (args: {
     networkId: string;
     environment: NetworkEnvironment;
@@ -192,9 +193,9 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const stopSession = useCallback((session: MiningSession) => {
+  const stopSession = useCallback((session: MiningSession): Promise<void> => {
     if (isMiningSessionNode(session)) {
-      void (async () => {
+      return (async () => {
         try {
           await window.desktopAPI?.stopNode?.(
             session.networkId,
@@ -219,7 +220,6 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
           setSessions((prev) => prev.filter((s) => sessionListKey(s) !== sessionListKey(session)));
         }
       })();
-      return;
     }
     const key = networkKey(session.networkId, session.environment);
     if (realKeysRef.current.has(key) && window.desktopAPI?.stopRealMining) {
@@ -227,6 +227,7 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
       realKeysRef.current.delete(key);
     }
     setSessions((prev) => prev.filter((s) => sessionListKey(s) !== sessionListKey(session)));
+    return Promise.resolve();
   }, []);
 
   const registerNodeSession = useCallback(

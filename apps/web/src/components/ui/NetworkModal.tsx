@@ -128,16 +128,27 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
 
   useEffect(() => {
     if (!network || !isDesktop || !window.desktopAPI?.isNodeRunning || !selectedPreset) return;
+    let cancelled = false;
+    const preset = sanitizeNodePresetId(selectedPreset.presetId);
     window.desktopAPI
-      .isNodeRunning(network.id, network.environment ?? 'mainnet', selectedPreset.presetId)
-      .then(setNodeRunning);
+      .isNodeRunning(network.id, network.environment ?? 'mainnet', preset)
+      .then((running) => {
+        if (!cancelled) setNodeRunning(running);
+      })
+      .catch(() => {
+        if (!cancelled) setNodeRunning(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [network, isDesktop, selectedPreset?.presetId]);
 
   useEffect(() => {
     if (!network || !isDesktop || !nodeRunning || !window.desktopAPI?.getNodeStatus || !selectedPreset) return;
+    const preset = sanitizeNodePresetId(selectedPreset.presetId);
     const interval = setInterval(() => {
       window.desktopAPI
-        ?.getNodeStatus?.(network.id, network.environment ?? 'mainnet', selectedPreset.presetId)
+        ?.getNodeStatus?.(network.id, network.environment ?? 'mainnet', preset)
         .then((s) => {
           if (s) setNodeStatus(s.status ?? null);
         });
@@ -364,15 +375,34 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                       <button
                         type="button"
                         onClick={() => {
-                          stopSession({
-                            kind: 'node',
-                            networkId: network.id,
-                            environment: network.environment ?? 'mainnet',
-                            presetId: sanitizeNodePresetId(selectedPreset.presetId),
-                            startedAt: 0,
-                            isActive: true,
-                          });
+                          const env = network.environment ?? 'mainnet';
+                          const preset = sanitizeNodePresetId(selectedPreset.presetId);
                           setNodeRunning(false);
+                          void (async () => {
+                            try {
+                              await stopSession({
+                                kind: 'node',
+                                networkId: network.id,
+                                environment: env,
+                                presetId: preset,
+                                startedAt: 0,
+                                isActive: true,
+                              });
+                            } catch (e) {
+                              console.warn('stopSession failed', e);
+                            }
+                            if (!window.desktopAPI?.isNodeRunning) return;
+                            try {
+                              const still = await window.desktopAPI.isNodeRunning(
+                                network.id,
+                                env,
+                                preset
+                              );
+                              setNodeRunning(still);
+                            } catch {
+                              setNodeRunning(false);
+                            }
+                          })();
                         }}
                         className="rounded-lg border border-red-500/30 px-3 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10"
                       >
@@ -446,7 +476,7 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                               const running = await window.desktopAPI.isNodeRunning(
                                 network.id,
                                 network.environment ?? 'mainnet',
-                                selectedPreset.presetId
+                                sanitizeNodePresetId(selectedPreset.presetId)
                               );
                               if (running) parsed = { ok: true };
                             } catch {
