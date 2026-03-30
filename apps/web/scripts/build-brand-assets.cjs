@@ -13,8 +13,8 @@ const root = path.join(__dirname, '..');
 const brandDir = path.join(root, 'public', 'brand');
 const srcPath = path.join(brandDir, 'logo-source.png');
 
-/** Opaque square backing for favicons, SEO tiles, and Tauri icons (pickaxe visible on any OS chrome). Matches brand surface-950 #0a0f14. */
-const ICON_SQUARE_BG = { r: 10, g: 15, b: 20, alpha: 1 };
+/** Opaque square backing for favicons, SEO tiles, and Tauri icons. Lighter than surface-950 so the mark reads as one unit on taskbar/tray; aligns with surface-850 #1a1d24. */
+const ICON_SQUARE_BG = { r: 26, g: 29, b: 36, alpha: 1 };
 const seoDir = path.join(root, 'public', 'seo');
 const appDir = path.join(root, 'src', 'app');
 const tauriIconSource = path.join(root, '..', 'tauri', 'icon-source');

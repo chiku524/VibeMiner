@@ -32,7 +32,7 @@ export default async function OpenGraphImage() {
               width: 88,
               height: 88,
               borderRadius: 20,
-              background: '#0a0f14',
+              background: '#1a1d24',
               border: '1px solid rgba(148, 163, 184, 0.35)',
               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.45)',
             }}

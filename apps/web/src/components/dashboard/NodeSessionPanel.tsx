@@ -12,6 +12,7 @@ import {
 } from '@vibeminer/shared';
 import { NetworkMark } from '@/components/ui/NetworkMark';
 import { NodeProcessLog } from '@/components/dashboard/NodeProcessLog';
+import { CloudflareTunnelPanel } from '@/components/dashboard/CloudflareTunnelPanel';
 import { Server } from 'lucide-react';
 
 interface NodeSessionPanelProps {
@@ -277,8 +278,9 @@ export function NodeSessionPanel({ session, network, onStop, onDismiss, compact 
       </div>
 
       {isBoingNetworkId(network.id) && (
-        <div className="px-5 pb-4">
+        <div className="space-y-3 px-5 pb-4">
           <BoingRpcTransparencyHint />
+          <CloudflareTunnelPanel embedded />
         </div>
       )}
 

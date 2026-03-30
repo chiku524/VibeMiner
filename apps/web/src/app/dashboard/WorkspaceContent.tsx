@@ -38,7 +38,6 @@ import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { BrandMark } from '@/components/BrandMark';
 import { MiningLoader } from '@/components/ui/MiningLoader';
 import { NetworkMark } from '@/components/ui/NetworkMark';
-import { CloudflareTunnelPanel } from '@/components/dashboard/CloudflareTunnelPanel';
 import { Radio, Zap, Coins, BarChart3 } from 'lucide-react';
 
 export type WorkspaceMode = 'mining' | 'nodes';
@@ -267,9 +266,9 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
   useEffect(() => { if (sessions.length > 0) setStartingId(null); }, [sessions.length]);
 
   const handleStopSession = useCallback(
-    (session: MiningSession) => {
+    async (session: MiningSession) => {
+      await stopSession(session);
       addToast(isMiningSessionNode(session) ? 'Node stopped' : 'Mining stopped');
-      stopSession(session);
     },
     [stopSession, addToast]
   );
@@ -432,7 +431,6 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                 <button type="button" onClick={() => { setNetworksFetchError(false); setRetryCount((c) => c + 1); }} className="shrink-0 rounded-lg border border-amber-500/30 px-2.5 py-1 text-xs font-medium text-amber-300 hover:bg-amber-500/10">Retry</button>
               </div>
             )}
-            {mode === 'nodes' && isDesktop && <CloudflareTunnelPanel />}
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <label htmlFor="sort-networks" className="text-xs text-gray-500">Sort</label>

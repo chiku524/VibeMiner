@@ -11,6 +11,21 @@ Use this checklist to onboard Boing Network via VibeMiner’s Request listing fo
 - **Multiple node modes** (checkbox): use either **one shared URL** with different commands per mode, **or** leave the shared URL empty and set an **HTTPS download URL (and optional SHA256) per mode** — suitable for **Windows / Linux / macOS** zips on one listing.
 - **Desktop:** archives are cached under **`bin/<url-hash-prefix>/`** with a per-URL **`.vm-ready/<prefix>.ok`** marker so switching presets does not reuse the wrong binary tree. **`get_platform()`** defaults the modal preset when id/label match `windows`, `linux`, `macos`, etc.
 
+### Static Boing testnet presets in the VibeMiner repo
+
+Shipped under network id **`boing-devnet`** in `packages/shared/src/networks.ts`. Command templates and default download URLs come from `packages/shared/src/boing-testnet-node.ts`. API or registration overrides can replace this row when the stored id is still `boing-devnet`.
+
+| `presetId` | Label (UI) | Download (default) | Notes |
+|------------|------------|--------------------|--------|
+| `windows` | Windows (x86_64) — full node | Windows zip from `BOING_TESTNET_DEFAULT_WINDOWS_DOWNLOAD_URL` | Inherits listing URL if preset omits URL |
+| `windows-validator` | Windows (x86_64) — validator | Same zip as `windows` | Template adds `--validator` |
+| `linux` | Linux (x86_64) — full node | Linux zip (`BOING_TESTNET_DEFAULT_LINUX_DOWNLOAD_URL`) | |
+| `linux-validator` | Linux (x86_64) — validator | Same zip as `linux` | `--validator` |
+| `macos-arm64` | macOS (Apple Silicon) — full node | macOS aarch64 zip (`BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL`) | |
+| `macos-arm64-validator` | macOS (Apple Silicon) — validator | Same zip as `macos-arm64` | `--validator` |
+
+Shared P2P/RPC flags for all presets: `BOING_TESTNET_NODE_ARGS_CORE` in `boing-testnet-node.ts` (`--p2p-listen`, `--bootnodes`, `--rpc-port 8545`, `--faucet-enable`).
+
 ### Cross-OS in one listing — implemented
 
 Use **Offer multiple node modes**, clear the **shared** node URL if you want only per-mode URLs, add one row per OS (ids like `windows`, `linux`, `macos-arm64` help auto-selection), and fill **Mode download URL** + optional **Archive SHA256** per row. The **Run node** action passes the selected preset’s effective URL and SHA into the desktop installer.

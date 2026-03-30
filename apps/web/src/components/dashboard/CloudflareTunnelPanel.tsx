@@ -19,11 +19,16 @@ function asStream(s: string): StreamKind {
   return 'stdout';
 }
 
+type CloudflareTunnelPanelProps = {
+  /** Render inside a Boing node session card instead of the sidebar. */
+  embedded?: boolean;
+};
+
 /**
  * Start/stop Cloudflare Tunnel from the desktop app (optional). Requires `cloudflared`
  * and `~/.cloudflared/config.yml` (see Boing Network infrastructure docs).
  */
-export function CloudflareTunnelPanel() {
+export function CloudflareTunnelPanel({ embedded = false }: CloudflareTunnelPanelProps) {
   const isDesktop = useIsDesktop();
   const { addToast } = useToast();
   const [running, setRunning] = useState(false);
@@ -175,14 +180,27 @@ export function CloudflareTunnelPanel() {
         </div>
       </div>
       <p className="mt-2 text-[11px] leading-snug text-gray-500">
-        <code className="rounded bg-white/10 px-1 font-mono text-[10px]">cloudflared</code> exposes local RPC (e.g.{' '}
-        <strong className="font-medium text-gray-400">8545</strong>). By default, starting a Boing node starts this tunnel if it
-        is not already running; stopping the node stops a tunnel the app started. You can still start or stop manually here.
-        Paths, tunnel name, and the pairing toggle:{' '}
-        <a href="/dashboard/settings" className="text-accent-cyan hover:underline">
-          Settings
-        </a>
-        .
+        {embedded ? (
+          <>
+            <code className="rounded bg-white/10 px-1 font-mono text-[10px]">cloudflared</code> exposes this session’s local RPC.
+            The desktop app usually starts/stops the tunnel with the Boing node; use the buttons here to override.{' '}
+            <a href="/dashboard/settings" className="text-accent-cyan hover:underline">
+              Settings
+            </a>
+            .
+          </>
+        ) : (
+          <>
+            <code className="rounded bg-white/10 px-1 font-mono text-[10px]">cloudflared</code> exposes local RPC (e.g.{' '}
+            <strong className="font-medium text-gray-400">8545</strong>). By default, starting a Boing node starts this tunnel if it
+            is not already running; stopping the node stops a tunnel the app started. You can still start or stop manually here.
+            Paths, tunnel name, and the pairing toggle:{' '}
+            <a href="/dashboard/settings" className="text-accent-cyan hover:underline">
+              Settings
+            </a>
+            .
+          </>
+        )}
       </p>
 
       <details className="mt-2 border-t border-white/5 pt-2">

@@ -36,6 +36,15 @@ function desktopNodeRowKey(d: DesktopRunningNodeRow): string {
   });
 }
 
+/** Mark a single node session as exited so the UI updates immediately (reconciled on next desktop list sync). */
+function markNodeSessionProcessExited(prev: MiningSession[], sessionKey: string, at: number): MiningSession[] {
+  return prev.map((s) => {
+    if (!isMiningSessionNode(s) || sessionListKey(s) !== sessionKey) return s;
+    if (s.nodeProcessExitedAt != null) return s;
+    return { ...s, nodeProcessExitedAt: at };
+  });
+}
+
 /** Sync running nodes from the desktop; keep ended node rows (with logs) until dismissed. */
 function mergeDesktopNodeRowsIntoSessions(
   prev: MiningSession[],
@@ -195,7 +204,10 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
 
   const stopSession = useCallback((session: MiningSession): Promise<void> => {
     if (isMiningSessionNode(session)) {
+      const stoppedKey = sessionListKey(session);
       return (async () => {
+        const exitedAt = Date.now();
+        setSessions((prev) => markNodeSessionProcessExited(prev, stoppedKey, exitedAt));
         try {
           await window.desktopAPI?.stopNode?.(
             session.networkId,
@@ -211,13 +223,15 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
             const list = await listFn();
             if (Array.isArray(list)) {
               setSessions((prev) => mergeDesktopNodeRowsIntoSessions(prev, list as DesktopRunningNodeRow[]));
+            } else {
+              console.warn('listRunningNodes returned non-array', list);
             }
           } catch (e) {
             console.warn('listRunningNodes failed', e);
-            setSessions((prev) => prev.filter((s) => sessionListKey(s) !== sessionListKey(session)));
+            setSessions((prev) => markNodeSessionProcessExited(prev, stoppedKey, Date.now()));
           }
         } else {
-          setSessions((prev) => prev.filter((s) => sessionListKey(s) !== sessionListKey(session)));
+          setSessions((prev) => prev.filter((s) => sessionListKey(s) !== stoppedKey));
         }
       })();
     }

@@ -177,6 +177,7 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
     nodeCommandTemplate: BOING_TESTNET_DEFAULT_WINDOWS_COMMAND_TEMPLATE,
     nodeDiskGb: BOING_TESTNET_SUGGESTED_NODE_DISK_GB,
     nodeRamMb: BOING_TESTNET_SUGGESTED_NODE_RAM_MB,
+    /** Six presets: full node + validator × Windows / Linux / macOS arm64 — see docs/BOING_REGISTRATION_CHECKLIST.md */
     nodePresets: [
       {
         presetId: 'windows',
