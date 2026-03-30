@@ -10,11 +10,20 @@ The Boing monorepo exposes read-only **`boing_getQaRegistry`** so explorers (e.g
 {"error":{"code":-32601,"message":"Method not found: boing_getQaRegistry"}}
 ```
 
-the process answering on `--rpc-port` was built **before** that method existed.
+the process answering on **`--rpc-port`** was built **before** that method existed.
+
+### Local node (VibeMiner) vs public RPC (boing.observer)
+
+| Where you see the error | Which `boing-node` matters |
+|-------------------------|----------------------------|
+| **curl / wallet → `http://127.0.0.1:8545`** | The binary VibeMiner downloaded and started — update listing URL / default tag and restart. |
+| **https://boing.observer/qa** | The **`boing-node` behind `NEXT_PUBLIC_TESTNET_RPC`** (default `https://testnet-rpc.boing.network`) — upgrade that deployment; your local VibeMiner binary does not fix the explorer. |
+
+Same symptom, two different backends. See Boing repo **[THREE-CODEBASE-ALIGNMENT.md §2.1](https://github.com/chiku524/boing.network/blob/main/docs/THREE-CODEBASE-ALIGNMENT.md#21-qa-registry-rpc-boing_getqaregistry--two-different-surfaces)**.
 
 ### What operators should do
 
-1. **Build** `boing-node` from [boing.network](https://github.com/boing-network/boing.network) `main` (or a tagged release that includes `boing_getQaRegistry`).
+1. **Build** `boing-node` from the [Boing Network repo](https://github.com/chiku524/boing.network) `main` (or a tagged release that includes `boing_getQaRegistry`).
 2. **Publish** a new GitHub Release with platform zips (same layout as today: `boing-node-windows-x86_64.exe` at zip root, etc.).
 3. **Point VibeMiner** at the new zip:
    - **Network listing:** update **Node download URL** (and optional SHA256) for each preset; or  
@@ -33,7 +42,7 @@ VibeMiner caches extracts under `%APPDATA%` (or platform equivalent) keyed partl
 | 1 | Tag Boing release (`testnet-v0.1.3`) — CI attaches `release-*-x86_64.zip` to a **draft** Release; publish when ready. |
 | 2 | Update [BOING_REGISTRATION_CHECKLIST.md](./BOING_REGISTRATION_CHECKLIST.md) URLs/tag. |
 | 3 | Bump `BOING_TESTNET_DEFAULT_DOWNLOAD_TAG` and the matching URLs in `boing-testnet-node.ts` (Windows/Linux/macOS); static `boing-devnet` in `networks.ts` uses those constants and `nodePresets` per OS. |
-| 4 | Document in Boing [RPC-API-SPEC.md](https://github.com/boing-network/boing.network/blob/main/docs/RPC-API-SPEC.md) (upstream). |
+| 4 | Document in Boing [RPC-API-SPEC.md](https://github.com/chiku524/boing.network/blob/main/docs/RPC-API-SPEC.md). |
 
 ## Related docs
 

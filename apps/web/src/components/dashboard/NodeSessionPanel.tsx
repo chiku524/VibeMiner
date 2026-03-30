@@ -30,15 +30,20 @@ function formatDuration(ms: number) {
   return [h, m, s].map((n) => n.toString().padStart(2, '0')).join(':');
 }
 
-/** Explains that newer Boing RPC (e.g. QA registry read) depends on the downloaded boing-node version. */
+/** Explains local boing-node vs public RPC used by boing.observer (see boing.network THREE-CODEBASE-ALIGNMENT §2.1). */
 function BoingRpcTransparencyHint() {
   return (
     <div className="rounded-lg border border-sky-500/25 bg-sky-500/5 px-3 py-2.5 text-left">
-      <p className="text-xs font-medium text-sky-200">Boing RPC &amp; public transparency</p>
+      <p className="text-xs font-medium text-sky-200">Boing RPC &amp; QA transparency</p>
       <p className="mt-1 text-[11px] leading-relaxed text-gray-400">
         Read-only{' '}
         <code className="rounded bg-black/40 px-1 py-0.5 font-mono text-gray-300">{BOING_RPC_METHOD_GET_QA_REGISTRY}</code>{' '}
-        powers{' '}
+        is implemented by <span className="text-gray-300">boing-node</span> (recent release, e.g. testnet zip in this
+        listing). Tools hitting <span className="text-gray-300">localhost:8545</span> use{' '}
+        <strong className="text-gray-300">this</strong> binary — if you see <span className="text-gray-300">Method not found</span>, update the
+        download URL / restart so a current binary runs.
+      </p>
+      <p className="mt-2 text-[11px] leading-relaxed text-gray-400">
         <a
           href="https://boing.observer/qa"
           target="_blank"
@@ -46,12 +51,20 @@ function BoingRpcTransparencyHint() {
           className="text-sky-400 underline-offset-2 hover:underline"
         >
           boing.observer/qa
-        </a>
-        . If tools return <span className="text-gray-300">Method not found</span>, this binary predates that RPC — build a
-        current <span className="text-gray-300">boing-node</span>, publish a new GitHub release, update the network&apos;s
-        download URL in the listing, then stop and restart the node here. See VibeMiner{' '}
-        <code className="rounded bg-black/40 px-1 font-mono text-[10px] text-gray-500">docs/BOING_QA_RPC_AND_RELEASES.md</code>
-        .
+        </a>{' '}
+        calls the <strong className="text-gray-300">public</strong> testnet RPC (not your PC). Upgrading only your local
+        node does not change that endpoint — operators must upgrade the node behind{' '}
+        <span className="text-gray-300">testnet-rpc.boing.network</span>, or the site falls back to canonical docs JSON. See{' '}
+        <a
+          href="https://github.com/chiku524/boing.network/blob/main/docs/THREE-CODEBASE-ALIGNMENT.md#21-qa-registry-rpc-boing_getqaregistry--two-different-surfaces"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sky-400 underline-offset-2 hover:underline"
+        >
+          Boing: two RPC surfaces (§2.1)
+        </a>{' '}
+        and VibeMiner{' '}
+        <code className="rounded bg-black/40 px-1 font-mono text-[10px] text-gray-500">docs/BOING_QA_RPC_AND_RELEASES.md</code>.
       </p>
     </div>
   );
