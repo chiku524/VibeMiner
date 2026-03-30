@@ -383,9 +383,13 @@ fn sha256_bytes(bytes: &[u8]) -> String {
 }
 
 /// Stable subdirectory name for this download URL so different OS archives never share one `bin/`.
+/// Includes the desktop app version so upgrading VibeMiner re-fetches zips even when the URL is unchanged
+/// (avoids stale `boing-node` after same-tag zip replacements or QA RPC additions).
 fn node_download_cache_key(url: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(url.as_bytes());
+    hasher.update(b"\xffvm-app\xff");
+    hasher.update(env!("CARGO_PKG_VERSION").as_bytes());
     let full: String = format!("{:x}", hasher.finalize());
     full.chars().take(16).collect()
 }
