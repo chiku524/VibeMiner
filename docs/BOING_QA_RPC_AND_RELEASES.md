@@ -33,7 +33,11 @@ Same symptom, two different backends. See Boing repo **[THREE-CODEBASE-ALIGNMENT
 
 ### Cache / same URL
 
-VibeMiner caches extracts under `%APPDATA%` (or platform equivalent) keyed by **download URL** and **desktop app version** (from **1.0.90** onward). Upgrading VibeMiner therefore forces a **fresh node zip download** even when the Boing release URL is unchanged. If you still see stale RPC behavior on an older app build, change the listing **Node download URL** (new Boing tag) or delete the app’s `nodes/` cache for that network. Prefer **a new Boing release tag** per binary (current default in VibeMiner: `testnet-v0.1.4`) when you publish updated `boing-node` zips so URLs change for everyone.
+VibeMiner caches extracts under `%APPDATA%` (or platform equivalent) keyed by **download URL** and **desktop app version** (from **1.0.89** onward). Upgrading VibeMiner therefore forces a **fresh node zip download** even when the Boing release URL is unchanged. If you still see stale RPC behavior on an older app build, change the listing **Node download URL** (new Boing tag) or delete the app’s `nodes/` cache for that network. Prefer **a new Boing release tag** per binary (current default in VibeMiner: `testnet-v0.1.4`) when you publish updated `boing-node` zips so URLs change for everyone.
+
+### D1 listed `testnet-v0.1.2` (or older) while static defaults say `v0.1.4`
+
+The **networks API** merges D1 rows over static `boing-devnet`. A registered listing with an old download URL **wins** and the desktop app downloads that zip. **`patchBlockchainNetworkJsonForBoing`** (VibeMiner API) and **`functions/api/networks.js`** (boing.network) now rewrite official **`chiku524/boing.network`** URLs using **`testnet-v0.1.0`–`testnet-v0.1.2`** to **`testnet-v0.1.4`** and refresh zip SHA256. Still run **`d1/migrations/003_boing_testnet_zip_urls_v0_1_4.sql`** on **vibeminer-db** and **`website/migrations/2026-03-30-network-listings-boing-testnet-v0-1-4.sql`** on **boing-network-db** so the database matches production.
 
 ## Maintainer checklist when Boing adds RPC methods
 

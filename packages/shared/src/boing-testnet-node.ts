@@ -38,6 +38,16 @@ export const BOING_TESTNET_DEFAULT_LINUX_DOWNLOAD_URL = `https://github.com/chik
 
 export const BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL = `https://github.com/chiku524/boing.network/releases/download/${BOING_TESTNET_DEFAULT_DOWNLOAD_TAG}/release-macos-aarch64.zip`;
 
+/**
+ * SHA-256 of official GitHub **zip** assets for {@link BOING_TESTNET_DEFAULT_DOWNLOAD_TAG}.
+ * Used when upgrading stale D1/API listing URLs (see `patchBlockchainNetworkJsonForBoing`).
+ */
+export const BOING_TESTNET_ZIP_SHA256_WINDOWS = '50898a02f3cba1effe0c91a6f0ea48d3eed62ab87b7aeb3ebb653b30a1248f65';
+
+export const BOING_TESTNET_ZIP_SHA256_LINUX = 'a96987461201f00d618afad5a494b52837663f90f6d9d3d5c097b6843cad17ab';
+
+export const BOING_TESTNET_ZIP_SHA256_MACOS_AARCH64 = '26fd3477dfead760b3a04d5449173cbb7468286f33a51eec09d07d96982c0718';
+
 /** Full node + faucet (matches Boing testnet join / INFRASTRUCTURE-SETUP). */
 export const BOING_TESTNET_DEFAULT_WINDOWS_COMMAND_TEMPLATE =
   `boing-node-windows-x86_64.exe --data-dir {dataDir} ${BOING_TESTNET_NODE_ARGS_CORE}`;
@@ -78,6 +88,20 @@ export function ensureBoingFaucetInCommandTemplate(template: string): string {
   return `${t} --faucet-enable`;
 }
 
+const CHIKU524_BOING_RELEASE_DL = 'github.com/chiku524/boing.network/releases/download/';
+/** Tags before QA transparency RPC (`boing_getQaRegistry`) existed in published Windows zips. */
+const STALE_TESTNET_TAG_RE = /\/download\/(testnet-v0\.1\.(?:0|1|2))\//;
+
+function upgradeChiku524BoingZipUrl(url: string): { url: string; sha256: string } | null {
+  if (!url.includes(CHIKU524_BOING_RELEASE_DL)) return null;
+  if (!STALE_TESTNET_TAG_RE.test(url)) return null;
+  const next = url.replace(STALE_TESTNET_TAG_RE, `/download/${BOING_TESTNET_DEFAULT_DOWNLOAD_TAG}/`);
+  let sha256 = BOING_TESTNET_ZIP_SHA256_WINDOWS;
+  if (next.includes('release-linux-x86_64')) sha256 = BOING_TESTNET_ZIP_SHA256_LINUX;
+  else if (next.includes('release-macos-aarch64')) sha256 = BOING_TESTNET_ZIP_SHA256_MACOS_AARCH64;
+  return { url: next, sha256 };
+}
+
 function patchPresets(presets: unknown): unknown {
   if (!Array.isArray(presets)) return presets;
   return presets.map((p) => {
@@ -85,6 +109,22 @@ function patchPresets(presets: unknown): unknown {
     const row = { ...(p as Record<string, unknown>) };
     if (typeof row.commandTemplate === 'string') {
       row.commandTemplate = ensureBoingFaucetInCommandTemplate(row.commandTemplate);
+    }
+    return row;
+  });
+}
+
+function patchBoingStaleReleaseZipUrlsInPresets(presets: unknown): unknown {
+  if (!Array.isArray(presets)) return presets;
+  return presets.map((p) => {
+    if (!p || typeof p !== 'object' || Array.isArray(p)) return p;
+    const row = { ...(p as Record<string, unknown>) };
+    if (typeof row.nodeDownloadUrl === 'string') {
+      const up = upgradeChiku524BoingZipUrl(row.nodeDownloadUrl);
+      if (up) {
+        row.nodeDownloadUrl = up.url;
+        row.nodeBinarySha256 = up.sha256;
+      }
     }
     return row;
   });
@@ -102,8 +142,17 @@ export function patchBlockchainNetworkJsonForBoing(n: Record<string, unknown>): 
 
   if (Array.isArray(out.nodePresets) && out.nodePresets.length > 0) {
     out.nodePresets = patchPresets(out.nodePresets);
+    out.nodePresets = patchBoingStaleReleaseZipUrlsInPresets(out.nodePresets);
   } else if (typeof out.nodeCommandTemplate === 'string') {
     out.nodeCommandTemplate = ensureBoingFaucetInCommandTemplate(out.nodeCommandTemplate);
+  }
+
+  if (typeof out.nodeDownloadUrl === 'string') {
+    const up = upgradeChiku524BoingZipUrl(out.nodeDownloadUrl);
+    if (up) {
+      out.nodeDownloadUrl = up.url;
+      out.nodeBinarySha256 = up.sha256;
+    }
   }
 
   const hasPresets = Array.isArray(out.nodePresets) && out.nodePresets.length > 0;

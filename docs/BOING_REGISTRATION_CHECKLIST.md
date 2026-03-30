@@ -34,6 +34,7 @@ Use **Offer multiple node modes**, clear the **shared** node URL if you want onl
 
 1. **Network account** — Register at [VibeMiner/register](https://vibeminer.tech/register) with account type **Network**
 2. **DB migration** — Ensure node columns exist. From VibeMiner project root: `cd apps/web && wrangler d1 execute vibeminer-db --remote --file=./d1/migrations/001_add_node_columns.sql`
+3. **Stale Boing zip URLs in D1** — If listings still point at `testnet-v0.1.0`–`v0.1.2` (no `boing_getQaRegistry` in those zips), apply **`d1/migrations/003_boing_testnet_zip_urls_v0_1_4.sql`**. After deploy, the **networks API** also rewrites those tags to `testnet-v0.1.4` in responses so the desktop app receives current zips even before you run the SQL.
 
 ## Registration Steps
 
