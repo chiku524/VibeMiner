@@ -89,7 +89,20 @@ export function CloudflareTunnelSettings() {
     <div className="rounded-xl border border-orange-500/20 bg-surface-900/30 px-4 py-3">
       <p className="text-sm font-medium text-white">Public RPC tunnel (Cloudflare)</p>
       <p className="mt-1 text-xs text-gray-500">
-        Optional. Exposes local JSON-RPC (e.g. Boing testnet on :8545). When enabled below, starting a Boing node starts this tunnel if it is not already running; stopping the node stops a tunnel the app started for you. Same layout as{' '}
+        Optional. Exposes local JSON-RPC (e.g. Boing testnet on :8545). Your{' '}
+        <code className="rounded bg-amber-500/15 px-1 text-amber-200/90">%USERPROFILE%\.cloudflared\config.yml</code>{' '}
+        <strong className="text-amber-200/90">ingress</strong> must route{' '}
+        <code className="rounded bg-white/10 px-1">testnet-rpc.boing.network</code> →{' '}
+        <code className="rounded bg-white/10 px-1">http://127.0.0.1:8545</code> (set in Cloudflare Zero Trust → Tunnels → public hostname). A Pages “custom domain” alone causes <strong className="text-amber-200/90">HTTP 405</strong> on POST — see Boing doc{' '}
+        <a
+          href="https://github.com/chiku524/boing.network/blob/main/docs/CLOUDFLARED-TUNNEL-ALIGNMENT.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-accent-cyan underline-offset-2 hover:underline"
+        >
+          CLOUDFLARED-TUNNEL-ALIGNMENT.md
+        </a>
+        . When enabled below, starting a Boing node starts this tunnel if it is not already running; stopping the node stops a tunnel the app started for you. Same layout as{' '}
         <code className="rounded bg-white/10 px-1">boing.network/scripts/start-cloudflare-tunnel.bat</code>: credentials in{' '}
         <code className="rounded bg-white/10 px-1">%USERPROFILE%\.cloudflared\config.yml</code> (or{' '}
         <code className="rounded bg-white/10 px-1">~/.cloudflared/config.yml</code>), binary often at{' '}
