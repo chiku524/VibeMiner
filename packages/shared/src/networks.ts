@@ -4,10 +4,16 @@ import { parseNetwork, parseNetworkList } from './schema';
 import {
   BOING_TESTNET_DEFAULT_LINUX_COMMAND_TEMPLATE,
   BOING_TESTNET_DEFAULT_LINUX_DOWNLOAD_URL,
+  BOING_TESTNET_DEFAULT_LINUX_VALIDATOR_COMMAND_TEMPLATE,
   BOING_TESTNET_DEFAULT_MACOS_AARCH64_COMMAND_TEMPLATE,
   BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL,
+  BOING_TESTNET_DEFAULT_MACOS_AARCH64_VALIDATOR_COMMAND_TEMPLATE,
   BOING_TESTNET_DEFAULT_WINDOWS_COMMAND_TEMPLATE,
   BOING_TESTNET_DEFAULT_WINDOWS_DOWNLOAD_URL,
+  BOING_TESTNET_DEFAULT_WINDOWS_VALIDATOR_COMMAND_TEMPLATE,
+  BOING_TESTNET_PUBLIC_RPC_URL,
+  BOING_TESTNET_SUGGESTED_NODE_DISK_GB,
+  BOING_TESTNET_SUGGESTED_NODE_RAM_MB,
 } from './boing-testnet-node';
 
 /** Raw mainnet networks (production). Miners and networks stay in sync here. */
@@ -153,13 +159,13 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
     rewardRate: 'Test only',
     minPayout: 'N/A',
   },
-  // Boing testnet — integration spec: boing-network/docs/VIBEMINER-INTEGRATION.md
+  // Boing testnet — integration spec: github.com/chiku524/boing.network docs/VIBEMINER-INTEGRATION.md
   {
     id: 'boing-devnet',
     name: 'Boing (Testnet)',
     symbol: 'BOING',
     description:
-      'Boing testnet: run a validator or full node (boing-node) with one click. JSON-RPC on port 8545 with --faucet-enable for testnet faucet; use a current boing.network release for browser CORS (e.g. boing.finance) and for newer read-only RPC (e.g. boing_getQaRegistry for boing.observer/qa). PoS chain—stake BOING to validate.',
+      'Boing testnet: full node or validator (boing-node) via presets below. Local RPC on 8545 with --faucet-enable; bootnodes match boing.network testnet config. Public RPC for faucets/explorer: see testnet join page. Use a current release (e.g. testnet-v0.1.3+) for boing_getQaRegistry and related JSON-RPC. PoS—stake BOING to validate.',
     icon: '◎',
     algorithm: 'PoS',
     environment: 'devnet',
@@ -169,26 +175,44 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
     minPayout: 'N/A',
     nodeDownloadUrl: BOING_TESTNET_DEFAULT_WINDOWS_DOWNLOAD_URL,
     nodeCommandTemplate: BOING_TESTNET_DEFAULT_WINDOWS_COMMAND_TEMPLATE,
-    nodeDiskGb: 5,
-    nodeRamMb: 2048,
+    nodeDiskGb: BOING_TESTNET_SUGGESTED_NODE_DISK_GB,
+    nodeRamMb: BOING_TESTNET_SUGGESTED_NODE_RAM_MB,
     nodePresets: [
       {
         presetId: 'windows',
-        label: 'Windows (x86_64)',
-        description: 'Uses the listing download URL (testnet release zip).',
+        label: 'Windows (x86_64) — full node',
+        description: `Testnet zip; bootnodes match boing.network. Public RPC: ${BOING_TESTNET_PUBLIC_RPC_URL}`,
         commandTemplate: BOING_TESTNET_DEFAULT_WINDOWS_COMMAND_TEMPLATE,
       },
       {
+        presetId: 'windows-validator',
+        label: 'Windows (x86_64) — validator',
+        description: 'Same binary; adds --validator for block production (stake BOING).',
+        commandTemplate: BOING_TESTNET_DEFAULT_WINDOWS_VALIDATOR_COMMAND_TEMPLATE,
+      },
+      {
         presetId: 'linux',
-        label: 'Linux (x86_64)',
+        label: 'Linux (x86_64) — full node',
         nodeDownloadUrl: BOING_TESTNET_DEFAULT_LINUX_DOWNLOAD_URL,
         commandTemplate: BOING_TESTNET_DEFAULT_LINUX_COMMAND_TEMPLATE,
       },
       {
+        presetId: 'linux-validator',
+        label: 'Linux (x86_64) — validator',
+        nodeDownloadUrl: BOING_TESTNET_DEFAULT_LINUX_DOWNLOAD_URL,
+        commandTemplate: BOING_TESTNET_DEFAULT_LINUX_VALIDATOR_COMMAND_TEMPLATE,
+      },
+      {
         presetId: 'macos-arm64',
-        label: 'macOS (Apple Silicon)',
+        label: 'macOS (Apple Silicon) — full node',
         nodeDownloadUrl: BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL,
         commandTemplate: BOING_TESTNET_DEFAULT_MACOS_AARCH64_COMMAND_TEMPLATE,
+      },
+      {
+        presetId: 'macos-arm64-validator',
+        label: 'macOS (Apple Silicon) — validator',
+        nodeDownloadUrl: BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL,
+        commandTemplate: BOING_TESTNET_DEFAULT_MACOS_AARCH64_VALIDATOR_COMMAND_TEMPLATE,
       },
     ],
   },

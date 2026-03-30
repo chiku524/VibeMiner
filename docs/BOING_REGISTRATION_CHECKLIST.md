@@ -56,9 +56,9 @@ Use this when you are **not** enabling **Offer multiple node modes**. One downlo
 |-------|-------|
 | **Network name** | **Boing** (slug `boing` → stored id **`boing-devnet`** — required to merge with static Boing testnet) |
 | **Node download URL** | `https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.3/release-windows-x86_64.zip` |
-| **Command template** | `boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
+| **Command template** | `boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001,/ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
 | **Binary SHA256** (optional, of the **zip** file) | *After the release is published, `sha256sum` the downloaded zip and paste here; omit until then.* |
-| **Disk (GB)** | e.g. `5` |
+| **Disk (GB)** | e.g. `10` (static `boing-devnet` default in `@vibeminer/shared`) |
 | **RAM (MB)** | e.g. `2048` |
 
 #### B. Multiple node modes (same Windows zip, different commands)
@@ -69,8 +69,8 @@ Example presets (illustrative — adjust labels/descriptions as you like):
 
 | Mode id | Label | Command template |
 |---------|-------|------------------|
-| `full-node` | Full node (Windows) | `boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
-| `validator` | Validator (Windows) | `boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable --validator` |
+| `full-node` | Full node (Windows) | `boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001,/ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
+| `validator` | Validator (Windows) | `boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001,/ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable --validator` |
 
 Use the **same** download URL and zip SHA as in section A for the listing (**shared** URL), or give each mode its **own** URL + optional SHA in the preset row (leave shared URL empty when every mode has a URL). Disk/RAM can be set per preset or inherited from the first row.
 
@@ -84,8 +84,8 @@ Register **additional** networks if you want one listing id per platform instead
 
 | Platform | Suggested network name (form) | Resulting VibeMiner listing id | Node download URL | Command template |
 |----------|------------------------------|----------------------------------|-------------------|------------------|
-| **Linux x86_64** | `Boing Linux` | `boing-linux-devnet` | `https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.3/release-linux-x86_64.zip` | `boing-node-linux-x86_64 --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
-| **macOS Apple Silicon** | `Boing macOS aarch64` | `boing-macos-aarch64-devnet` | `https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.3/release-macos-aarch64.zip` | `boing-node-macos-aarch64 --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
+| **Linux x86_64** | `Boing Linux` | `boing-linux-devnet` | `https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.3/release-linux-x86_64.zip` | `boing-node-linux-x86_64 --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001,/ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
+| **macOS Apple Silicon** | `Boing macOS aarch64` | `boing-macos-aarch64-devnet` | `https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.3/release-macos-aarch64.zip` | `boing-node-macos-aarch64 --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001,/ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
 
 | Field | Linux / macOS zip SHA256 (optional) |
 |-------|-------------------------------------|
@@ -95,7 +95,7 @@ These listings **do not** replace the static **`boing-devnet`** row; they show u
 
 **Bootnodes / RPC (reference)** — same on all platforms:
 
-- **Bootnode (comma-separated for CLI):** `/ip4/73.84.106.121/tcp/4001` (official testnet; duplicate entry in API list is intentional fallback)
+- **Bootnodes (comma-separated for `--bootnodes`):** `/ip4/73.84.106.121/tcp/4001,/ip4/73.84.106.121/tcp/4001` (matches `website/src/config/testnet.ts` default; duplicate is intentional)
 - **Public RPC:** `https://testnet-rpc.boing.network/`
 - **Chain ID (EIP-155 style):** `0x1b01` (6913)
 
