@@ -165,7 +165,7 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
     name: 'Boing (Testnet)',
     symbol: 'BOING',
     description:
-      'Boing testnet: full node or validator (boing-node) via presets below. Local RPC on 8545 with --faucet-enable; bootnodes match boing.network testnet config. Public RPC for faucets/explorer: see testnet join page. Use a current release (e.g. testnet-v0.1.3+) for boing_getQaRegistry and related JSON-RPC. PoS—stake BOING to validate.',
+      'Boing testnet: full node or validator (boing-node) via presets below. Local RPC on 8545 with --faucet-enable; use it with the Boing SDK / Boing Express for deploys, reference token/NFT calldata, and QA preflight. Public RPC powers the faucet and observer; bootnodes match boing.network. Use a current boing-node release for boing_getQaRegistry / boing_qaPoolConfig on the public endpoint. PoS—stake BOING to validate.',
     icon: '◎',
     algorithm: 'PoS',
     environment: 'devnet',

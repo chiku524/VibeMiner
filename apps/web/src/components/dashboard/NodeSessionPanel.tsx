@@ -13,6 +13,7 @@ import {
 import { NetworkMark } from '@/components/ui/NetworkMark';
 import { NodeProcessLog } from '@/components/dashboard/NodeProcessLog';
 import { CloudflareTunnelPanel } from '@/components/dashboard/CloudflareTunnelPanel';
+import { BoingTestnetToolkit } from '@/components/dashboard/BoingTestnetToolkit';
 import { Server } from 'lucide-react';
 
 interface NodeSessionPanelProps {
@@ -193,8 +194,10 @@ export function NodeSessionPanel({ session, network, onStop, onDismiss, compact 
           </div>
         </div>
         {isBoingNetworkId(network.id) && (
-          <div className="px-4 pb-2">
+          <div className="space-y-2 px-4 pb-2">
             <BoingRpcTransparencyHint />
+            <BoingTestnetToolkit variant="compact" />
+            <CloudflareTunnelPanel embedded />
           </div>
         )}
         <details
@@ -280,6 +283,7 @@ export function NodeSessionPanel({ session, network, onStop, onDismiss, compact 
       {isBoingNetworkId(network.id) && (
         <div className="space-y-3 px-5 pb-4">
           <BoingRpcTransparencyHint />
+          <BoingTestnetToolkit variant="compact" />
           <CloudflareTunnelPanel embedded />
         </div>
       )}

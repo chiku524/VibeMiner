@@ -44,6 +44,10 @@ VibeMiner caches extracts under `%APPDATA%` (or platform equivalent) keyed partl
 | 3 | Bump `BOING_TESTNET_DEFAULT_DOWNLOAD_TAG` and the matching URLs in `boing-testnet-node.ts` (Windows/Linux/macOS); static `boing-devnet` in `networks.ts` uses those constants, **`BOING_TESTNET_BOOTNODES_CLI`** (aligned with `website/src/config/testnet.ts`), and **six** `nodePresets` (full node + validator per OS). |
 | 4 | Document in Boing [RPC-API-SPEC.md](https://github.com/chiku524/boing.network/blob/main/docs/RPC-API-SPEC.md). |
 
+## In-app: testnet developer toolkit
+
+The VibeMiner dashboard shows a **Testnet: tokens, contracts & NFTs** panel for Boing networks (network modal and Boing node session card): copyable **public** and **local** RPC URLs plus links to the faucet, boing.observer/qa, SDK, reference token/NFT docs, and Hub releases. Deploy and QA preflight still happen via **Boing SDK / Boing Express / Hub** against whichever RPC you choose; VibeMiner supplies the local node and documentation entry points.
+
 ## Related docs
 
 - [NODE_RUNNING.md](./NODE_RUNNING.md) — how VibeMiner runs nodes securely.

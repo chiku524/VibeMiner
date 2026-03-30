@@ -17,7 +17,9 @@ import {
   effectivePresetNodeBinarySha256,
   effectivePresetNodeDownloadUrl,
   sanitizeNodePresetId,
+  isBoingNetworkId,
 } from '@vibeminer/shared';
+import { BoingTestnetToolkit } from '@/components/dashboard/BoingTestnetToolkit';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useToast } from '@/contexts/ToastContext';
 import { useMining } from '@/contexts/MiningContext';
@@ -314,6 +316,11 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
               >
                 Visit website →
               </a>
+            )}
+            {network && isBoingNetworkId(network.id) && (
+              <div className="col-span-full mt-1">
+                <BoingTestnetToolkit variant="modal" />
+              </div>
             )}
           </div>
           {network.status === 'live' && (

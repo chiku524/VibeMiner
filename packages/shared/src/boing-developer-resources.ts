@@ -1,0 +1,57 @@
+import { BOING_TESTNET_PUBLIC_RPC_URL } from './boing-testnet-node';
+
+/** Default JSON-RPC when a Boing node is running from VibeMiner (same as boing-node --rpc-port 8545). */
+export const BOING_LOCAL_RPC_DEFAULT = 'http://127.0.0.1:8545';
+
+export type BoingToolkitLink = {
+  label: string;
+  href: string;
+  hint?: string;
+};
+
+/** Curated links for testnet QA, deploy, reference token/NFT, and operator tooling. */
+export const BOING_TESTNET_TOOLKIT_LINKS: BoingToolkitLink[] = [
+  {
+    label: 'Faucet',
+    href: 'https://boing.network/faucet',
+    hint: 'Request testnet BOING via the public RPC configured on that page.',
+  },
+  {
+    label: 'QA registry & pool (boing.observer)',
+    href: 'https://boing.observer/qa',
+    hint: 'Live rules require public RPC with boing_getQaRegistry and boing_qaPoolConfig.',
+  },
+  {
+    label: 'Testnet join & bootnodes',
+    href: 'https://boing.network/testnet/join',
+  },
+  {
+    label: 'Boing SDK (TypeScript)',
+    href: 'https://github.com/chiku524/boing.network/tree/main/boing-sdk#readme',
+    hint: 'qaCheck, simulate, submit — use with a node RPC URL.',
+  },
+  {
+    label: 'QA & deploy rules',
+    href: 'https://github.com/chiku524/boing.network/blob/main/docs/QUALITY-ASSURANCE-NETWORK.md',
+  },
+  {
+    label: 'Reference token (calldata)',
+    href: 'https://github.com/chiku524/boing.network/blob/main/docs/BOING-REFERENCE-TOKEN.md',
+  },
+  {
+    label: 'Reference NFT (calldata)',
+    href: 'https://github.com/chiku524/boing.network/blob/main/docs/BOING-REFERENCE-NFT.md',
+  },
+  {
+    label: 'Boing Network Hub (desktop)',
+    href: 'https://github.com/chiku524/boing.network/releases?q=desktop-hub&expanded=true',
+    hint: 'QA operator flows; download latest Hub release from boing.network.',
+  },
+  {
+    label: 'Verify public RPC (operator)',
+    href: 'https://github.com/chiku524/boing.network/blob/main/docs/INFRASTRUCTURE-SETUP.md',
+    hint: 'Run scripts/verify-public-testnet-rpc.mjs after upgrading the node behind the tunnel.',
+  },
+];
+
+export { BOING_TESTNET_PUBLIC_RPC_URL };
