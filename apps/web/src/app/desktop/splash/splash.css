@@ -34,12 +34,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(
-    135deg,
-    rgba(34, 211, 238, 0.22) 0%,
-    rgba(16, 185, 129, 0.18) 100%
-  );
-  border-radius: 1.25rem;
+  background: rgba(228, 241, 239, 0.96);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.22);
   /* Stay visible on first paint; avoid several seconds of “empty” while the mark image loads. */
   animation: splashSymbolFade 0.35s ease-out;
 }

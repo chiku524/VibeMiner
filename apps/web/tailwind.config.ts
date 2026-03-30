@@ -36,6 +36,8 @@ const config: Config = {
           emerald: '#34d399',
           amber: '#fbbf24',
         },
+        /** Circular app/OG disc (see `scripts/build-brand-assets.cjs` ICON_DISC). */
+        iconDisc: '#e4f1ef',
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',

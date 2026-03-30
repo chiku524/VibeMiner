@@ -33,7 +33,7 @@ Same symptom, two different backends. See Boing repo **[THREE-CODEBASE-ALIGNMENT
 
 ### Cache / same URL
 
-VibeMiner caches extracts under `%APPDATA%` (or platform equivalent) keyed by **download URL** and **desktop app version** (from **1.0.89** onward). Upgrading VibeMiner therefore forces a **fresh node zip download** even when the Boing release URL is unchanged. If you still see stale RPC behavior on an older app build, change the listing **Node download URL** (new Boing tag) or delete the app’s `nodes/` cache for that network. Prefer **a new Boing release tag** per binary (current default in VibeMiner: `testnet-v0.1.4`) when you publish updated `boing-node` zips so URLs change for everyone.
+VibeMiner caches extracts under `%APPDATA%` (or platform equivalent) keyed by **download URL** and **desktop app version** (from **1.0.90** onward). Upgrading VibeMiner therefore forces a **fresh node zip download** even when the Boing release URL is unchanged. If you still see stale RPC behavior on an older app build, change the listing **Node download URL** (new Boing tag) or delete the app’s `nodes/` cache for that network. Prefer **a new Boing release tag** per binary (current default in VibeMiner: `testnet-v0.1.4`) when you publish updated `boing-node` zips so URLs change for everyone.
 
 ## Maintainer checklist when Boing adds RPC methods
 

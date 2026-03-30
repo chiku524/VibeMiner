@@ -2,6 +2,8 @@
  * Build brand PNGs from public/brand/logo-source.png:
  * - Chroma-style removal of near-uniform dark background (corners sample).
  * - Transparent master, SEO sizes, favicons, Tauri 1024 source.
+ * - Static Open Graph image (1200×630) at src/app/opengraph-image.png — avoids next/og + yoga.wasm,
+ *   which breaks OpenNext + Wrangler deploy (absolute wasm paths in the server bundle).
  *
  * Run: node scripts/build-brand-assets.cjs (also chained from prebuild).
  */
@@ -13,8 +15,12 @@ const root = path.join(__dirname, '..');
 const brandDir = path.join(root, 'public', 'brand');
 const srcPath = path.join(brandDir, 'logo-source.png');
 
-/** Opaque square backing for favicons, SEO tiles, and Tauri icons. Lighter than surface-950 so the mark reads as one unit on taskbar/tray; aligns with surface-850 #1a1d24. */
-const ICON_SQUARE_BG = { r: 26, g: 29, b: 36, alpha: 1 };
+/**
+ * Opaque circular disc behind the mark (favicons, SEO tiles, Tauri source).
+ * Light mint-slate so the teal/indigo mark reads clearly and blends with brand gradients.
+ */
+const ICON_DISC_BG = { r: 228, g: 241, b: 239, alpha: 1 };
+const ICON_DISC_HEX = '#e4f1ef';
 const seoDir = path.join(root, 'public', 'seo');
 const appDir = path.join(root, 'src', 'app');
 const tauriIconSource = path.join(root, '..', 'tauri', 'icon-source');
@@ -67,9 +73,9 @@ async function removeNearBackground(inputBuffer, threshold = 42) {
   return sharp(out, { raw: { width, height, channels: 4 } }).png().toBuffer();
 }
 
-async function fitOnSquareCanvas(pngBuffer, side, background) {
-  const meta = await sharp(pngBuffer).metadata();
-  const inner = Math.round(side * 0.82);
+/** Circular badge: filled disc + centered logo (square canvas, transparent outside the circle). */
+async function fitOnCircularCanvas(pngBuffer, side, background) {
+  const inner = Math.round(side * 0.68);
   const resized = await sharp(pngBuffer)
     .resize({
       width: inner,
@@ -81,17 +87,65 @@ async function fitOnSquareCanvas(pngBuffer, side, background) {
   const { width: w, height: h } = await sharp(resized).metadata();
   const left = Math.round((side - w) / 2);
   const top = Math.round((side - h) / 2);
-  return sharp({
-    create: {
-      width: side,
-      height: side,
-      channels: 4,
-      background,
-    },
-  })
+  const cx = side / 2;
+  const cy = side / 2;
+  const r = side / 2 - 0.5;
+  const { r: br, g: bg, b: bb } = background;
+  const circleSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${side}" height="${side}">
+  <circle cx="${cx}" cy="${cy}" r="${r}" fill="rgb(${br},${bg},${bb})"/>
+</svg>`;
+  return sharp(Buffer.from(circleSvg))
     .composite([{ input: resized, left, top }])
     .png()
     .toBuffer();
+}
+
+/** Keep in sync with src/lib/site.ts (name, slogan, description line used on OG card). */
+const OG_TITLE = 'VibeMiner';
+const OG_SLOGAN = 'Mine without the grind.';
+const OG_TAGLINE = 'Mine cryptocurrencies for networks that need you';
+
+async function writeOpenGraphPng(transparentBuf) {
+  const W = 1200;
+  const H = 630;
+  const logoInner = 64;
+  const logoBox = 88;
+  const gap = 24;
+  const cx = W / 2;
+  const rowY = 260;
+  const titleApproxW = 400;
+  const rowW = logoBox + gap + titleApproxW;
+  const startX = cx - rowW / 2;
+
+  const logoSmall = await sharp(transparentBuf).resize(logoInner, logoInner).png().toBuffer();
+  const logoB64 = logoSmall.toString('base64');
+
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}">
+  <defs>
+    <linearGradient id="og-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0f14"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="og-title" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f1f5f9"/>
+      <stop offset="35%" stop-color="#2dd4bf"/>
+      <stop offset="70%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#4338ca"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#og-bg)"/>
+  <circle cx="${startX + logoBox / 2}" cy="${rowY}" r="${logoBox / 2 - 0.5}" fill="${ICON_DISC_HEX}" stroke="rgb(148,163,184)" stroke-opacity="0.35" stroke-width="1"/>
+  <image xlink:href="data:image/png;base64,${logoB64}" x="${startX + (logoBox - logoInner) / 2}" y="${rowY - logoInner / 2}" width="${logoInner}" height="${logoInner}" preserveAspectRatio="xMidYMid meet"/>
+  <text x="${startX + logoBox + gap}" y="${rowY}" fill="url(#og-title)" font-family="system-ui, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif" font-size="64" font-weight="700" letter-spacing="-0.02em" dominant-baseline="middle">${OG_TITLE}</text>
+  <text x="${cx}" y="${rowY + logoBox / 2 + 48}" text-anchor="middle" fill="#94a3b8" font-family="system-ui, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif" font-size="32" font-weight="600">${OG_SLOGAN}</text>
+  <text x="${cx}" y="${rowY + logoBox / 2 + 48 + 52}" text-anchor="middle" fill="#64748b" font-family="system-ui, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif" font-size="20">${OG_TAGLINE}</text>
+</svg>`;
+
+  const outPath = path.join(appDir, 'opengraph-image.png');
+  await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toFile(outPath);
+  console.log('Wrote', outPath);
 }
 
 async function main() {
@@ -119,6 +173,8 @@ async function main() {
   await sharp(transparentBuf).png({ compressionLevel: 9 }).toFile(outTransparent);
   console.log('Wrote', outTransparent);
 
+  await writeOpenGraphPng(transparentBuf);
+
   const onDark = await sharp(transparentBuf)
     .flatten({ background: { r: 12, g: 14, b: 18 } })
     .png()
@@ -133,28 +189,28 @@ async function main() {
     { name: 'logo-180.png', w: 180 },
   ];
   for (const { name, w } of seoSizes) {
-    const buf = await fitOnSquareCanvas(transparentBuf, w, ICON_SQUARE_BG);
+    const buf = await fitOnCircularCanvas(transparentBuf, w, ICON_DISC_BG);
     const out = path.join(seoDir, name);
     await sharp(buf).png().toFile(out);
     console.log('Wrote', out);
   }
 
-  const icon32 = await fitOnSquareCanvas(transparentBuf, 32, ICON_SQUARE_BG);
+  const icon32 = await fitOnCircularCanvas(transparentBuf, 32, ICON_DISC_BG);
   await sharp(icon32).toFile(path.join(appDir, 'icon.png'));
   console.log('Wrote', path.join(appDir, 'icon.png'));
 
-  const apple = await fitOnSquareCanvas(transparentBuf, 180, ICON_SQUARE_BG);
+  const apple = await fitOnCircularCanvas(transparentBuf, 180, ICON_DISC_BG);
   await sharp(apple).toFile(path.join(appDir, 'apple-icon.png'));
   console.log('Wrote', path.join(appDir, 'apple-icon.png'));
 
   if (fs.existsSync(tauriIconSource)) {
-    const tauri1024 = await fitOnSquareCanvas(transparentBuf, 1024, ICON_SQUARE_BG);
+    const tauri1024 = await fitOnCircularCanvas(transparentBuf, 1024, ICON_DISC_BG);
     const tauriOut = path.join(tauriIconSource, 'app-icon-1024.png');
     await sharp(tauri1024).png().toFile(tauriOut);
     console.log('Wrote', tauriOut);
   }
 
-  const sm128 = await fitOnSquareCanvas(transparentBuf, 128, ICON_SQUARE_BG);
+  const sm128 = await fitOnCircularCanvas(transparentBuf, 128, ICON_DISC_BG);
   await sharp(sm128).toFile(path.join(brandDir, 'logo-mark-128.png'));
   console.log('Wrote', path.join(brandDir, 'logo-mark-128.png'));
 }

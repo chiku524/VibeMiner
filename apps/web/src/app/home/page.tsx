@@ -90,7 +90,7 @@ export default function HomePage() {
           transition={{ duration: 0.3 }}
           className="mt-6 text-center mb-10"
         >
-          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-cyan/20">
+          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-iconDisc shadow-[0_0_0_1px_rgba(148,163,184,0.22)]">
             <BrandMark className="h-10 w-10" />
           </div>
           <h1 className="font-display text-2xl font-bold bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">

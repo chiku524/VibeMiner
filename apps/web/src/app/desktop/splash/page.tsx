@@ -144,7 +144,7 @@ export default function DesktopSplashPage() {
         >
           <div className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-surface-900/90 px-10 py-8 shadow-xl">
             <div
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent-cyan/25 to-emerald-500/20"
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-iconDisc shadow-[0_0_0_1px_rgba(148,163,184,0.22)]"
               aria-hidden
             >
               <BrandMark className="h-9 w-9" />
