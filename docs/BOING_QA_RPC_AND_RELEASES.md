@@ -41,7 +41,7 @@ VibeMiner caches extracts under `%APPDATA%` (or platform equivalent) keyed partl
 |------|--------|
 | 1 | Tag Boing release (`testnet-v0.1.3`) — CI attaches `release-*-x86_64.zip` to a **draft** Release; publish when ready. |
 | 2 | Update [BOING_REGISTRATION_CHECKLIST.md](./BOING_REGISTRATION_CHECKLIST.md) URLs/tag. |
-| 3 | Bump `BOING_TESTNET_DEFAULT_DOWNLOAD_TAG` and the matching URLs in `boing-testnet-node.ts` (Windows/Linux/macOS); static `boing-devnet` in `networks.ts` uses those constants and `nodePresets` per OS. |
+| 3 | Bump `BOING_TESTNET_DEFAULT_DOWNLOAD_TAG` and the matching URLs in `boing-testnet-node.ts` (Windows/Linux/macOS); static `boing-devnet` in `networks.ts` uses those constants, **`BOING_TESTNET_BOOTNODES_CLI`** (aligned with `website/src/config/testnet.ts`), and **six** `nodePresets` (full node + validator per OS). |
 | 4 | Document in Boing [RPC-API-SPEC.md](https://github.com/chiku524/boing.network/blob/main/docs/RPC-API-SPEC.md). |
 
 ## Related docs
