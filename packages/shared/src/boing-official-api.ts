@@ -133,6 +133,8 @@ function presetRemoteListingId(presetId: string): string | null {
   if (p.startsWith('windows')) return 'boing-devnet';
   if (p.startsWith('linux')) return 'boing-devnet-linux';
   if (p.startsWith('macos')) return 'boing-devnet-macos';
+  // Registered listings sometimes use generic ids (Windows zip on both presets).
+  if (p === 'full-node' || p === 'validator') return 'boing-devnet';
   return null;
 }
 
