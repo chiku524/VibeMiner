@@ -39,6 +39,10 @@ VibeMiner caches extracts under `%APPDATA%` (or platform equivalent) keyed by **
 
 The **networks API** merges D1 rows over static `boing-devnet`. A registered listing with an old download URL **wins** and the desktop app downloads that zip. **`patchBlockchainNetworkJsonForBoing`** (VibeMiner API) and **`functions/api/networks.js`** (boing.network) now rewrite official **`chiku524/boing.network`** URLs using **`testnet-v0.1.0`–`testnet-v0.1.2`** to **`testnet-v0.1.4`** and refresh zip SHA256. Still run **`d1/migrations/003_boing_testnet_zip_urls_v0_1_4.sql`** on **vibeminer-db** and **`website/migrations/2026-03-30-network-listings-boing-testnet-v0-1-4.sql`** on **boing-network-db** so the database matches production.
 
+### Live overlay from Boing (`GET https://boing.network/api/networks`)
+
+After VibeMiner merges D1 + static and runs **`patchBlockchainNetworkJsonForBoing`**, **`apps/web/src/app/api/networks/route.ts`** calls **`fetchBoingOfficialNetworks`** ( **`packages/shared/src/boing-official-api.ts`** ) and **`mergeBoingDevnetFromOfficialApi`** so **`boing-devnet`** presets pick up Boing’s **`node_download_url`**, **`node_command_template`**, and **`node_binary_sha256`** per OS when Boing has deployed a newer tag than this repo’s constants. Cached ~5 minutes per server instance; if the fetch fails, static **`boing-testnet-node.ts`** values apply. Boing’s contract and maintainer checklist: [VIBEMINER-INTEGRATION.md](https://github.com/chiku524/boing.network/blob/main/docs/VIBEMINER-INTEGRATION.md) §3.1 / §6.
+
 ## Maintainer checklist when Boing adds RPC methods
 
 | Step | Action |

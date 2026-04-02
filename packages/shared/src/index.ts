@@ -14,6 +14,7 @@ export {
 } from './schema';
 export * from './networks';
 export * from './boing-testnet-node';
+export * from './boing-official-api';
 export * from './boing-developer-resources';
 export * from './mining';
 export * from './nodes';

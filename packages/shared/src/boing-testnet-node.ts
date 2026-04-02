@@ -6,7 +6,9 @@
  * **New RPC methods:** VibeMiner only runs whatever is inside the downloaded zip. Read-only methods such as
  * `boing_getQaRegistry` (QA transparency / boing.observer) require a boing-node build that includes them.
  * After you publish a new GitHub release with updated binaries, bump {@link BOING_TESTNET_DEFAULT_DOWNLOAD_TAG}
- * and matching URLs in `networks.ts` + docs. See `docs/BOING_QA_RPC_AND_RELEASES.md`.
+ * and matching URLs here (offline fallback) + docs. **Live installs:** VibeMiner’s `GET /api/networks` merges
+ * {@link fetchBoingOfficialNetworks} from `https://boing.network/api/networks` over these defaults when the fetch
+ * succeeds (see `boing-official-api.ts`). See `docs/BOING_QA_RPC_AND_RELEASES.md`.
  */
 
 /** JSON-RPC method for live rule registry (Boing Observer / transparency). Requires recent boing-node. */

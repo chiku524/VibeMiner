@@ -4,8 +4,10 @@ import {
   getDevnetNetworks,
   parseStoredNodePresetsJson,
   patchBlockchainNetworkJsonForBoing,
+  mergeBoingDevnetFromOfficialApi,
 } from '@vibeminer/shared';
 import { getEnv } from '@/lib/auth-server';
+import { getBoingOfficialBundleCached } from '@/lib/boing-official-cache';
 
 /** Returns mainnet and devnet networks: static list + dynamic listings from D1. Excludes placeholder "Your Network". */
 export async function GET(request: Request) {
@@ -45,12 +47,14 @@ export async function GET(request: Request) {
       for (const n of dynamicList) (n as { id?: string }).id && byId.set((n as { id: string }).id, n);
       return Array.from(byId.values());
     };
+    const boingOfficial = await getBoingOfficialBundleCached();
+
     const mainnet = mergeById(staticMainnet, dynamicMainnet as typeof staticMainnet).map((n) =>
       patchBlockchainNetworkJsonForBoing(n as Record<string, unknown>)
     );
-    const devnet = mergeById(staticDevnet, dynamicDevnet as typeof staticDevnet).map((n) =>
-      patchBlockchainNetworkJsonForBoing(n as Record<string, unknown>)
-    );
+    const devnet = mergeById(staticDevnet, dynamicDevnet as typeof staticDevnet)
+      .map((n) => patchBlockchainNetworkJsonForBoing(n as Record<string, unknown>))
+      .map((n) => mergeBoingDevnetFromOfficialApi(n as Record<string, unknown>, boingOfficial));
 
     if (env === 'mainnet') {
       return NextResponse.json({ mainnet });

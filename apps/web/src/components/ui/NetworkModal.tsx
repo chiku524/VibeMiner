@@ -384,7 +384,6 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                         onClick={() => {
                           const env = network.environment ?? 'mainnet';
                           const preset = sanitizeNodePresetId(selectedPreset.presetId);
-                          setNodeRunning(false);
                           void (async () => {
                             try {
                               await stopSession({
@@ -398,7 +397,10 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                             } catch (e) {
                               console.warn('stopSession failed', e);
                             }
-                            if (!window.desktopAPI?.isNodeRunning) return;
+                            if (!window.desktopAPI?.isNodeRunning) {
+                              setNodeRunning(false);
+                              return;
+                            }
                             try {
                               const still = await window.desktopAPI.isNodeRunning(
                                 network.id,

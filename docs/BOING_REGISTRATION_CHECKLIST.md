@@ -2,7 +2,7 @@
 
 Use this checklist to onboard Boing Network via VibeMiner’s Request listing form. No simulations—everything uses real data.
 
-**Source of truth (live):** [https://boing.network/api/networks](https://boing.network/api/networks) — Boing’s registry (three ids by platform: `boing-devnet`, `boing-devnet-linux`, `boing-devnet-macos`). **VibeMiner static defaults** use a single id `boing-devnet` with **`nodePresets`** for Windows / Linux / macOS (same zips as the API). Prefer the live API when you need D1-updated SHA256 or URLs without shipping a new VibeMiner build.
+**Source of truth (live):** [https://boing.network/api/networks](https://boing.network/api/networks) — Boing’s registry (response includes **`meta`** plus three rows: `boing-devnet`, `boing-devnet-linux`, `boing-devnet-macos`). **VibeMiner static defaults** use a single id `boing-devnet` with **`nodePresets`** for Windows / Linux / macOS. **`GET /api/networks`** (and **`GET /api/networks/my`**) on the VibeMiner web app **merge** that live payload over **`boing-devnet`** presets (URLs, SHA256, command templates; validator presets get `--validator` appended to Boing’s full-node template). Cached ~5 minutes; if Boing is unreachable, **`boing-testnet-node.ts`** constants apply.
 
 **How VibeMiner models node downloads**
 

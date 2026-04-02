@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
-import { parseStoredNodePresetsJson, patchBlockchainNetworkJsonForBoing } from '@vibeminer/shared';
+import {
+  parseStoredNodePresetsJson,
+  patchBlockchainNetworkJsonForBoing,
+  mergeBoingDevnetFromOfficialApi,
+} from '@vibeminer/shared';
 import { getEnv, getSessionCookie, getUserIdFromSession } from '@/lib/auth-server';
+import { getBoingOfficialBundleCached } from '@/lib/boing-official-cache';
 
 function rowToNetwork(row: Record<string, unknown>, stats?: { minerCount: number; totalBalanceRaw: string; currency: string } | null) {
   const env = (row.environment as string) === 'mainnet' ? 'mainnet' : 'devnet';
@@ -29,7 +34,7 @@ function rowToNetwork(row: Record<string, unknown>, stats?: { minerCount: number
     listedAt: typeof row.created_at === 'string' ? row.created_at : undefined,
     ...(stats ? { minerCount: stats.minerCount, totalBalanceRaw: stats.totalBalanceRaw, currency: stats.currency } : {}),
   };
-  return patchBlockchainNetworkJsonForBoing(base);
+  return base;
 }
 
 /** GET: List networks listed by the current user (network account). */
@@ -64,6 +69,8 @@ export async function GET(request: Request) {
     const { results } = rows;
     const listingRows = (results ?? []) as Record<string, unknown>[];
 
+    const boingOfficial = await getBoingOfficialBundleCached();
+
     const networks = await Promise.all(
       listingRows.map(async (r) => {
         const id = r.id as string;
@@ -90,7 +97,8 @@ export async function GET(request: Request) {
         } catch {
           // D1 or table might not exist; keep defaults
         }
-        return rowToNetwork(r, { minerCount, totalBalanceRaw, currency });
+        const patched = patchBlockchainNetworkJsonForBoing(rowToNetwork(r, { minerCount, totalBalanceRaw, currency }));
+        return mergeBoingDevnetFromOfficialApi(patched, boingOfficial);
       })
     );
     return NextResponse.json({ networks });

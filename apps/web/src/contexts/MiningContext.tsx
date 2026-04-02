@@ -45,35 +45,48 @@ function markNodeSessionProcessExited(prev: MiningSession[], sessionKey: string,
   });
 }
 
-/** Sync running nodes from the desktop; keep ended node rows (with logs) until dismissed. */
+/**
+ * Sync running nodes from the desktop; keep ended node rows (with logs) until dismissed.
+ *
+ * If the user already stopped a session (`nodeProcessExitedAt` set) but `listRunningNodes` is briefly
+ * stale and still returns that node, we must **not** resurrect a "running" row — that kept the dashboard
+ * showing a live node after Stop while the process was already gone.
+ */
 function mergeDesktopNodeRowsIntoSessions(
   prev: MiningSession[],
   rows: DesktopRunningNodeRow[]
 ): MiningSession[] {
   const mining = prev.filter((s) => !isMiningSessionNode(s));
   const prevNodes = prev.filter(isMiningSessionNode);
-  const desktopKeys = new Set(rows.map((d) => desktopNodeRowKey(d)));
   const now = Date.now();
 
-  const runningNodes: MiningSessionNode[] = rows.map((d) => {
-    const key = desktopNodeRowKey(d);
-    const old = prevNodes.find((s) => sessionListKey(s) === key);
-    const presetId = sanitizeNodePresetId(d.nodePresetId);
-    return {
-      kind: 'node' as const,
-      networkId: d.networkId,
-      environment: d.environment as NetworkEnvironment,
-      presetId,
-      startedAt: d.startedAt > 0 ? Number(d.startedAt) : old?.startedAt ?? now,
-      isActive: true,
-      nodeStatus: old?.nodeStatus,
-    };
-  });
+  const exitedKeys = new Set(
+    prevNodes.filter((n) => n.nodeProcessExitedAt != null).map((n) => sessionListKey(n))
+  );
+
+  const runningNodes: MiningSessionNode[] = rows
+    .filter((d) => !exitedKeys.has(desktopNodeRowKey(d)))
+    .map((d) => {
+      const key = desktopNodeRowKey(d);
+      const old = prevNodes.find((s) => sessionListKey(s) === key);
+      const presetId = sanitizeNodePresetId(d.nodePresetId);
+      return {
+        kind: 'node' as const,
+        networkId: d.networkId,
+        environment: d.environment as NetworkEnvironment,
+        presetId,
+        startedAt: d.startedAt > 0 ? Number(d.startedAt) : old?.startedAt ?? now,
+        isActive: true,
+        nodeStatus: old?.nodeStatus,
+      };
+    });
+
+  const runningKeys = new Set(runningNodes.map((r) => sessionListKey(r)));
 
   const retained: MiningSessionNode[] = [];
   for (const n of prevNodes) {
     const key = sessionListKey(n);
-    if (desktopKeys.has(key)) {
+    if (runningKeys.has(key)) {
       continue;
     }
     if (n.nodeProcessExitedAt != null) {
@@ -205,34 +218,35 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
   const stopSession = useCallback((session: MiningSession): Promise<void> => {
     if (isMiningSessionNode(session)) {
       const stoppedKey = sessionListKey(session);
+      const preset = sanitizeNodePresetId(session.presetId);
       return (async () => {
-        const exitedAt = Date.now();
-        setSessions((prev) => markNodeSessionProcessExited(prev, stoppedKey, exitedAt));
         try {
-          await window.desktopAPI?.stopNode?.(
-            session.networkId,
-            session.environment,
-            sanitizeNodePresetId(session.presetId)
-          );
+          await window.desktopAPI?.stopNode?.(session.networkId, session.environment, preset);
         } catch (e) {
           console.warn('stopNode failed', e);
         }
         const listFn = window.desktopAPI?.listRunningNodes;
+        let rows: DesktopRunningNodeRow[] = [];
         if (listFn) {
           try {
             const list = await listFn();
             if (Array.isArray(list)) {
-              setSessions((prev) => mergeDesktopNodeRowsIntoSessions(prev, list as DesktopRunningNodeRow[]));
+              rows = list as DesktopRunningNodeRow[];
             } else {
               console.warn('listRunningNodes returned non-array', list);
             }
           } catch (e) {
             console.warn('listRunningNodes failed', e);
-            setSessions((prev) => markNodeSessionProcessExited(prev, stoppedKey, Date.now()));
           }
-        } else {
-          setSessions((prev) => prev.filter((s) => sessionListKey(s) !== stoppedKey));
         }
+        const exitedAt = Date.now();
+        setSessions((prev) => {
+          const marked = markNodeSessionProcessExited(prev, stoppedKey, exitedAt);
+          if (listFn) {
+            return mergeDesktopNodeRowsIntoSessions(marked, rows);
+          }
+          return prev.filter((s) => sessionListKey(s) !== stoppedKey);
+        });
       })();
     }
     const key = networkKey(session.networkId, session.environment);
