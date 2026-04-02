@@ -15,7 +15,7 @@
 export const BOING_RPC_METHOD_GET_QA_REGISTRY = 'boing_getQaRegistry';
 
 /** Pinned release for default downloads when no listing overrides exist (includes `boing_getQaRegistry`). */
-export const BOING_TESTNET_DEFAULT_DOWNLOAD_TAG = 'testnet-v0.1.6';
+export const BOING_TESTNET_DEFAULT_DOWNLOAD_TAG = 'testnet-v0.1.7';
 
 /**
  * Bootnode multiaddrs — keep in sync with `website/src/config/testnet.ts` (`PUBLIC_BOOTNODES` fallback).
@@ -44,11 +44,11 @@ export const BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL = `https://github.
  * SHA-256 of official GitHub **zip** assets for {@link BOING_TESTNET_DEFAULT_DOWNLOAD_TAG}.
  * Used when upgrading stale D1/API listing URLs (see `patchBlockchainNetworkJsonForBoing`).
  */
-export const BOING_TESTNET_ZIP_SHA256_WINDOWS = '05de30c7bcd256f13549fa66bacf6a4072362c53b300ce912b03bc8c34185d1e';
+export const BOING_TESTNET_ZIP_SHA256_WINDOWS = '9dd69565e8d4225fb9bb229e11d6acbbaeab1d4a395d9efeb2346fc6c1144111';
 
-export const BOING_TESTNET_ZIP_SHA256_LINUX = '5c7587c7c38ed75bc7ed35736a8a4111bf927dd60f3f2b8eb59dcd8d8ebf8032';
+export const BOING_TESTNET_ZIP_SHA256_LINUX = 'd7f394301f17dcef5c59e08d8fda2a269b5880e8af0601ade96a4c905b47d2db';
 
-export const BOING_TESTNET_ZIP_SHA256_MACOS_AARCH64 = 'b9561483bfd26017302e3745072183e58536bdb9ef50b6ab5324f83fd9a3ed44';
+export const BOING_TESTNET_ZIP_SHA256_MACOS_AARCH64 = '3fd1fa44fe22c7c4b399426afebeea74df999107772dffb1a4a62ba810d4f378';
 
 /** Full node + faucet (matches Boing testnet join / INFRASTRUCTURE-SETUP). */
 export const BOING_TESTNET_DEFAULT_WINDOWS_COMMAND_TEMPLATE =
@@ -92,7 +92,7 @@ export function ensureBoingFaucetInCommandTemplate(template: string): string {
 
 const CHIKU524_BOING_RELEASE_DL = 'github.com/chiku524/boing.network/releases/download/';
 /** Tags before QA transparency RPC (`boing_getQaRegistry`) existed in published Windows zips. */
-const STALE_TESTNET_TAG_RE = /\/download\/(testnet-v0\.1\.(?:0|1|2|3|4|5))\//;
+const STALE_TESTNET_TAG_RE = /\/download\/(testnet-v0\.1\.(?:0|1|2|3|4|5|6))\//;
 
 function upgradeChiku524BoingZipUrl(url: string): { url: string; sha256: string } | null {
   if (!url.includes(CHIKU524_BOING_RELEASE_DL)) return null;
