@@ -48,6 +48,19 @@ VibeMiner runs the **downloaded** `boing-node` binary; it does not proxy or filt
 
 See **[BOING_QA_RPC_AND_RELEASES.md](./BOING_QA_RPC_AND_RELEASES.md)** for a full maintainer checklist.
 
+### Boing: run a locally built `boing-node` (upgrade before the next GitHub zip)
+
+VibeMiner’s default download (`testnet-v0.1.x` zips) can lag behind **current** Boing `main` (for example, protocol QA opcode rules or RPC methods). To run a **validator or full node** built from your machine without waiting for a new release asset:
+
+1. Build: `cargo build -p boing-node --release` in the [boing.network](https://github.com/chiku524/boing.network) repo.
+2. Set an environment variable **before** launching the VibeMiner desktop app (Tauri reads the process environment):
+   - **Windows (cmd):** `set VIBEMINER_BOING_NODE_EXE=C:\path\to\boing.network\target\release\boing-node.exe`
+   - **Windows (PowerShell):** `$env:VIBEMINER_BOING_NODE_EXE = "C:\path\to\boing.network\target\release\boing-node.exe"`
+   - **macOS / Linux:** `export VIBEMINER_BOING_NODE_EXE=/path/to/boing.network/target/release/boing-node`
+3. Start VibeMiner from **that** shell (or set the variable in your user profile / shortcut) and run the Boing network as usual.
+
+When `VIBEMINER_BOING_NODE_EXE` is set to an **absolute path** to an existing binary, VibeMiner **skips** the zip download for networks whose id contains `boing` and substitutes that path as the first token of the command template (flags such as `--validator` and `{dataDir}` are unchanged).
+
 ## Database
 
 Run the migration for existing D1 databases:

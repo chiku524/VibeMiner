@@ -374,7 +374,8 @@ async fn start_node(
         .node_preset_id
         .clone()
         .unwrap_or_else(|| "default".to_string());
-    if url.is_empty() {
+    let local_boing_exe = node::boing_local_exe_from_env(&network_id)?;
+    if local_boing_exe.is_none() && url.is_empty() {
         return Ok(serde_json::json!({ "ok": false, "error": "No node download URL" }));
     }
     if template.is_empty() {
@@ -386,30 +387,58 @@ async fn start_node(
     let env_for_ready = env.clone();
     let url_for_ready = url.clone();
     let preset_for_ready = preset_raw.clone();
-    let (bin_dir, data_dir) = tauri::async_runtime::spawn_blocking(move || {
-        node::ensure_node_ready(
-            &id_for_ready,
-            &env_for_ready,
-            &preset_for_ready,
-            &url_for_ready,
-            sha.as_deref(),
-            &user_data_path,
-            |phase, percent, message| {
-                let _ = window_emit.emit(
-                    "node-download-progress",
-                    serde_json::json!({ "phase": phase, "percent": percent, "message": message }),
-                );
-            },
-        )
-    })
-    .await
-    .map_err(|e| e.to_string())??;
+    let sha_for_ready = sha.clone();
+    let local_for_blocking = local_boing_exe.clone();
+    let (bin_dir, data_dir) = if let Some(ref exe_path) = local_for_blocking {
+        tauri::async_runtime::spawn_blocking({
+            let exe_path = exe_path.clone();
+            let id_for_ready = id_for_ready.clone();
+            let env_for_ready = env_for_ready.clone();
+            let preset_for_ready = preset_for_ready.clone();
+            let user_data_path = user_data_path.clone();
+            move || {
+                node::ensure_local_boing_node_paths(
+                    &id_for_ready,
+                    &env_for_ready,
+                    &preset_for_ready,
+                    &user_data_path,
+                    &exe_path,
+                )
+            }
+        })
+        .await
+        .map_err(|e| e.to_string())??
+    } else {
+        tauri::async_runtime::spawn_blocking(move || {
+            node::ensure_node_ready(
+                &id_for_ready,
+                &env_for_ready,
+                &preset_for_ready,
+                &url_for_ready,
+                sha_for_ready.as_deref(),
+                &user_data_path,
+                |phase, percent, message| {
+                    let _ = window_emit.emit(
+                        "node-download-progress",
+                        serde_json::json!({ "phase": phase, "percent": percent, "message": message }),
+                    );
+                },
+            )
+        })
+        .await
+        .map_err(|e| e.to_string())??
+    };
+    let template_run = if let Some(ref exe_path) = local_boing_exe {
+        node::replace_command_template_exe(&template, exe_path)?
+    } else {
+        template
+    };
     node::start_node(
         &app,
         network_id.clone(),
         env.clone(),
         &preset_raw,
-        &template,
+        &template_run,
         &bin_dir,
         &data_dir,
     )?;

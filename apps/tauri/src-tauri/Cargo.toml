@@ -1,6 +1,6 @@
 [package]
 name = "vibeminer-tauri"
-version = "1.0.92"
+version = "1.0.93"
 description = "VibeMiner desktop app"
 authors = ["nico.builds"]
 edition = "2021"

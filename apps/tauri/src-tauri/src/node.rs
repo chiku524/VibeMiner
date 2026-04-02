@@ -394,6 +394,63 @@ fn node_download_cache_key(url: &str) -> String {
     full.chars().take(16).collect()
 }
 
+/// Env: absolute path to a `boing-node` binary. When set, VibeMiner **skips** the zip download for
+/// networks whose id contains `"boing"` and runs this executable (use a `cargo build -p boing-node`
+/// binary from current Boing `main` when GitHub releases lag).
+pub const VIBEMINER_BOING_NODE_EXE_ENV: &str = "VIBEMINER_BOING_NODE_EXE";
+
+pub fn boing_local_exe_from_env(network_id: &str) -> Result<Option<std::path::PathBuf>, String> {
+    let raw = match std::env::var(VIBEMINER_BOING_NODE_EXE_ENV) {
+        Ok(s) => s,
+        Err(_) => return Ok(None),
+    };
+    let t = raw.trim();
+    if t.is_empty() {
+        return Ok(None);
+    }
+    if !network_id.to_lowercase().contains("boing") {
+        return Ok(None);
+    }
+    let p = std::path::PathBuf::from(t);
+    if !p.is_absolute() {
+        return Err(format!(
+            "{VIBEMINER_BOING_NODE_EXE_ENV} must be an absolute path (got {t})"
+        ));
+    }
+    if !p.exists() {
+        return Err(format!(
+            "{VIBEMINER_BOING_NODE_EXE_ENV} file not found: {}",
+            p.display()
+        ));
+    }
+    Ok(Some(p))
+}
+
+pub fn ensure_local_boing_node_paths(
+    network_id: &str,
+    environment: &str,
+    node_preset_id: &str,
+    user_data_path: &Path,
+    local_exe: &Path,
+) -> Result<(std::path::PathBuf, std::path::PathBuf), String> {
+    let key = node_dir_key(network_id, environment);
+    let node_dir = user_data_path.join("nodes").join(&key);
+    let legacy_dir = user_data_path
+        .join("nodes")
+        .join(legacy_node_dir_key(network_id, environment));
+    if !node_dir.exists() && legacy_dir.exists() {
+        let _ = std::fs::rename(&legacy_dir, &node_dir);
+    }
+    let preset_safe = sanitize_preset_id(node_preset_id);
+    let data_dir = node_dir.join("data").join(&preset_safe);
+    std::fs::create_dir_all(&data_dir).map_err(|e| e.to_string())?;
+    let bin_dir = local_exe
+        .parent()
+        .ok_or_else(|| "Local boing-node path has no parent directory".to_string())?
+        .to_path_buf();
+    Ok((bin_dir, data_dir))
+}
+
 pub fn ensure_node_ready(
     network_id: &str,
     environment: &str,
@@ -551,6 +608,26 @@ fn unquote_token(s: &str) -> String {
     } else {
         t.to_string()
     }
+}
+
+/// Replace the first token of `node_command_template` with `new_exe` (quoted when needed).
+pub fn replace_command_template_exe(template: &str, new_exe: &Path) -> Result<String, String> {
+    let parts = split_command_args(template);
+    if parts.is_empty() {
+        return Err("Empty command template".into());
+    }
+    let exe_q = quote_path_token(&new_exe.to_string_lossy());
+    let mut out = exe_q;
+    for a in parts.iter().skip(1) {
+        let piece = if a.chars().any(|c| c.is_whitespace()) {
+            quote_path_token(a)
+        } else {
+            a.clone()
+        };
+        out.push(' ');
+        out.push_str(&piece);
+    }
+    Ok(out)
 }
 
 /// Parse `--rpc-port` / `--rpc-port=NN` from argv (matches common node CLIs, including Boing).
