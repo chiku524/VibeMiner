@@ -1,9 +1,10 @@
 /**
  * Build brand PNGs from public/brand/logo-source.png:
- * - Chroma-style removal of near-uniform dark background (corners sample).
+ * - If the source already has meaningful alpha (exported transparent PNG), skip chroma removal.
+ * - Otherwise chroma-style removal of near-uniform background (corner sample).
  * - Transparent master, SEO sizes, favicons, Tauri 1024 source.
- * - Static Open Graph image (1200×630) at src/app/opengraph-image.png — avoids next/og + yoga.wasm,
- *   which breaks OpenNext + Wrangler deploy (absolute wasm paths in the server bundle).
+ * - Open Graph (1200×630) at src/app/opengraph-image.png: from public/brand/og-banner.png when present,
+ *   else programmatic card — avoids next/og + yoga.wasm (OpenNext + Wrangler).
  *
  * Run: node scripts/build-brand-assets.cjs (also chained from prebuild).
  */
@@ -24,6 +25,22 @@ const ICON_DISC_HEX = '#e4f1ef';
 const seoDir = path.join(root, 'public', 'seo');
 const appDir = path.join(root, 'src', 'app');
 const tauriIconSource = path.join(root, '..', 'tauri', 'icon-source');
+const ogBannerPath = path.join(brandDir, 'og-banner.png');
+
+/** True when enough pixels are non-opaque — already keyed PNGs must not go through removeNearBackground. */
+async function hasMeaningfulTransparency(pngBuffer) {
+  const { data, info } = await sharp(pngBuffer).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { width, height, channels } = info;
+  if (channels < 4) return false;
+  let nonOpaque = 0;
+  const step = Math.max(1, Math.floor((width * height) / 50_000));
+  for (let p = 0; p < width * height; p += step) {
+    const i = p * 4 + 3;
+    if (data[i] < 250) nonOpaque++;
+  }
+  const samples = Math.ceil((width * height) / step);
+  return nonOpaque > Math.max(8, samples * 0.005);
+}
 
 function avgCornerRgb({ data, width, height, channels }, cx, cy, rw, rh) {
   let r = 0;
@@ -148,6 +165,18 @@ async function writeOpenGraphPng(transparentBuf) {
   console.log('Wrote', outPath);
 }
 
+/** Resize/crop authored banner to standard OG/Twitter card size. */
+async function writeOpenGraphFromBanner() {
+  const W = 1200;
+  const H = 630;
+  const outPath = path.join(appDir, 'opengraph-image.png');
+  await sharp(ogBannerPath)
+    .resize(W, H, { fit: 'cover', position: 'center' })
+    .png({ compressionLevel: 9 })
+    .toFile(outPath);
+  console.log('Wrote', outPath, '(from og-banner.png)');
+}
+
 async function main() {
   if (!fs.existsSync(srcPath)) {
     console.error('Missing', srcPath);
@@ -167,13 +196,19 @@ async function main() {
     .png()
     .toBuffer();
 
-  let transparentBuf = await removeNearBackground(scaledSrc, 44);
+  const preKeyed = await hasMeaningfulTransparency(scaledSrc);
+  let transparentBuf = preKeyed ? scaledSrc : await removeNearBackground(scaledSrc, 44);
+  if (preKeyed) console.log('Using existing alpha from logo-source.png (skip chroma removal)');
 
   const outTransparent = path.join(brandDir, 'logo-mark-transparent.png');
   await sharp(transparentBuf).png({ compressionLevel: 9 }).toFile(outTransparent);
   console.log('Wrote', outTransparent);
 
-  await writeOpenGraphPng(transparentBuf);
+  if (fs.existsSync(ogBannerPath)) {
+    await writeOpenGraphFromBanner();
+  } else {
+    await writeOpenGraphPng(transparentBuf);
+  }
 
   const onDark = await sharp(transparentBuf)
     .flatten({ background: { r: 12, g: 14, b: 18 } })

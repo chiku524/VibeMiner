@@ -9,6 +9,11 @@
  * and matching URLs here (offline fallback) + docs. **Live installs:** VibeMiner’s `GET /api/networks` merges
  * {@link fetchBoingOfficialNetworks} from `https://boing.network/api/networks` over these defaults when the fetch
  * succeeds (see `boing-official-api.ts`). See `docs/BOING_QA_RPC_AND_RELEASES.md`.
+ *
+ * **Native AMM / canonical pool:** VibeMiner does not configure a pool `AccountId`. Operators deploy the pool
+ * via Boing Express + SDK (or scripts) against this node’s `http://127.0.0.1:8545` (or public RPC), then
+ * publish the frozen hex per Boing `OPS-CANONICAL-TESTNET-NATIVE-AMM-POOL.md`. See `boing-developer-resources.ts`
+ * (`BOING_TESTNET_TOOLKIT_LINKS`) for dashboard links to native AMM + ops docs.
  */
 
 /** JSON-RPC method for live rule registry (Boing Observer / transparency). Requires recent boing-node. */

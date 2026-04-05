@@ -2,6 +2,7 @@
 
 import type { ImgHTMLAttributes } from 'react';
 import { BRAND_MARK_PNG } from '@/lib/brand';
+import { site } from '@/lib/site';
 
 type BrandMarkProps = {
   className?: string;
@@ -19,7 +20,7 @@ export function BrandMark({
   fetchPriority,
 }: BrandMarkProps) {
   const hidden = ariaHidden === true || ariaHidden === 'true';
-  const alt = title ?? (hidden ? '' : 'VibeMiner');
+  const alt = title ?? (hidden ? '' : site.brandMarkImageAlt);
   return (
     <img
       src={BRAND_MARK_PNG}

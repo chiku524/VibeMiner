@@ -31,6 +31,21 @@ export const BOING_TESTNET_TOOLKIT_LINKS: BoingToolkitLink[] = [
     hint: 'qaCheck, simulate, submit — use with a node RPC URL.',
   },
   {
+    label: 'Native AMM — calldata & CREATE2',
+    href: 'https://github.com/chiku524/boing.network/blob/main/docs/NATIVE-AMM-CALLDATA.md',
+    hint: 'Deploy constant-product pool bytecode; precompute pool AccountId before submit.',
+  },
+  {
+    label: 'Ops — publish canonical testnet pool id',
+    href: 'https://github.com/chiku524/boing.network/blob/main/docs/OPS-CANONICAL-TESTNET-NATIVE-AMM-POOL.md',
+    hint: 'After pool is on-chain: hex + deploy method for RPC spec, TESTNET, and boing.finance.',
+  },
+  {
+    label: 'Self-hosted RPC + pool (operators)',
+    href: 'https://github.com/chiku524/boing.network/blob/main/docs/DEVNET-OPERATOR-NATIVE-AMM.md',
+    hint: 'CORS, deploy pool on your node, point Express / boing.finance at your RPC.',
+  },
+  {
     label: 'QA & deploy rules',
     href: 'https://github.com/chiku524/boing.network/blob/main/docs/QUALITY-ASSURANCE-NETWORK.md',
   },

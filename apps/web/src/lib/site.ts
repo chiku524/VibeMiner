@@ -9,8 +9,16 @@ export const site = {
     'Mine cryptocurrencies for networks that need you. One-click mining, no terminal or config files. Web app and desktop (Windows, macOS, Linux) with auto-updates. Contribute hashrate to Monero, Kaspa, Ergo and more. By nico.builds.',
   baseUrl: process.env.NEXT_PUBLIC_APP_URL ?? 'https://vibeminer.tech',
   twitter: '@vibeminer',
-  /** Used for Open Graph and Twitter Card images (absolute URL). Static file from prebuild; see scripts/build-brand-assets.cjs. */
+  /** Link unfurl / share preview (Discord, X, Slack, etc.): og:image + twitter:image. Built 1200×630 in scripts/build-brand-assets.cjs. */
   openGraphImagePath: '/opengraph-image.png',
+  /** Alt text for OG/Twitter preview image (accessibility + SEO). */
+  openGraphImageAlt:
+    'VibeMiner — Mine without the grind. Brand banner with neon circuit-board pickaxe on a dark tech background.',
   /** Static PNG from `scripts/build-brand-assets.cjs` — Organization.logo in JSON-LD (crawler-friendly). */
   organizationLogoPngPath: '/seo/logo-512.png',
+  organizationLogoCaption:
+    'VibeMiner logo — futuristic PCB-style pickaxe with green-to-cyan gradient for crypto and blockchain mining.',
+  /** Alt text when the nav/footer mark is exposed to assistive tech (not aria-hidden). */
+  brandMarkImageAlt:
+    'VibeMiner logo — neon circuit-board pickaxe icon (transparent) for cryptocurrency mining.',
 } as const;

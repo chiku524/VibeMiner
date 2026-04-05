@@ -2,6 +2,15 @@
 
 VibeMiner **does not implement** Boing JSON-RPC itself. It **downloads** a `boing-node` archive from your listing URL and runs the command template you configure. Any RPC method (including newer read-only calls) is entirely determined by **that binary’s version**.
 
+## Native constant-product AMM pool (deploy + publish)
+
+- **VibeMiner** starts **`boing-node`** with P2P, bootnodes, **`--faucet-enable`**, and JSON-RPC on **8545**. It does **not** deploy the pool or store a pool `AccountId`.
+- **Deploying** the pool uses the same methods as any contract: **`boing_qaCheck`** on bytecode, **`boing_submitTransaction`** for the purpose deploy (CREATE2 recommended — see Boing [NATIVE-AMM-CALLDATA.md](https://github.com/chiku524/boing.network/blob/main/docs/NATIVE-AMM-CALLDATA.md)). Point Boing Express + **boing-sdk** (or tutorial scripts) at **`http://127.0.0.1:8545`** for a local VibeMiner node, or at public testnet RPC.
+- **Publishing** the canonical testnet pool hex for integrators is an **ops + docs** step after the deploy is included: [OPS-CANONICAL-TESTNET-NATIVE-AMM-POOL.md](https://github.com/chiku524/boing.network/blob/main/docs/OPS-CANONICAL-TESTNET-NATIVE-AMM-POOL.md) (not a VibeMiner setting).
+- **When to bump the Boing zip tag anyway:** If deploys fail due to an **old** `boing-node` (missing execution fixes, P2P gossip, QA rules, etc.), follow the same release flow as for new RPC methods below — tag **`testnet-v0.1.x`**, refresh D1 / **`boing.network/api/networks`**, and bump **`BOING_TESTNET_DEFAULT_DOWNLOAD_TAG`** in this repo.
+
+The dashboard **Testnet: tokens, contracts & NFTs** panel includes links to native AMM calldata and the ops publish checklist (`packages/shared/src/boing-developer-resources.ts`).
+
 ## `boing_getQaRegistry` and QA transparency
 
 The Boing monorepo exposes read-only **`boing_getQaRegistry`** so explorers (e.g. [boing.observer/qa](https://boing.observer/qa)) can show the live rule registry. If you see:
@@ -55,7 +64,7 @@ After VibeMiner merges D1 + static and runs **`patchBlockchainNetworkJsonForBoin
 
 ## In-app: testnet developer toolkit
 
-The VibeMiner dashboard shows a **Testnet: tokens, contracts & NFTs** panel for Boing networks (network modal and Boing node session card): copyable **public** and **local** RPC URLs plus links to the faucet, boing.observer/qa, SDK, reference token/NFT docs, and Hub releases. Deploy and QA preflight still happen via **Boing SDK / Boing Express / Hub** against whichever RPC you choose; VibeMiner supplies the local node and documentation entry points.
+The VibeMiner dashboard shows a **Testnet: tokens, contracts & NFTs** panel for Boing networks (network modal and Boing node session card): copyable **public** and **local** RPC URLs plus links to the faucet, boing.observer/qa, SDK, **native AMM calldata**, **ops pool-publish checklist**, self-hosted RPC guide, reference token/NFT docs, and Hub releases. Deploy and QA preflight still happen via **Boing SDK / Boing Express / Hub** against whichever RPC you choose; VibeMiner supplies the local node and documentation entry points.
 
 ## Related docs
 
