@@ -159,7 +159,7 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
     rewardRate: 'Test only',
     minPayout: 'N/A',
   },
-  // Boing testnet — integration spec: github.com/chiku524/boing.network docs/VIBEMINER-INTEGRATION.md
+  // Boing testnet — integration spec: github.com/Boing-Network/boing.network docs/VIBEMINER-INTEGRATION.md
   {
     id: 'boing-devnet',
     name: 'Boing (Testnet)',

@@ -12,7 +12,8 @@
     "desktop:build": "npm run build -w vibeminer-tauri",
     "desktop:icons": "npm run generate-brand-assets -w vibeminer-web && npm run icons -w vibeminer-tauri",
     "tauri": "npm run tauri -w vibeminer-tauri",
-    "deploy:cloudflare": "npm run build -w @vibeminer/shared && npm run deploy -w vibeminer-web"
+    "deploy:cloudflare": "npm run build -w @vibeminer/shared && npm run deploy -w vibeminer-web",
+    "test": "npm run test -w @vibeminer/shared"
   },
   "devDependencies": {
     "typescript": "^5.3.3"

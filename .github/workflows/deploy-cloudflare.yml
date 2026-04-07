@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Test
+        run: npm run test
+
       - name: Verify Cloudflare secrets
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
@@ -42,8 +45,8 @@ jobs:
           fi
           echo "Cloudflare API token and account ID are set."
 
-      - name: Build shared package
-        run: npm run build -w @vibeminer/shared
+      - name: Production build (shared + web)
+        run: npm run build
 
       - name: Create .env for Wrangler (apps/web)
         run: |
@@ -53,6 +56,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+      # OpenNext runs another production compile for the Workers bundle; `npm run build` above matches CI and fails fast if Next/tsc break.
       - name: Build and deploy from apps/web
         run: |
           cd apps/web && node ./scripts/opennext-clean.mjs && npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy -- --keep-vars

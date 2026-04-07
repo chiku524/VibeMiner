@@ -2,7 +2,7 @@
  * Live merge from Boing's public {@link BOING_OFFICIAL_NETWORKS_API_URL} (`meta` + per-OS rows).
  * Constants in `boing-testnet-node.ts` remain the offline fallback when fetch fails.
  *
- * @see https://github.com/chiku524/boing.network/blob/main/docs/VIBEMINER-INTEGRATION.md §3.1 / §6
+ * @see https://github.com/Boing-Network/boing.network/blob/main/docs/VIBEMINER-INTEGRATION.md §3.1 / §6
  */
 
 export const BOING_OFFICIAL_NETWORKS_API_URL = 'https://boing.network/api/networks';

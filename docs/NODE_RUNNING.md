@@ -52,7 +52,7 @@ See **[BOING_QA_RPC_AND_RELEASES.md](./BOING_QA_RPC_AND_RELEASES.md)** for a ful
 
 VibeMiner’s default download (`testnet-v0.1.x` zips) can lag behind **current** Boing `main` (for example, protocol QA opcode rules or RPC methods). To run a **validator or full node** built from your machine without waiting for a new release asset:
 
-1. Build: `cargo build -p boing-node --release` in the [boing.network](https://github.com/chiku524/boing.network) repo.
+1. Build: `cargo build -p boing-node --release` in the [boing.network](https://github.com/Boing-Network/boing.network) repo.
 2. Set an environment variable **before** launching the VibeMiner desktop app (Tauri reads the process environment):
    - **Windows (cmd):** `set VIBEMINER_BOING_NODE_EXE=C:\path\to\boing.network\target\release\boing-node.exe`
    - **Windows (PowerShell):** `$env:VIBEMINER_BOING_NODE_EXE = "C:\path\to\boing.network\target\release\boing-node.exe"`

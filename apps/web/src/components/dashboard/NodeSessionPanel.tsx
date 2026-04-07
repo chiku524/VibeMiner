@@ -58,13 +58,23 @@ function BoingRpcTransparencyHint() {
         node does not change that endpoint — operators must upgrade the node behind{' '}
         <span className="text-gray-300">testnet-rpc.boing.network</span>, or the site falls back to canonical docs JSON. See{' '}
         <a
-          href="https://github.com/chiku524/boing.network/blob/main/docs/THREE-CODEBASE-ALIGNMENT.md#21-qa-registry-rpc-boing_getqaregistry--two-different-surfaces"
+          href="https://github.com/Boing-Network/boing.network/blob/main/docs/THREE-CODEBASE-ALIGNMENT.md#21-qa-registry-rpc-boing_getqaregistry--two-different-surfaces"
           target="_blank"
           rel="noopener noreferrer"
           className="text-sky-400 underline-offset-2 hover:underline"
         >
           Boing: two RPC surfaces (§2.1)
-        </a>{' '}
+        </a>
+        {' · '}
+        <a
+          href="https://github.com/Boing-Network/boing.network/blob/main/docs/HANDOFF-DEPENDENT-PROJECTS.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sky-400 underline-offset-2 hover:underline"
+        >
+          dependent-project handoff
+        </a>
+        {' '}
         and VibeMiner{' '}
         <code className="rounded bg-black/40 px-1 font-mono text-[10px] text-gray-500">docs/BOING_QA_RPC_AND_RELEASES.md</code>.
       </p>

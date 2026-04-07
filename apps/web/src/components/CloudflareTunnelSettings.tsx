@@ -95,7 +95,7 @@ export function CloudflareTunnelSettings() {
         <code className="rounded bg-white/10 px-1">testnet-rpc.boing.network</code> →{' '}
         <code className="rounded bg-white/10 px-1">http://127.0.0.1:8545</code> (set in Cloudflare Zero Trust → Tunnels → public hostname). A Pages “custom domain” alone causes <strong className="text-amber-200/90">HTTP 405</strong> on POST — see Boing doc{' '}
         <a
-          href="https://github.com/chiku524/boing.network/blob/main/docs/CLOUDFLARED-TUNNEL-ALIGNMENT.md"
+          href="https://github.com/Boing-Network/boing.network/blob/main/docs/CLOUDFLARED-TUNNEL-ALIGNMENT.md"
           target="_blank"
           rel="noopener noreferrer"
           className="text-accent-cyan underline-offset-2 hover:underline"
