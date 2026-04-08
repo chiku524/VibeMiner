@@ -82,6 +82,11 @@ export const BOING_TESTNET_TOOLKIT_LINKS: BoingToolkitLink[] = [
     href: 'https://github.com/Boing-Network/boing.network/blob/main/docs/INFRASTRUCTURE-SETUP.md',
     hint: 'Run scripts/verify-public-testnet-rpc.mjs after upgrading the node behind the tunnel.',
   },
+  {
+    label: 'RUNBOOK — canonical native DEX RPC hints',
+    href: 'https://github.com/Boing-Network/boing.network/blob/main/docs/RUNBOOK.md',
+    hint: 'BOING_CANONICAL_NATIVE_* on the boing-node process; VibeMiner injects testnet defaults when unset (see BOING_TESTNET_CANONICAL_NATIVE_ENV).',
+  },
 ];
 
 export { BOING_TESTNET_PUBLIC_RPC_URL };

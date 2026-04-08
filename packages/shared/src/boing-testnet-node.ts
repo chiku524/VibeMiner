@@ -14,6 +14,12 @@
  * via Boing Express + SDK (or scripts) against this node’s `http://127.0.0.1:8545` (or public RPC), then
  * publish the frozen hex per Boing `OPS-CANONICAL-TESTNET-NATIVE-AMM-POOL.md`. See `boing-developer-resources.ts`
  * (`BOING_TESTNET_TOOLKIT_LINKS`) for dashboard links to native AMM + ops docs.
+ *
+ * **Canonical RPC hints (`BOING_CANONICAL_NATIVE_*`):** the desktop app injects **`BOING_TESTNET_CANONICAL_NATIVE_ENV`**
+ * when starting a node whose network id contains `boing`, unless already set in the environment or
+ * **`VIBEMINER_SKIP_BOING_CANONICAL_DEFAULTS=1`**. Values match public testnet (`tools/boing-node-public-testnet.env.example`
+ * in boing.network). Self-hosted nodes without VibeMiner still set these on the **boing-node** process
+ * (see `docs/RUNBOOK.md`). Restarting **public** RPC after changing hints is **infra** (operators restart the process).
  */
 
 /** JSON-RPC method for live rule registry (Boing Observer / transparency). Requires recent boing-node. */
@@ -36,6 +42,28 @@ export const BOING_TESTNET_BOOTNODES_CLI = BOING_TESTNET_BOOTNODES.join(',');
 
 /** Public JSON-RPC used by faucet pages and boing.observer (not the same as a local VibeMiner node). */
 export const BOING_TESTNET_PUBLIC_RPC_URL = 'https://testnet-rpc.boing.network/';
+
+/**
+ * Default public-testnet canonical native DEX AccountIds for `boing_getNetworkInfo.end_user`.
+ * The Tauri app applies these when spawning `boing-node` if unset — keep in sync with
+ * `boing.network/tools/boing-node-public-testnet.env.example` and `node.rs` (`BOING_TESTNET_CANONICAL_NATIVE_DEFAULTS`).
+ */
+export const BOING_TESTNET_CANONICAL_NATIVE_ENV: Readonly<Record<string, string>> = {
+  BOING_CANONICAL_NATIVE_CP_POOL:
+    '0xce4f819369630e89c4634112fdf01e1907f076bc30907f0402591abfca66518d',
+  BOING_CANONICAL_NATIVE_DEX_FACTORY:
+    '0x12dff97625620a1f10c05cd66cd72878288e8fea70d4150e9815bd38983b2890',
+  BOING_CANONICAL_NATIVE_DEX_MULTIHOP_SWAP_ROUTER:
+    '0x43a6410510e7d742db8366347a343af6f7d2d1aec39b8281677d5643a7fc110b',
+  BOING_CANONICAL_NATIVE_DEX_LEDGER_ROUTER_V2:
+    '0x60a232b91d6f86a61d037ea6ea0fb769897f983c8e0d399e3df5189d00868992',
+  BOING_CANONICAL_NATIVE_DEX_LEDGER_ROUTER_V3:
+    '0xfb552619b27dacacba52b62d97cd171eabe4a74dac262ecb0e8735284d7555ba',
+  BOING_CANONICAL_NATIVE_AMM_LP_VAULT:
+    '0x2b195b93a57b632ca3c1cf58cb7578542a6d58998116cddb8a6a50f1bd652f48',
+  BOING_CANONICAL_NATIVE_LP_SHARE_TOKEN:
+    '0x0618b4a6a30bc31822a0cdcf253ed2bcf642a6cecf26346ba655b63fccbde03c',
+} as const;
 
 const BOING_TESTNET_NODE_ARGS_CORE = `--p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes ${BOING_TESTNET_BOOTNODES_CLI} --rpc-port 8545 --faucet-enable`;
 
