@@ -506,10 +506,12 @@ pub fn ensure_node_ready(
     std::fs::write(&archive_path, &bytes).map_err(|e| e.to_string())?;
 
     if let Some(expected) = node_binary_sha256 {
-        let actual = sha256_bytes(&bytes);
-        if actual.to_lowercase() != expected.to_lowercase() {
-            let _ = std::fs::remove_file(&archive_path);
-            return Err("Integrity check failed: SHA256 mismatch".into());
+        if expected.len() == 64 && expected.chars().all(|c| c.is_ascii_hexdigit()) {
+            let actual = sha256_bytes(&bytes);
+            if actual.to_lowercase() != expected.to_lowercase() {
+                let _ = std::fs::remove_file(&archive_path);
+                return Err("Integrity check failed: SHA256 mismatch".into());
+            }
         }
     }
 

@@ -52,14 +52,17 @@ See **[BOING_QA_RPC_AND_RELEASES.md](./BOING_QA_RPC_AND_RELEASES.md)** for a ful
 
 VibeMiner’s default download (`testnet-v0.1.x` zips) can lag behind **current** Boing `main` (for example, protocol QA opcode rules or RPC methods). To run a **validator or full node** built from your machine without waiting for a new release asset:
 
-1. Build: `cargo build -p boing-node --release` in the [boing.network](https://github.com/Boing-Network/boing.network) repo.
+1. Build: `cargo build -p boing-node --release` in the [boing.network](https://github.com/Boing-Network/boing.network) repo (produces `target/release/boing-node` or `boing-node.exe`).
 2. Set an environment variable **before** launching the VibeMiner desktop app (Tauri reads the process environment):
+   - **Repo helpers (sibling clone `../boing.network`):** [scripts/run-vibeminer-with-local-boing-node.ps1](../scripts/run-vibeminer-with-local-boing-node.ps1) — dot-source in PowerShell: `. .\scripts\run-vibeminer-with-local-boing-node.ps1` then start VibeMiner from that window. Or [scripts/run-vibeminer-with-local-boing-node.cmd](../scripts/run-vibeminer-with-local-boing-node.cmd) for Command Prompt.
    - **Windows (cmd):** `set VIBEMINER_BOING_NODE_EXE=C:\path\to\boing.network\target\release\boing-node.exe`
    - **Windows (PowerShell):** `$env:VIBEMINER_BOING_NODE_EXE = "C:\path\to\boing.network\target\release\boing-node.exe"`
    - **macOS / Linux:** `export VIBEMINER_BOING_NODE_EXE=/path/to/boing.network/target/release/boing-node`
 3. Start VibeMiner from **that** shell (or set the variable in your user profile / shortcut) and run the Boing network as usual.
 
 When `VIBEMINER_BOING_NODE_EXE` is set to an **absolute path** to an existing binary, VibeMiner **skips** the zip download for networks whose id contains `boing` and substitutes that path as the first token of the command template (flags such as `--validator` and `{dataDir}` are unchanged).
+
+**Public testnet RPC** (`https://testnet-rpc.boing.network`) is a **separate** deployment: upgrading your local VibeMiner binary does not change what that URL serves. To fix QA / RPC for everyone hitting public RPC, operators must deploy a newer `boing-node` behind the tunnel and (when applicable) publish a new GitHub release zip — see [BOING_QA_RPC_AND_RELEASES.md](./BOING_QA_RPC_AND_RELEASES.md).
 
 ## Database
 

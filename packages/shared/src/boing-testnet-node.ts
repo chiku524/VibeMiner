@@ -20,7 +20,7 @@
 export const BOING_RPC_METHOD_GET_QA_REGISTRY = 'boing_getQaRegistry';
 
 /** Pinned release for default downloads when no listing overrides exist (includes `boing_getQaRegistry`). */
-export const BOING_TESTNET_DEFAULT_DOWNLOAD_TAG = 'testnet-v0.1.7';
+export const BOING_TESTNET_DEFAULT_DOWNLOAD_TAG = 'testnet-v0.1.8';
 
 /**
  * Bootnode multiaddrs — keep in sync with `website/src/config/testnet.ts` (`PUBLIC_BOOTNODES` fallback).
@@ -48,12 +48,16 @@ export const BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL = `https://github.
 /**
  * SHA-256 of official GitHub **zip** assets for {@link BOING_TESTNET_DEFAULT_DOWNLOAD_TAG}.
  * Used when upgrading stale D1/API listing URLs (see `patchBlockchainNetworkJsonForBoing`).
+ * Refresh from `website/scripts/network-listings-release-sql.mjs <tag>` when you cut a new release.
  */
-export const BOING_TESTNET_ZIP_SHA256_WINDOWS = '9dd69565e8d4225fb9bb229e11d6acbbaeab1d4a395d9efeb2346fc6c1144111';
+export const BOING_TESTNET_ZIP_SHA256_WINDOWS =
+  '2cea7a6f093990c02bf405a20caf3b68bb59b434b69421449ab6bb4fec96a16a';
 
-export const BOING_TESTNET_ZIP_SHA256_LINUX = 'd7f394301f17dcef5c59e08d8fda2a269b5880e8af0601ade96a4c905b47d2db';
+export const BOING_TESTNET_ZIP_SHA256_LINUX =
+  '70355e6e6c6c9f33804957df1c215a531bec0c329fe5c1fc48f3d23350bd296c';
 
-export const BOING_TESTNET_ZIP_SHA256_MACOS_AARCH64 = '3fd1fa44fe22c7c4b399426afebeea74df999107772dffb1a4a62ba810d4f378';
+export const BOING_TESTNET_ZIP_SHA256_MACOS_AARCH64 =
+  '435216299129a6bcc04d4775cf7956315246c4860bf2fd8a769df93bea7e7bbc';
 
 /** Full node + faucet (matches Boing testnet join / INFRASTRUCTURE-SETUP). */
 export const BOING_TESTNET_DEFAULT_WINDOWS_COMMAND_TEMPLATE =
@@ -99,26 +103,30 @@ export function ensureBoingFaucetInCommandTemplate(template: string): string {
 const CANONICAL_BOING_GITHUB_ORG_PATH = 'github.com/Boing-Network/boing.network/';
 const CANONICAL_BOING_RELEASE_DL = `${CANONICAL_BOING_GITHUB_ORG_PATH}releases/download/`;
 /** Tags before QA transparency RPC (`boing_getQaRegistry`) existed in published Windows zips. */
-const STALE_TESTNET_TAG_RE = /\/download\/(testnet-v0\.1\.(?:0|1|2|3|4|5|6))\//;
+const STALE_TESTNET_TAG_RE = /\/download\/(testnet-v0\.1\.(?:0|1|2|3|4|5|6|7))\//;
 
-function zipSha256ForOfficialBoingUrl(url: string): string {
-  if (url.includes('release-linux-x86_64')) return BOING_TESTNET_ZIP_SHA256_LINUX;
-  if (url.includes('release-macos-aarch64')) return BOING_TESTNET_ZIP_SHA256_MACOS_AARCH64;
-  return BOING_TESTNET_ZIP_SHA256_WINDOWS;
+function zipSha256ForOfficialBoingUrl(url: string): string | undefined {
+  let h: string;
+  if (url.includes('release-linux-x86_64')) h = BOING_TESTNET_ZIP_SHA256_LINUX;
+  else if (url.includes('release-macos-aarch64')) h = BOING_TESTNET_ZIP_SHA256_MACOS_AARCH64;
+  else h = BOING_TESTNET_ZIP_SHA256_WINDOWS;
+  if (!h || !/^[0-9a-f]{64}$/i.test(h)) return undefined;
+  return h;
 }
 
 /**
  * Normalize legacy org host and upgrade stale testnet zip tags on official Boing release URLs.
  * Returns null when the URL is not an official Boing GitHub release download or nothing changed.
  */
-function upgradeOfficialBoingZipUrl(url: string): { url: string; sha256: string } | null {
+function upgradeOfficialBoingZipUrl(url: string): { url: string; sha256?: string } | null {
   let next = url.replace(/github\.com\/chiku524\/boing\.network\//g, CANONICAL_BOING_GITHUB_ORG_PATH);
   if (!next.includes(CANONICAL_BOING_RELEASE_DL)) return null;
   if (STALE_TESTNET_TAG_RE.test(next)) {
     next = next.replace(STALE_TESTNET_TAG_RE, `/download/${BOING_TESTNET_DEFAULT_DOWNLOAD_TAG}/`);
   }
   if (next === url) return null;
-  return { url: next, sha256: zipSha256ForOfficialBoingUrl(next) };
+  const sha256 = zipSha256ForOfficialBoingUrl(next);
+  return sha256 === undefined ? { url: next } : { url: next, sha256 };
 }
 
 function patchPresets(presets: unknown): unknown {
@@ -142,7 +150,8 @@ function patchBoingStaleReleaseZipUrlsInPresets(presets: unknown): unknown {
       const up = upgradeOfficialBoingZipUrl(row.nodeDownloadUrl);
       if (up) {
         row.nodeDownloadUrl = up.url;
-        row.nodeBinarySha256 = up.sha256;
+        if (up.sha256) row.nodeBinarySha256 = up.sha256;
+        else delete row.nodeBinarySha256;
       }
     }
     return row;
@@ -170,7 +179,8 @@ export function patchBlockchainNetworkJsonForBoing(n: Record<string, unknown>): 
     const up = upgradeOfficialBoingZipUrl(out.nodeDownloadUrl);
     if (up) {
       out.nodeDownloadUrl = up.url;
-      out.nodeBinarySha256 = up.sha256;
+      if (up.sha256) out.nodeBinarySha256 = up.sha256;
+      else delete out.nodeBinarySha256;
     }
   }
 
