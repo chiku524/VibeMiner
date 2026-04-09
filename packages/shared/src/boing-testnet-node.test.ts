@@ -1,11 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BOING_TESTNET_CANONICAL_NATIVE_ENV,
   BOING_TESTNET_DEFAULT_WINDOWS_DOWNLOAD_URL,
   BOING_TESTNET_ZIP_SHA256_LINUX,
   BOING_TESTNET_ZIP_SHA256_MACOS_AARCH64,
   BOING_TESTNET_ZIP_SHA256_WINDOWS,
   patchBlockchainNetworkJsonForBoing,
 } from './boing-testnet-node';
+
+describe('BOING_TESTNET_CANONICAL_NATIVE_ENV', () => {
+  it('multihop swap router matches Boing canonicalTestnetDex predicted CREATE2 (multihop bytecode v2–6 hops)', () => {
+    expect(BOING_TESTNET_CANONICAL_NATIVE_ENV.BOING_CANONICAL_NATIVE_DEX_MULTIHOP_SWAP_ROUTER).toBe(
+      '0x8f8b2ecb6fd5dc7682e41ebe443d6116e0f4ae8247f67b4bfafec4dea2d861a3',
+    );
+  });
+});
 
 describe('patchBlockchainNetworkJsonForBoing', () => {
   it('does not modify networks without a Boing id', () => {

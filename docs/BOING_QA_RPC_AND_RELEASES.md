@@ -11,6 +11,10 @@ VibeMiner **does not implement** Boing JSON-RPC itself. It **downloads** a `boin
 
 The dashboard **Testnet: tokens, contracts & NFTs** panel includes links to native AMM calldata and the ops publish checklist (`packages/shared/src/boing-developer-resources.ts`).
 
+## Canonical native DEX RPC hints (`BOING_CANONICAL_NATIVE_*`)
+
+When VibeMiner spawns **`boing-node`** for a Boing network, it injects **`BOING_TESTNET_CANONICAL_NATIVE_ENV`** (see `packages/shared/src/boing-testnet-node.ts` and `apps/tauri/src-tauri/src/node.rs`) unless **`VIBEMINER_SKIP_BOING_CANONICAL_DEFAULTS=1`**. Keep these ids aligned with Boing **`tools/boing-node-public-testnet.env.example`**, **`boing-sdk/src/canonicalTestnetDex.ts`**, and **`scripts/canonical-testnet-dex-predicted.json`** — especially **`BOING_CANONICAL_NATIVE_DEX_MULTIHOP_SWAP_ROUTER`**, which changes when multihop router bytecode is revised (same CREATE2 salt, new artifact).
+
 ## `boing_getQaRegistry` and QA transparency
 
 The Boing monorepo exposes read-only **`boing_getQaRegistry`** so explorers (e.g. [boing.observer/qa](https://boing.observer/qa)) can show the live rule registry. If you see:
