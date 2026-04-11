@@ -54,7 +54,9 @@ function markNodeSessionProcessExited(prev: MiningSession[], sessionKey: string,
  */
 function mergeDesktopNodeRowsIntoSessions(
   prev: MiningSession[],
-  rows: DesktopRunningNodeRow[]
+  rows: DesktopRunningNodeRow[],
+  /** User dismissed the card — ignore matching rows from `listRunningNodes` so sync does not resurrect the session. */
+  dismissedKeys?: ReadonlySet<string>
 ): MiningSession[] {
   const mining = prev.filter((s) => !isMiningSessionNode(s));
   const prevNodes = prev.filter(isMiningSessionNode);
@@ -64,7 +66,12 @@ function mergeDesktopNodeRowsIntoSessions(
     prevNodes.filter((n) => n.nodeProcessExitedAt != null).map((n) => sessionListKey(n))
   );
 
-  const runningNodes: MiningSessionNode[] = rows
+  const rowsFiltered =
+    dismissedKeys && dismissedKeys.size > 0
+      ? rows.filter((d) => !dismissedKeys.has(desktopNodeRowKey(d)))
+      : rows;
+
+  const runningNodes: MiningSessionNode[] = rowsFiltered
     .filter((d) => !exitedKeys.has(desktopNodeRowKey(d)))
     .map((d) => {
       const key = desktopNodeRowKey(d);
@@ -123,6 +130,8 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
   const sessionsRef = useRef(sessions);
   sessionsRef.current = sessions;
   const realKeysRef = useRef<Set<string>>(new Set());
+  /** Stops periodic `listRunningNodes` sync from re-adding a session after the user dismissed its card. Cleared when the same preset is started again via `registerNodeSession`. */
+  const dismissedNodeSessionKeysRef = useRef<Set<string>>(new Set());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const startMining = useCallback(
@@ -243,7 +252,7 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
         setSessions((prev) => {
           const marked = markNodeSessionProcessExited(prev, stoppedKey, exitedAt);
           if (listFn) {
-            return mergeDesktopNodeRowsIntoSessions(marked, rows);
+            return mergeDesktopNodeRowsIntoSessions(marked, rows, dismissedNodeSessionKeysRef.current);
           }
           return prev.filter((s) => sessionListKey(s) !== stoppedKey);
         });
@@ -268,6 +277,7 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
         startedAt: args.startedAt ?? Date.now(),
         isActive: true,
       };
+      dismissedNodeSessionKeysRef.current.delete(sessionListKey(row));
       setSessions((prev) => {
         const mining = prev.filter((s) => !isMiningSessionNode(s));
         const otherNodes = prev.filter(
@@ -281,6 +291,7 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
 
   const dismissNodeSession = useCallback((session: MiningSessionNode) => {
     const k = sessionListKey(session);
+    dismissedNodeSessionKeysRef.current.add(k);
     setSessions((prev) => prev.filter((s) => sessionListKey(s) !== k));
   }, []);
 
@@ -307,7 +318,9 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
         const list = (await listFn()) as unknown;
         if (cancelled || !Array.isArray(list)) return;
         const rows = list as DesktopRunningNodeRow[];
-        setSessions((prev) => mergeDesktopNodeRowsIntoSessions(prev, rows));
+        setSessions((prev) =>
+          mergeDesktopNodeRowsIntoSessions(prev, rows, dismissedNodeSessionKeysRef.current)
+        );
       } catch {
         /* desktop IPC unavailable */
       }

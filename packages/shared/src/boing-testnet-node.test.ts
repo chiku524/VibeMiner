@@ -9,9 +9,9 @@ import {
 } from './boing-testnet-node';
 
 describe('BOING_TESTNET_CANONICAL_NATIVE_ENV', () => {
-  it('multihop swap router matches Boing canonicalTestnetDex predicted CREATE2 (multihop bytecode v2–6 hops)', () => {
+  it('multihop swap router matches boing-sdk canonicalTestnetDex (swap2 / full-stack bundle)', () => {
     expect(BOING_TESTNET_CANONICAL_NATIVE_ENV.BOING_CANONICAL_NATIVE_DEX_MULTIHOP_SWAP_ROUTER).toBe(
-      '0x8f8b2ecb6fd5dc7682e41ebe443d6116e0f4ae8247f67b4bfafec4dea2d861a3',
+      '0xf801cd1aa5ec402f89a2f394b49e6b0c136264d8945b16a4a6a81a188b18acc1',
     );
   });
 });

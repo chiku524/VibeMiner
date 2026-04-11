@@ -47,22 +47,23 @@ export const BOING_TESTNET_PUBLIC_RPC_URL = 'https://testnet-rpc.boing.network/'
  * Default public-testnet canonical native DEX AccountIds for `boing_getNetworkInfo.end_user`.
  * The Tauri app applies these when spawning `boing-node` if unset — keep in sync with
  * `boing.network/tools/boing-node-public-testnet.env.example` and `node.rs` (`BOING_TESTNET_CANONICAL_NATIVE_DEFAULTS`).
+ * **Source of truth:** `boing-sdk` `canonicalTestnet.ts` + `canonicalTestnetDex.ts` (live testnet stack on public RPC).
  */
 export const BOING_TESTNET_CANONICAL_NATIVE_ENV: Readonly<Record<string, string>> = {
   BOING_CANONICAL_NATIVE_CP_POOL:
-    '0xce4f819369630e89c4634112fdf01e1907f076bc30907f0402591abfca66518d',
+    '0x7247ddc3180fdc4d3fd1e716229bfa16bad334a07d28aa9fda9ad1bfa7bdacc3',
   BOING_CANONICAL_NATIVE_DEX_FACTORY:
-    '0x12dff97625620a1f10c05cd66cd72878288e8fea70d4150e9815bd38983b2890',
+    '0x58112627fc84618a27b82e9af82bc9a51761c6d3cca1260c93d56d22b6c481a1',
   BOING_CANONICAL_NATIVE_DEX_MULTIHOP_SWAP_ROUTER:
-    '0x8f8b2ecb6fd5dc7682e41ebe443d6116e0f4ae8247f67b4bfafec4dea2d861a3',
+    '0xf801cd1aa5ec402f89a2f394b49e6b0c136264d8945b16a4a6a81a188b18acc1',
   BOING_CANONICAL_NATIVE_DEX_LEDGER_ROUTER_V2:
-    '0x60a232b91d6f86a61d037ea6ea0fb769897f983c8e0d399e3df5189d00868992',
+    '0x33334ff73c44c93335ac5e69938a52ea65fa77b062d1961ed22c131adaa31e0f',
   BOING_CANONICAL_NATIVE_DEX_LEDGER_ROUTER_V3:
-    '0xfb552619b27dacacba52b62d97cd171eabe4a74dac262ecb0e8735284d7555ba',
+    '0x2c90ffcddeb2683219b4b8143a91d7b93f249bcb0d9523c8b4f2111de668b79a',
   BOING_CANONICAL_NATIVE_AMM_LP_VAULT:
-    '0x2b195b93a57b632ca3c1cf58cb7578542a6d58998116cddb8a6a50f1bd652f48',
+    '0x937d09ee8e4dcc521c812566ad4930792e74ad004ecb3ae2cc73dc015813aa8d',
   BOING_CANONICAL_NATIVE_LP_SHARE_TOKEN:
-    '0x0618b4a6a30bc31822a0cdcf253ed2bcf642a6cecf26346ba655b63fccbde03c',
+    '0x101201403f573e5b1d6d5c6b93d52d12c68957f4a228d5dad76e78c747044421',
 } as const;
 
 const BOING_TESTNET_NODE_ARGS_CORE = `--p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes ${BOING_TESTNET_BOOTNODES_CLI} --rpc-port 8545 --faucet-enable`;
