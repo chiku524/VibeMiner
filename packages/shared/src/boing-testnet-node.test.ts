@@ -36,14 +36,14 @@ describe('patchBlockchainNetworkJsonForBoing', () => {
     expect(out.nodeBinarySha256).toBe(BOING_TESTNET_ZIP_SHA256_WINDOWS);
   });
 
-  it('normalizes legacy org when the tag is already current', () => {
+  it('normalizes legacy org when the tag is one behind the pinned default (rewrites to current tag + SHA)', () => {
     const out = patchBlockchainNetworkJsonForBoing({
       id: 'boing-devnet',
       nodeDownloadUrl:
         'https://github.com/chiku524/boing.network/releases/download/testnet-v0.1.8/release-linux-x86_64.zip',
     });
     expect(out.nodeDownloadUrl).toBe(
-      'https://github.com/Boing-Network/boing.network/releases/download/testnet-v0.1.8/release-linux-x86_64.zip',
+      'https://github.com/Boing-Network/boing.network/releases/download/testnet-v0.1.9/release-linux-x86_64.zip',
     );
     expect(out.nodeBinarySha256).toBe(BOING_TESTNET_ZIP_SHA256_LINUX);
   });
@@ -70,7 +70,7 @@ describe('patchBlockchainNetworkJsonForBoing', () => {
     });
     const presets = out.nodePresets as Record<string, unknown>[];
     expect(presets[0].nodeDownloadUrl).toContain('Boing-Network/boing.network');
-    expect(presets[0].nodeDownloadUrl).toContain('testnet-v0.1.8');
+    expect(presets[0].nodeDownloadUrl).toContain('testnet-v0.1.9');
     expect(presets[0].nodeBinarySha256).toBe(BOING_TESTNET_ZIP_SHA256_MACOS_AARCH64);
   });
 });

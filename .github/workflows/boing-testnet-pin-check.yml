@@ -1,0 +1,20 @@
+# Fails when GitHub has a newer `testnet-v0.1.*` zip than `BOING_TESTNET_DEFAULT_DOWNLOAD_TAG` in shared code.
+# Schedule: weekly nudge; use workflow_dispatch after you publish a Boing testnet release to confirm the pin was bumped.
+
+name: Boing testnet zip pin check
+
+on:
+  schedule:
+    - cron: '0 14 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Compare pin to latest GitHub testnet release
+        run: node scripts/check-boing-testnet-pin.mjs

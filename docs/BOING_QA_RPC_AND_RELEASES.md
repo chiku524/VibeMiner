@@ -46,11 +46,11 @@ Same symptom, two different backends. See Boing repo **[THREE-CODEBASE-ALIGNMENT
 
 ### Cache / same URL
 
-VibeMiner caches extracts under `%APPDATA%` (or platform equivalent) keyed by **download URL** and **desktop app version** (from **1.0.89** onward). Upgrading VibeMiner therefore forces a **fresh node zip download** even when the Boing release URL is unchanged. If you still see stale RPC behavior on an older app build, change the listing **Node download URL** (new Boing tag) or delete the app’s `nodes/` cache for that network. Prefer **a new Boing release tag** per binary (current default in VibeMiner: `testnet-v0.1.8`) when you publish updated `boing-node` zips so URLs change for everyone.
+VibeMiner caches extracts under `%APPDATA%` (or platform equivalent) keyed by **download URL** and **desktop app version** (from **1.0.89** onward). Upgrading VibeMiner therefore forces a **fresh node zip download** even when the Boing release URL is unchanged. If you still see stale RPC behavior on an older app build, change the listing **Node download URL** (new Boing tag) or delete the app’s `nodes/` cache for that network. Prefer **a new Boing release tag** per binary (current default in VibeMiner: `testnet-v0.1.9`) when you publish updated `boing-node` zips so URLs change for everyone.
 
 ### D1 listed an older testnet tag while static defaults say `v0.1.8`
 
-The **networks API** merges D1 rows over static `boing-devnet`. A registered listing with an old download URL **wins** and the desktop app downloads that zip. **`patchBlockchainNetworkJsonForBoing`** (VibeMiner API) and **`functions/api/networks.js`** (boing.network) rewrite legacy **`chiku524/boing.network`** download URLs to canonical **`Boing-Network/boing.network`**, bump **`testnet-v0.1.0`–`testnet-v0.1.7`** to **`testnet-v0.1.8`**, and refresh zip SHA256 when pinned in code. Run **`d1/migrations/007_boing_testnet_zip_urls_v0_1_8.sql`** on **vibeminer-db** and **`website/migrations/2026-04-08-network-listings-boing-testnet-v0-1-8.sql`** on **boing-network-db** so the database matches production (see [TESTNET-NODE-RELEASE-CHECKLIST.md](https://github.com/Boing-Network/boing.network/blob/main/docs/TESTNET-NODE-RELEASE-CHECKLIST.md) in the Boing repo).
+The **networks API** merges D1 rows over static `boing-devnet`. A registered listing with an old download URL **wins** and the desktop app downloads that zip. **`patchBlockchainNetworkJsonForBoing`** (VibeMiner API) and **`functions/api/networks.js`** (boing.network) rewrite legacy **`chiku524/boing.network`** download URLs to canonical **`Boing-Network/boing.network`**, bump **`testnet-v0.1.0`–`testnet-v0.1.8`** to **`testnet-v0.1.9`**, and refresh zip SHA256 when pinned in code. Run **`d1/migrations/009_boing_testnet_zip_urls_v0_1_9.sql`** on **vibeminer-db** and the matching Boing **`website/migrations/*.sql`** (or regenerate via **`network-listings-release-sql.mjs`**) on **boing-network-db** so the database matches production (see [TESTNET-NODE-RELEASE-CHECKLIST.md](https://github.com/Boing-Network/boing.network/blob/main/docs/TESTNET-NODE-RELEASE-CHECKLIST.md) in the Boing repo). Maintainer helper: **[BOING_TESTNET_PIN_SYNC.md](./BOING_TESTNET_PIN_SYNC.md)**.
 
 ### Live overlay from Boing (`GET https://boing.network/api/networks`)
 
@@ -76,6 +76,7 @@ After changing RPC, SDK, or tunnel behavior, run the checks Boing documents in *
 
 ## Related docs
 
+- [BOING_TESTNET_PIN_SYNC.md](./BOING_TESTNET_PIN_SYNC.md) — print SHAs, D1 order, automation options (scheduled pin check + optional `repository_dispatch`).
 - [NODE_RUNNING.md](./NODE_RUNNING.md) — how VibeMiner runs nodes securely.
 - [BOING_REGISTRATION_CHECKLIST.md](./BOING_REGISTRATION_CHECKLIST.md) — exact Boing testnet URLs/templates for listings.
 - [Boing THREE-CODEBASE-ALIGNMENT.md](https://github.com/Boing-Network/boing.network/blob/main/docs/THREE-CODEBASE-ALIGNMENT.md) — RPC URLs, env vars, chain IDs across node / Express / Observer.

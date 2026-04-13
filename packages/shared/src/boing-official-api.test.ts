@@ -25,7 +25,7 @@ describe('parseBoingOfficialNetworksResponse', () => {
     const json = {
       ok: true,
       meta: {
-        boing_testnet_download_tag: 'testnet-v0.1.8',
+        boing_testnet_download_tag: 'testnet-v0.1.9',
         chain_id_hex: '0x1',
         public_testnet_rpc_url: 'https://testnet-rpc.boing.network/',
         official_bootnodes: ['/ip4/1.2.3.4/tcp/4001'],
@@ -44,7 +44,7 @@ describe('parseBoingOfficialNetworksResponse', () => {
     };
     const bundle = parseBoingOfficialNetworksResponse(json);
     expect(bundle).not.toBeNull();
-    expect(bundle!.meta.boing_testnet_download_tag).toBe('testnet-v0.1.8');
+    expect(bundle!.meta.boing_testnet_download_tag).toBe('testnet-v0.1.9');
     expect(bundle!.meta.official_bootnodes).toEqual(['/ip4/1.2.3.4/tcp/4001']);
     expect(bundle!.meta.docs).toEqual({ guide: 'https://example.com' });
     expect(bundle!.byId.get('boing-devnet')?.node_download_url).toContain('z.zip');
@@ -84,7 +84,7 @@ describe('parseBoingOfficialNetworksResponse', () => {
 function sampleOfficialBundle(): BoingOfficialNetworksBundle {
   return {
     meta: {
-      boing_testnet_download_tag: 'testnet-v0.1.8',
+      boing_testnet_download_tag: 'testnet-v0.1.9',
       chain_id_hex: '0xabc',
       public_testnet_rpc_url: 'https://testnet-rpc.boing.network/',
       official_bootnodes: [],

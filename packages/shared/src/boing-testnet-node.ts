@@ -25,8 +25,8 @@
 /** JSON-RPC method for live rule registry (Boing Observer / transparency). Requires recent boing-node. */
 export const BOING_RPC_METHOD_GET_QA_REGISTRY = 'boing_getQaRegistry';
 
-/** Pinned release for default downloads when no listing overrides exist (includes `boing_getQaRegistry`). */
-export const BOING_TESTNET_DEFAULT_DOWNLOAD_TAG = 'testnet-v0.1.8';
+/** Pinned release for default downloads when no listing overrides exist (includes DEX discovery RPC + `boing_getQaRegistry`). */
+export const BOING_TESTNET_DEFAULT_DOWNLOAD_TAG = 'testnet-v0.1.9';
 
 /**
  * Bootnode multiaddrs — keep in sync with `website/src/config/testnet.ts` (`PUBLIC_BOOTNODES` fallback).
@@ -77,16 +77,16 @@ export const BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL = `https://github.
 /**
  * SHA-256 of official GitHub **zip** assets for {@link BOING_TESTNET_DEFAULT_DOWNLOAD_TAG}.
  * Used when upgrading stale D1/API listing URLs (see `patchBlockchainNetworkJsonForBoing`).
- * Refresh from `website/scripts/network-listings-release-sql.mjs <tag>` when you cut a new release.
+ * Refresh from `website/scripts/network-listings-release-sql.mjs <tag>` when you cut a new release, or run `node scripts/print-boing-testnet-zip-shas.mjs <tag>`.
  */
 export const BOING_TESTNET_ZIP_SHA256_WINDOWS =
-  '2cea7a6f093990c02bf405a20caf3b68bb59b434b69421449ab6bb4fec96a16a';
+  '0e5c9d42a603dbaf4471feb4ea367f89146bd21b11dde4b5b70cc430997fff37';
 
 export const BOING_TESTNET_ZIP_SHA256_LINUX =
-  '70355e6e6c6c9f33804957df1c215a531bec0c329fe5c1fc48f3d23350bd296c';
+  '037807bd7cf57b1049d82739f764567f1ea55bb6852b6680917e833c865e6514';
 
 export const BOING_TESTNET_ZIP_SHA256_MACOS_AARCH64 =
-  '435216299129a6bcc04d4775cf7956315246c4860bf2fd8a769df93bea7e7bbc';
+  'a5830f7d492917cb830a7d7a69e254fff382c038fa6a97cb26d60ed67ea1dc8b';
 
 /** Full node + faucet (matches Boing testnet join / INFRASTRUCTURE-SETUP). */
 export const BOING_TESTNET_DEFAULT_WINDOWS_COMMAND_TEMPLATE =
@@ -132,7 +132,7 @@ export function ensureBoingFaucetInCommandTemplate(template: string): string {
 const CANONICAL_BOING_GITHUB_ORG_PATH = 'github.com/Boing-Network/boing.network/';
 const CANONICAL_BOING_RELEASE_DL = `${CANONICAL_BOING_GITHUB_ORG_PATH}releases/download/`;
 /** Tags before QA transparency RPC (`boing_getQaRegistry`) existed in published Windows zips. */
-const STALE_TESTNET_TAG_RE = /\/download\/(testnet-v0\.1\.(?:0|1|2|3|4|5|6|7))\//;
+const STALE_TESTNET_TAG_RE = /\/download\/(testnet-v0\.1\.(?:0|1|2|3|4|5|6|7|8))\//;
 
 function zipSha256ForOfficialBoingUrl(url: string): string | undefined {
   let h: string;

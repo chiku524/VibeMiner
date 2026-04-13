@@ -34,7 +34,7 @@ Use **Offer multiple node modes**, clear the **shared** node URL if you want onl
 
 1. **Network account** — Register at [VibeMiner/register](https://vibeminer.tech/register) with account type **Network**
 2. **DB migration** — Ensure node columns exist. From VibeMiner project root: `cd apps/web && wrangler d1 execute vibeminer-db --remote --file=./d1/migrations/001_add_node_columns.sql`
-3. **Stale Boing zip URLs in D1** — If listings still point at older `testnet-v0.1.x` tags, apply **`d1/migrations/007_boing_testnet_zip_urls_v0_1_8.sql`** (after **`006_…v0_1_7.sql`** if you are upgrading from very old rows). After deploy, the **networks API** also rewrites `testnet-v0.1.0`–`v0.1.7` URLs toward the pinned tag and normalizes legacy **`github.com/chiku524/boing.network`** release URLs to **`Boing-Network/boing.network`** in responses so the desktop app receives current zips even before you run the SQL.
+3. **Stale Boing zip URLs in D1** — If listings still point at older `testnet-v0.1.x` tags, apply **`d1/migrations/009_boing_testnet_zip_urls_v0_1_9.sql`** (after **`007_…v0_1_8.sql`** if needed). After deploy, the **networks API** also rewrites `testnet-v0.1.0`–`v0.1.8` URLs toward the pinned tag and normalizes legacy **`github.com/chiku524/boing.network`** release URLs to **`Boing-Network/boing.network`** in responses so the desktop app receives current zips even before you run the SQL.
 
 ## Registration Steps
 
@@ -63,15 +63,15 @@ Use **Offer multiple node modes**, clear the **shared** node URL if you want onl
 
 Use this when you are **not** enabling **Offer multiple node modes**. One download URL, one command. This **overrides** the static `boing-devnet` row in `@vibeminer/shared` so **Run node** uses your release.
 
-**Current GitHub release tag:** `testnet-v0.1.8` (see Boing [TESTNET-NODE-RELEASE-CHECKLIST.md](https://github.com/Boing-Network/boing.network/blob/main/docs/TESTNET-NODE-RELEASE-CHECKLIST.md) for tag → SHA pin order)  
+**Current GitHub release tag:** `testnet-v0.1.9` (see Boing [TESTNET-NODE-RELEASE-CHECKLIST.md](https://github.com/Boing-Network/boing.network/blob/main/docs/TESTNET-NODE-RELEASE-CHECKLIST.md) for tag → SHA pin order)  
 **Repository:** [Boing-Network/boing.network](https://github.com/Boing-Network/boing.network) (push tag `testnet-v0.1.x` → CI builds zips → **`testnet*`** releases are published automatically)
 
-**QA / explorer RPC:** Boing adds read-only methods over time (e.g. **`boing_getQaRegistry`** for [boing.observer/qa](https://boing.observer/qa)). VibeMiner only runs whatever is inside your zip — **no app update can add RPC methods**. When you ship a new `boing-node` with additional JSON-RPC, **tag a new release** (e.g. `testnet-v0.1.9`), update every download URL in this checklist and in `@vibeminer/shared` defaults (`BOING_TESTNET_DEFAULT_DOWNLOAD_TAG`, `networks.ts`), then redeploy VibeMiner. Details: **[BOING_QA_RPC_AND_RELEASES.md](./BOING_QA_RPC_AND_RELEASES.md)**.
+**QA / explorer RPC:** Boing adds read-only methods over time (e.g. **`boing_getQaRegistry`** for [boing.observer/qa](https://boing.observer/qa)). VibeMiner only runs whatever is inside your zip — **no app update can add RPC methods**. When you ship a new `boing-node` with additional JSON-RPC, **tag a new release** (e.g. `testnet-v0.1.10`), update every download URL in this checklist and in `@vibeminer/shared` defaults (`BOING_TESTNET_DEFAULT_DOWNLOAD_TAG`, `networks.ts`), then redeploy VibeMiner. Details: **[BOING_QA_RPC_AND_RELEASES.md](./BOING_QA_RPC_AND_RELEASES.md)**.
 
 | Field | Value |
 |-------|-------|
 | **Network name** | **Boing** (slug `boing` → stored id **`boing-devnet`** — required to merge with static Boing testnet) |
-| **Node download URL** | `https://github.com/Boing-Network/boing.network/releases/download/testnet-v0.1.8/release-windows-x86_64.zip` |
+| **Node download URL** | `https://github.com/Boing-Network/boing.network/releases/download/testnet-v0.1.9/release-windows-x86_64.zip` |
 | **Command template** | `boing-node-windows-x86_64.exe --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001,/ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
 | **Binary SHA256** (optional, of the **zip** file) | *After the release is published, `sha256sum` the downloaded zip and paste here; omit until then.* |
 | **Disk (GB)** | e.g. `10` (static `boing-devnet` default in `@vibeminer/shared`) |
@@ -100,12 +100,12 @@ Register **additional** networks if you want one listing id per platform instead
 
 | Platform | Suggested network name (form) | Resulting VibeMiner listing id | Node download URL | Command template |
 |----------|------------------------------|----------------------------------|-------------------|------------------|
-| **Linux x86_64** | `Boing Linux` | `boing-linux-devnet` | `https://github.com/Boing-Network/boing.network/releases/download/testnet-v0.1.8/release-linux-x86_64.zip` | `boing-node-linux-x86_64 --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001,/ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
-| **macOS Apple Silicon** | `Boing macOS aarch64` | `boing-macos-aarch64-devnet` | `https://github.com/Boing-Network/boing.network/releases/download/testnet-v0.1.8/release-macos-aarch64.zip` | `boing-node-macos-aarch64 --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001,/ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
+| **Linux x86_64** | `Boing Linux` | `boing-linux-devnet` | `https://github.com/Boing-Network/boing.network/releases/download/testnet-v0.1.9/release-linux-x86_64.zip` | `boing-node-linux-x86_64 --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001,/ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
+| **macOS Apple Silicon** | `Boing macOS aarch64` | `boing-macos-aarch64-devnet` | `https://github.com/Boing-Network/boing.network/releases/download/testnet-v0.1.9/release-macos-aarch64.zip` | `boing-node-macos-aarch64 --data-dir {dataDir} --p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes /ip4/73.84.106.121/tcp/4001,/ip4/73.84.106.121/tcp/4001 --rpc-port 8545 --faucet-enable` |
 
 | Field | Linux / macOS zip SHA256 (optional) |
 |-------|-------------------------------------|
-| **Binary SHA256** | *From published `testnet-v0.1.8` zips; run `website/scripts/network-listings-release-sql.mjs testnet-v0.1.8` in the Boing repo after CI uploads assets, then paste per-zip SHA256 here.* |
+| **Binary SHA256** | *From published `testnet-v0.1.9` zips; run `website/scripts/network-listings-release-sql.mjs testnet-v0.1.9` in the Boing repo after CI uploads assets, then paste per-zip SHA256 here.* |
 
 These listings **do not** replace the static **`boing-devnet`** row; they show up as **extra** devnet networks. The primary **Boing (Testnet)** entry remains the Windows (or multi-preset Windows) registration with **`boing-devnet`**.
 
