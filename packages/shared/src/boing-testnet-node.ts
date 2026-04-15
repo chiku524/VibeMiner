@@ -15,10 +15,11 @@
  * publish the frozen hex per Boing `OPS-CANONICAL-TESTNET-NATIVE-AMM-POOL.md`. See `boing-developer-resources.ts`
  * (`BOING_TESTNET_TOOLKIT_LINKS`) for dashboard links to native AMM + ops docs.
  *
- * **Canonical RPC hints (`BOING_CANONICAL_NATIVE_*`):** the desktop app injects **`BOING_TESTNET_CANONICAL_NATIVE_ENV`**
+ * **Canonical RPC hints + DEX discovery tuning:** the desktop app injects **`BOING_TESTNET_CANONICAL_NATIVE_ENV`**
  * when starting a node whose network id contains `boing`, unless already set in the environment or
  * **`VIBEMINER_SKIP_BOING_CANONICAL_DEFAULTS=1`**. Values match public testnet (`tools/boing-node-public-testnet.env.example`
- * in boing.network). Self-hosted nodes without VibeMiner still set these on the **boing-node** process
+ * in boing.network), including **`BOING_CANONICAL_NATIVE_*`** and **`BOING_DEX_*`** scan/decimal defaults for
+ * **`boing_listDexPools`** / **`boing_listDexTokens`**. Self-hosted nodes without VibeMiner still set these on the **boing-node** process
  * (see `docs/RUNBOOK.md`). Restarting **public** RPC after changing hints is **infra** (operators restart the process).
  */
 
@@ -64,6 +65,9 @@ export const BOING_TESTNET_CANONICAL_NATIVE_ENV: Readonly<Record<string, string>
     '0x937d09ee8e4dcc521c812566ad4930792e74ad004ecb3ae2cc73dc015813aa8d',
   BOING_CANONICAL_NATIVE_LP_SHARE_TOKEN:
     '0x101201403f573e5b1d6d5c6b93d52d12c68957f4a228d5dad76e78c747044421',
+  BOING_DEX_TOKEN_METADATA_SCAN_BLOCKS: '8192',
+  BOING_DEX_DISCOVERY_MAX_RECEIPT_SCANS: '500000',
+  BOING_DEX_TOKEN_DECIMALS_JSON: '{}',
 } as const;
 
 const BOING_TESTNET_NODE_ARGS_CORE = `--p2p-listen /ip4/0.0.0.0/tcp/4001 --bootnodes ${BOING_TESTNET_BOOTNODES_CLI} --rpc-port 8545 --faucet-enable`;

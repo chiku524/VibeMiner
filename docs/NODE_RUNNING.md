@@ -50,7 +50,7 @@ See **[BOING_QA_RPC_AND_RELEASES.md](./BOING_QA_RPC_AND_RELEASES.md)** for a ful
 
 ### Boing: local node vs Cloudflare / indexer (no restart needed)
 
-Deploying **Workers**, **D1**, or the **native DEX indexer** on Cloudflare does **not** require restarting a `boing-node` you run in VibeMiner. Those services talk to **public** RPC or their own storage. Restart the local node only when you want a **new `boing-node` binary** (new RPC methods, bugfixes) or when you change **`BOING_CANONICAL_NATIVE_*`** env overrides and want the process to pick up defaults injected at spawn.
+Deploying **Workers**, **D1**, or the **native DEX indexer** on Cloudflare does **not** require restarting a `boing-node` you run in VibeMiner. Those services talk to **public** RPC or their own storage. Restart the local node only when you want a **new `boing-node` binary** (new RPC methods, bugfixes) or when you change **`BOING_CANONICAL_NATIVE_*`** or **`BOING_DEX_*`** env overrides and want the process to pick up defaults injected at spawn.
 
 ### Boing: run a locally built `boing-node` (upgrade before the next GitHub zip)
 

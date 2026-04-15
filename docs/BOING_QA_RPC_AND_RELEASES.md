@@ -13,7 +13,7 @@ The dashboard **Testnet: tokens, contracts & NFTs** panel includes links to nati
 
 ## Canonical native DEX RPC hints (`BOING_CANONICAL_NATIVE_*`)
 
-When VibeMiner spawns **`boing-node`** for a Boing network, it injects **`BOING_TESTNET_CANONICAL_NATIVE_ENV`** (see `packages/shared/src/boing-testnet-node.ts` and `apps/tauri/src-tauri/src/node.rs`) unless **`VIBEMINER_SKIP_BOING_CANONICAL_DEFAULTS=1`**. Keep these ids aligned with Boing **`tools/boing-node-public-testnet.env.example`**, **`boing-sdk/src/canonicalTestnetDex.ts`**, and **`scripts/canonical-testnet-dex-predicted.json`** — especially **`BOING_CANONICAL_NATIVE_DEX_MULTIHOP_SWAP_ROUTER`**, which changes when multihop router bytecode is revised (same CREATE2 salt, new artifact).
+When VibeMiner spawns **`boing-node`** for a Boing network, it injects **`BOING_TESTNET_CANONICAL_NATIVE_ENV`** (see `packages/shared/src/boing-testnet-node.ts` and `apps/tauri/src-tauri/src/node.rs`) unless **`VIBEMINER_SKIP_BOING_CANONICAL_DEFAULTS=1`**. Keep these ids aligned with Boing **`tools/boing-node-public-testnet.env.example`**, **`boing-sdk/src/canonicalTestnetDex.ts`**, and **`scripts/canonical-testnet-dex-predicted.json`** — especially **`BOING_CANONICAL_NATIVE_DEX_MULTIHOP_SWAP_ROUTER`**, which changes when multihop router bytecode is revised (same CREATE2 salt, new artifact). Also align **`BOING_DEX_TOKEN_METADATA_SCAN_BLOCKS`**, **`BOING_DEX_DISCOVERY_MAX_RECEIPT_SCANS`**, and **`BOING_DEX_TOKEN_DECIMALS_JSON`** with that template so local nodes match public RPC labeling limits for **`boing_listDexPools`** / **`boing_listDexTokens`**.
 
 ## `boing_getQaRegistry` and QA transparency
 

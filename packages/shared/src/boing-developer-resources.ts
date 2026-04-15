@@ -85,7 +85,7 @@ export const BOING_TESTNET_TOOLKIT_LINKS: BoingToolkitLink[] = [
   {
     label: 'RUNBOOK — canonical native DEX RPC hints',
     href: 'https://github.com/Boing-Network/boing.network/blob/main/docs/RUNBOOK.md',
-    hint: 'BOING_CANONICAL_NATIVE_* on the boing-node process; VibeMiner injects testnet defaults when unset (see BOING_TESTNET_CANONICAL_NATIVE_ENV).',
+    hint: 'BOING_CANONICAL_NATIVE_* and BOING_DEX_* on boing-node; VibeMiner injects testnet defaults when unset (BOING_TESTNET_CANONICAL_NATIVE_ENV).',
   },
 ];
 

@@ -399,10 +399,12 @@ fn node_download_cache_key(url: &str) -> String {
 /// binary from current Boing `main` when GitHub releases lag).
 pub const VIBEMINER_BOING_NODE_EXE_ENV: &str = "VIBEMINER_BOING_NODE_EXE";
 
-/// When set to `1` or `true`, do not inject default `BOING_CANONICAL_NATIVE_*` hints for Boing networks.
+/// When set to `1` or `true`, do not inject default Boing testnet `BOING_*` process env (`BOING_CANONICAL_NATIVE_*`
+/// and DEX discovery tuning — see `BOING_TESTNET_CANONICAL_NATIVE_DEFAULTS`).
 pub const VIBEMINER_SKIP_BOING_CANONICAL_DEFAULTS_ENV: &str = "VIBEMINER_SKIP_BOING_CANONICAL_DEFAULTS";
 
-/// Default public-testnet canonical native DEX `AccountId`s (`boing_getNetworkInfo.end_user`).
+/// Default public-testnet `boing-node` env: canonical DEX `AccountId`s (`boing_getNetworkInfo.end_user`) and
+/// DEX L1 discovery limits (`BOING_DEX_*`, same semantics as `boing.network` node).
 /// Keep in sync with `boing.network/tools/boing-node-public-testnet.env.example` and
 /// `packages/shared/src/boing-testnet-node.ts` (`BOING_TESTNET_CANONICAL_NATIVE_ENV`).
 const BOING_TESTNET_CANONICAL_NATIVE_DEFAULTS: &[(&str, &str)] = &[
@@ -434,6 +436,9 @@ const BOING_TESTNET_CANONICAL_NATIVE_DEFAULTS: &[(&str, &str)] = &[
         "BOING_CANONICAL_NATIVE_LP_SHARE_TOKEN",
         "0x101201403f573e5b1d6d5c6b93d52d12c68957f4a228d5dad76e78c747044421",
     ),
+    ("BOING_DEX_TOKEN_METADATA_SCAN_BLOCKS", "8192"),
+    ("BOING_DEX_DISCOVERY_MAX_RECEIPT_SCANS", "500000"),
+    ("BOING_DEX_TOKEN_DECIMALS_JSON", "{}"),
 ];
 
 fn apply_boing_testnet_canonical_env_defaults(cmd: &mut Command, network_id: &str) {

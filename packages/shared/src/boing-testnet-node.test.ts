@@ -14,6 +14,12 @@ describe('BOING_TESTNET_CANONICAL_NATIVE_ENV', () => {
       '0xf801cd1aa5ec402f89a2f394b49e6b0c136264d8945b16a4a6a81a188b18acc1',
     );
   });
+
+  it('DEX discovery env matches tools/boing-node-public-testnet.env.example (scan limits + decimals map)', () => {
+    expect(BOING_TESTNET_CANONICAL_NATIVE_ENV.BOING_DEX_TOKEN_METADATA_SCAN_BLOCKS).toBe('8192');
+    expect(BOING_TESTNET_CANONICAL_NATIVE_ENV.BOING_DEX_DISCOVERY_MAX_RECEIPT_SCANS).toBe('500000');
+    expect(BOING_TESTNET_CANONICAL_NATIVE_ENV.BOING_DEX_TOKEN_DECIMALS_JSON).toBe('{}');
+  });
 });
 
 describe('patchBlockchainNetworkJsonForBoing', () => {
