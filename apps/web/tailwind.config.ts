@@ -8,6 +8,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      screens: {
+        /** Matches Tauri main window minWidth (900px) for desktop shell sidebar */
+        shell: '900px',
+      },
       fontFamily: {
         sans: ['var(--font-display)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'monospace'],

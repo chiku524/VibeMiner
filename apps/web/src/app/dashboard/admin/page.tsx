@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import { Users, Network, Wallet } from 'lucide-react';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
-import { BrandMark } from '@/components/BrandMark';
+import { WebAppHeader } from '@/components/WebAppHeader';
 import { MiningLoader } from '@/components/ui/MiningLoader';
 import { PLATFORM_WALLET } from '@/lib/platform-wallet';
 
@@ -52,7 +52,7 @@ export default function AdminDashboardPage() {
   if (loading || !user) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${!isDesktop ? 'pt-14' : 'pt-6'}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
+        <div className="flex flex-1 flex-col items-center justify-center px-4 pt-6" style={{ minHeight: 'calc(100dvh - 4rem)' }}>
           <MiningLoader size="sm" label="Loading…" />
         </div>
       </main>
@@ -62,7 +62,7 @@ export default function AdminDashboardPage() {
   if (!isAdmin) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${!isDesktop ? 'pt-14' : 'pt-6'}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
+        <div className="flex flex-1 flex-col items-center justify-center px-4 pt-6" style={{ minHeight: 'calc(100dvh - 4rem)' }}>
           <p className="text-sm text-gray-400">Redirecting…</p>
         </div>
       </main>
@@ -71,31 +71,16 @@ export default function AdminDashboardPage() {
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
-      {!isDesktop && (
-        <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-            <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold">
-              <BrandMark className="h-6 w-6 shrink-0" />
-              <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
-                VibeMiner
-              </span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="text-sm text-gray-400 transition hover:text-white">
-                Dashboard
-              </Link>
-              <Link href="/fees" className="text-sm text-gray-400 transition hover:text-white">
-                Fees
-              </Link>
-              <Link href="/" className="text-sm text-gray-400 transition hover:text-white">
-                ← Back home
-              </Link>
-            </div>
-          </div>
-        </header>
-      )}
+      <WebAppHeader
+        homeHref="/"
+        links={[
+          { href: '/dashboard', label: 'Dashboard' },
+          { href: '/fees', label: 'Fees' },
+          { href: '/', label: '← Back home' },
+        ]}
+      />
 
-      <div className={`mx-auto w-full min-w-0 max-w-4xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pt-6 pb-8'}`}>
+      <div className={`mx-auto w-full min-w-0 max-w-4xl px-4 sm:px-6 ${!isDesktop ? 'pb-8 pt-6' : 'pt-6 pb-8'}`}>
         <Breadcrumbs
           crumbs={[
             { label: 'Home', href: '/home' },

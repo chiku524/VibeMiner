@@ -69,7 +69,7 @@ export default function MiningSessionsPage() {
   if (authLoading || !user) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        <div className={`flex min-h-[60vh] flex-col items-center justify-center ${!isDesktop ? 'pt-14' : 'pt-6'}`}>
+        <div className="flex min-h-[60vh] flex-col items-center justify-center">
           <MiningLoader size="md" label="Loading…" />
         </div>
       </main>
@@ -78,7 +78,7 @@ export default function MiningSessionsPage() {
 
   return (
     <>
-      <div className={`mx-auto w-full min-w-0 max-w-4xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pt-6 pb-8'}`}>
+      <div className={`mx-auto w-full min-w-0 max-w-4xl px-4 sm:px-6 ${!isDesktop ? 'pb-8 pt-6' : 'pt-6 pb-8'}`}>
         <Breadcrumbs
           crumbs={[
             { label: 'Home', href: '/home' },

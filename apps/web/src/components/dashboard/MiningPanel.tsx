@@ -155,7 +155,7 @@ export function MiningPanel({ session, network, onStop, compact = false }: Minin
         </div>
       </div>
 
-      <div className="grid gap-4 p-5 sm:grid-cols-4">
+      <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg bg-surface-850/80 p-3">
           <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Hash rate</p>
           <p className="mt-0.5 font-mono text-lg text-accent-cyan">{session.hashrate} <span className="text-xs text-gray-400">H/s</span></p>

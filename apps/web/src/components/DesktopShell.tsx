@@ -82,8 +82,8 @@ function SidebarContent({ onNavigate, mobileOpen }: SidebarProps) {
   return (
     <aside
       id="desktop-app-sidebar"
-      className={`fixed left-0 top-0 z-40 flex h-screen w-[min(260px,92vw)] flex-col border-r border-white/5 bg-surface-900/98 backdrop-blur-md transition-transform duration-200 ease-out lg:w-[240px] lg:translate-x-0 ${
-        mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
+      className={`fixed left-0 top-0 z-40 flex h-screen w-[min(260px,92vw)] flex-col border-r border-white/5 bg-surface-900/98 backdrop-blur-md transition-transform duration-200 ease-out shell:w-[240px] shell:translate-x-0 ${
+        mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full shell:translate-x-0'
       }`}
     >
       <div className="flex h-14 shrink-0 items-center gap-2 border-b border-white/5 px-4">
@@ -102,7 +102,7 @@ function SidebarContent({ onNavigate, mobileOpen }: SidebarProps) {
           type="button"
           aria-label="Close menu"
           onClick={() => onNavigate?.()}
-          className="rounded-lg p-2 text-gray-400 hover:bg-white/10 hover:text-white lg:hidden"
+          className="rounded-lg p-2 text-gray-400 hover:bg-white/10 hover:text-white shell:hidden"
         >
           <X className="h-5 w-5" />
         </button>
@@ -211,14 +211,14 @@ function DesktopShellInner({ children }: { children: React.ReactNode }) {
       <div
         role="presentation"
         aria-hidden={!mobileNavOpen}
-        className={`fixed inset-0 z-30 bg-black/60 transition-opacity lg:hidden ${
+        className={`fixed inset-0 z-30 bg-black/60 transition-opacity shell:hidden ${
           mobileNavOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
         onClick={() => setMobileNavOpen(false)}
       />
       <SidebarContent mobileOpen={mobileNavOpen} onNavigate={() => setMobileNavOpen(false)} />
-      <main className="flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden lg:ml-[240px]">
-        <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-white/5 bg-surface-950/95 px-3 py-2.5 backdrop-blur-md lg:hidden">
+      <main className="flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden shell:ml-[240px]">
+        <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-white/5 bg-surface-950/95 px-3 py-2.5 backdrop-blur-md shell:hidden">
           <button
             type="button"
             aria-label="Open navigation"

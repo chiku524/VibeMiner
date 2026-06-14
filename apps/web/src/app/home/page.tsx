@@ -20,6 +20,7 @@ import {
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { BrandMark } from '@/components/BrandMark';
+import { WebAppHeader } from '@/components/WebAppHeader';
 import { MiningLoader } from '@/components/ui/MiningLoader';
 
 const MINER_NAV_ITEMS = [
@@ -53,7 +54,7 @@ export default function HomePage() {
   if (loading || !user) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        <div className={`flex min-h-[60vh] flex-col items-center justify-center ${!isDesktop ? 'pt-14' : ''}`}>
+        <div className="flex min-h-[60vh] flex-col items-center justify-center">
           <MiningLoader size="md" label="Loading…" />
         </div>
       </main>
@@ -65,24 +66,14 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
-      {!isDesktop && (
-        <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-            <Link href="/home" className="flex items-center gap-2 font-display text-lg font-semibold">
-              <BrandMark className="h-6 w-6 shrink-0" />
-              <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
-                VibeMiner
-              </span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <Link href="/networks" className="text-sm text-gray-400 transition hover:text-white">Networks</Link>
-              <Link href="/" className="text-sm text-gray-400 transition hover:text-white">← Landing</Link>
-            </div>
-          </div>
-        </header>
-      )}
+      <WebAppHeader
+        links={[
+          { href: '/networks', label: 'Networks' },
+          { href: '/', label: '← Landing' },
+        ]}
+      />
 
-      <div className={`mx-auto w-full min-w-0 max-w-2xl px-4 py-8 sm:px-6 ${!isDesktop ? 'pt-14' : 'pt-6'}`}>
+      <div className={`mx-auto w-full min-w-0 max-w-2xl px-4 py-8 sm:px-6 ${!isDesktop ? 'pt-6' : 'pt-6'}`}>
         <Breadcrumbs crumbs={[{ label: 'Home' }]} />
         <motion.div
           initial={{ opacity: 0, y: 8 }}

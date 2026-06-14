@@ -80,7 +80,7 @@ function OnboardingModal({ onDismiss }: { onDismiss: () => void }) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95 }}
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-md rounded-2xl border border-white/10 bg-surface-900 p-8 shadow-xl"
+          className="w-full max-w-md max-h-[min(90dvh,720px)] overflow-y-auto rounded-2xl border border-white/10 bg-surface-900 p-8 shadow-xl"
         >
           <h2 className="font-display text-2xl font-bold text-white">Welcome to VibeMiner</h2>
           <p className="mt-2 text-sm text-gray-400">Here’s how to get started in 3 steps:</p>

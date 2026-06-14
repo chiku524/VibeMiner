@@ -797,7 +797,7 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
                         className="mt-1 w-full rounded border border-white/10 bg-surface-950 px-2 py-1.5 font-mono text-sm text-white"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <div>
                         <label className="block text-xs text-gray-500">Disk (GB)</label>
                         <input
@@ -859,7 +859,7 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
                     className="mt-1 w-full rounded-lg border border-white/10 bg-surface-900 px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label htmlFor="req-node-disk" className="block text-xs font-medium text-gray-500">Disk (GB)</label>
                     <input

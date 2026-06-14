@@ -33,6 +33,7 @@ import { NetworkListSkeleton, DashboardSkeleton } from '@/components/ui/Skeleton
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { BrandMark } from '@/components/BrandMark';
+import { WebAppHeader } from '@/components/WebAppHeader';
 import { NetworkMark } from '@/components/ui/NetworkMark';
 import { MiningLoader } from '@/components/ui/MiningLoader';
 
@@ -304,7 +305,7 @@ export function DashboardContent() {
   if (!authLoading && accountType === 'network') {
     return (
       <>
-        <main className={`min-h-screen bg-surface-950 bg-grid flex items-center justify-center ${!isDesktop ? 'pt-14' : 'pt-6'}`}>
+        <main className={`min-h-screen bg-surface-950 bg-grid flex items-center justify-center ${!isDesktop ? '' : 'pt-6'}`}>
           <MiningLoader size="sm" />
         </main>
       </>
@@ -314,21 +315,11 @@ export function DashboardContent() {
   if (authLoading) {
     return (
       <>
-        {!isDesktop && (
-          <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
-            <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-              <Link href="/home" className="flex items-center gap-2 font-display text-lg font-semibold">
-                <BrandMark className="h-6 w-6 shrink-0" />
-                <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">VibeMiner</span>
-              </Link>
-              <Link href="/home" className="text-sm text-gray-400 transition hover:text-white">← Home</Link>
-            </div>
-          </header>
-        )}
-        <div className={`mx-auto w-full min-w-0 max-w-6xl px-4 py-8 sm:px-6 ${!isDesktop ? 'pt-14' : 'pt-6'}`}>
+        <WebAppHeader links={[{ href: '/home', label: '← Home' }]} />
+        <div className={`mx-auto w-full min-w-0 max-w-6xl px-4 py-8 sm:px-6 ${!isDesktop ? '' : 'pt-6'}`}>
           <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: 'Dashboard' }]} />
           <div className="mb-8 mt-4 h-16 w-64 rounded-lg bg-white/5 animate-pulse" aria-hidden />
-          <div className="grid min-w-0 gap-8 lg:grid-cols-3">
+          <div className="grid min-w-0 gap-8 md:grid-cols-2 xl:grid-cols-3">
             <div className="min-w-0 space-y-4 lg:col-span-1">
               <div className="h-12 rounded-xl bg-white/5 animate-pulse" />
               <div className="h-10 rounded-xl bg-white/5 animate-pulse" />
@@ -347,34 +338,16 @@ export function DashboardContent() {
 
   return (
     <>
-      {!isDesktop && (
-        <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-            <Link href="/home" className="flex items-center gap-2 font-display text-lg font-semibold">
-              <BrandMark className="h-6 w-6 shrink-0" />
-              <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">
-                VibeMiner
-              </span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard/sessions" className="text-sm text-gray-400 transition hover:text-white">
-                Sessions
-              </Link>
-              <Link href="/networks" className="text-sm text-gray-400 transition hover:text-white">
-                Networks
-              </Link>
-              <Link href="/dashboard/settings" className="text-sm text-gray-400 transition hover:text-white">
-                Settings
-              </Link>
-              <Link href="/home" className="text-sm text-gray-400 transition hover:text-white">
-                ← Home
-              </Link>
-            </div>
-          </div>
-        </header>
-      )}
+      <WebAppHeader
+        links={[
+          { href: '/dashboard/sessions', label: 'Sessions' },
+          { href: '/networks', label: 'Networks' },
+          { href: '/dashboard/settings', label: 'Settings' },
+          { href: '/home', label: '← Home' },
+        ]}
+      />
 
-      <div className={`mx-auto w-full min-w-0 max-w-6xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pt-6 pb-8'}`}>
+      <div className={`mx-auto w-full min-w-0 max-w-6xl px-4 sm:px-6 ${!isDesktop ? 'pb-8 pt-6' : 'pt-6 pb-8'}`}>
         <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: 'Dashboard' }]} />
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -390,7 +363,7 @@ export function DashboardContent() {
           </p>
         </motion.div>
 
-        <div className="grid min-w-0 gap-8 lg:grid-cols-3">
+        <div className="grid min-w-0 gap-8 md:grid-cols-2 xl:grid-cols-3">
           <div className="min-w-0 lg:col-span-1">
             <div className="relative mb-4 flex rounded-xl bg-surface-900/50 p-1">
               {ENV_OPTIONS.map((opt) => (

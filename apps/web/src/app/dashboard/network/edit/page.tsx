@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
-import { BrandMark } from '@/components/BrandMark';
+import { WebAppHeader } from '@/components/WebAppHeader';
 import { MiningLoader } from '@/components/ui/MiningLoader';
 import { RequestListingForm, type NetworkListingInitialData } from '@/components/RequestListingForm';
 import type { NetworkEnvironment, NetworkNodePreset } from '@vibeminer/shared';
@@ -88,7 +88,7 @@ export default function EditNetworkPage() {
   if (!user && !loading) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${!isDesktop ? 'pt-14' : 'pt-6'}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
+        <div className="flex flex-1 flex-col items-center justify-center px-4 pt-6" style={{ minHeight: 'calc(100dvh - 4rem)' }}>
           <p className="text-gray-400">Sign in to edit your network.</p>
           <Link href="/login" className="mt-4 text-accent-cyan hover:underline">Sign in</Link>
         </div>
@@ -99,7 +99,7 @@ export default function EditNetworkPage() {
   if (accountType !== 'network' && !loading) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${!isDesktop ? 'pt-14' : 'pt-6'}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
+        <div className="flex flex-1 flex-col items-center justify-center px-4 pt-6" style={{ minHeight: 'calc(100dvh - 4rem)' }}>
           <p className="text-gray-400">Only network accounts can edit listings.</p>
           <Link href="/dashboard" className="mt-4 text-accent-cyan hover:underline">Go to dashboard</Link>
         </div>
@@ -110,7 +110,7 @@ export default function EditNetworkPage() {
   if (!id) {
     return (
       <main className="min-h-screen bg-surface-950 bg-grid">
-        <div className={`flex flex-1 flex-col items-center justify-center px-4 ${!isDesktop ? 'pt-14' : 'pt-6'}`} style={{ minHeight: 'calc(100vh - 4rem)' }}>
+        <div className="flex flex-1 flex-col items-center justify-center px-4 pt-6" style={{ minHeight: 'calc(100dvh - 4rem)' }}>
           <p className="text-gray-400">No network specified.</p>
           <Link href="/dashboard/settings" className="mt-4 text-accent-cyan hover:underline">Back to settings</Link>
         </div>
@@ -120,18 +120,11 @@ export default function EditNetworkPage() {
 
   return (
     <main className="min-h-screen bg-surface-950 bg-grid">
-      {!isDesktop && (
-        <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-            <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold">
-              <BrandMark className="h-6 w-6 shrink-0" />
-              <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">VibeMiner</span>
-            </Link>
-            <Link href="/dashboard/settings" className="text-sm text-gray-400 transition hover:text-white">← Settings</Link>
-          </div>
-        </header>
-      )}
-      <div className={`mx-auto w-full min-w-0 max-w-3xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pt-6 pb-8'}`}>
+      <WebAppHeader
+        homeHref="/"
+        links={[{ href: '/dashboard/settings', label: '← Settings' }]}
+      />
+      <div className={`mx-auto w-full min-w-0 max-w-3xl px-4 sm:px-6 ${!isDesktop ? 'pb-8 pt-6' : 'pt-6 pb-8'}`}>
         <Breadcrumbs
           crumbs={[
             { label: 'Home', href: '/home' },

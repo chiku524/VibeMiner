@@ -36,9 +36,20 @@ import { NetworkListSkeleton, DashboardSkeleton } from '@/components/ui/Skeleton
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { BrandMark } from '@/components/BrandMark';
+import { WebAppHeader } from '@/components/WebAppHeader';
+import { MiningSessionSummaryTable } from '@/components/dashboard/MiningSessionSummaryTable';
 import { MiningLoader } from '@/components/ui/MiningLoader';
 import { NetworkMark } from '@/components/ui/NetworkMark';
 import { Radio, Zap, Coins, BarChart3 } from 'lucide-react';
+
+const WORKSPACE_HEADER_LINKS = [
+  { href: '/dashboard/mining', label: 'Mining' },
+  { href: '/dashboard/nodes', label: 'Run nodes' },
+  { href: '/dashboard/sessions', label: 'Sessions' },
+  { href: '/networks', label: 'Networks' },
+  { href: '/dashboard/settings', label: 'Settings' },
+  { href: '/home', label: '← Home' },
+] as const;
 
 export type WorkspaceMode = 'mining' | 'nodes';
 
@@ -324,7 +335,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
   if (!authLoading && accountType === 'network') {
     return (
       <>
-        <main className={`min-h-screen bg-surface-950 bg-grid flex items-center justify-center ${!isDesktop ? 'pt-14' : ''}`}>
+        <main className={`min-h-screen bg-surface-950 bg-grid flex items-center justify-center`}>
           <MiningLoader size="sm" />
         </main>
       </>
@@ -334,21 +345,11 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
   if (authLoading) {
     return (
       <>
-        {!isDesktop && (
-          <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
-            <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-              <Link href="/home" className="flex items-center gap-2 font-display text-lg font-semibold">
-                <BrandMark className="h-6 w-6 shrink-0" />
-                <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">VibeMiner</span>
-              </Link>
-              <Link href="/home" className="text-sm text-gray-400 transition hover:text-white">← Home</Link>
-            </div>
-          </header>
-        )}
-        <div className={`mx-auto w-full min-w-0 max-w-6xl px-4 py-8 sm:px-6 ${!isDesktop ? 'pt-14' : ''}`}>
+        <WebAppHeader links={[{ href: '/home', label: '← Home' }]} />
+        <div className={`mx-auto w-full min-w-0 max-w-6xl px-4 py-8 sm:px-6`}>
           <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: title }]} />
           <div className="mb-8 mt-4 h-16 w-64 rounded-lg bg-white/5 animate-pulse" aria-hidden />
-          <div className="grid min-w-0 gap-8 lg:grid-cols-3">
+          <div className="grid min-w-0 gap-8 md:grid-cols-2 xl:grid-cols-3">
             <div className="min-w-0 space-y-4 lg:col-span-1">
               <div className="h-12 rounded-xl bg-white/5 animate-pulse" />
               <div className="h-10 rounded-xl bg-white/5 animate-pulse" />
@@ -367,26 +368,9 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
 
   return (
     <>
-      {!isDesktop && (
-        <header className="sticky top-0 z-10 border-b border-white/5 bg-surface-950/90 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-            <Link href="/home" className="flex items-center gap-2 font-display text-lg font-semibold">
-              <BrandMark className="h-6 w-6 shrink-0" />
-              <span className="bg-gradient-to-r from-accent-cyan to-emerald-400 bg-clip-text text-transparent">VibeMiner</span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard/mining" className="text-sm text-gray-400 transition hover:text-white">Mining</Link>
-              <Link href="/dashboard/nodes" className="text-sm text-gray-400 transition hover:text-white">Run nodes</Link>
-              <Link href="/dashboard/sessions" className="text-sm text-gray-400 transition hover:text-white">Sessions</Link>
-              <Link href="/networks" className="text-sm text-gray-400 transition hover:text-white">Networks</Link>
-              <Link href="/dashboard/settings" className="text-sm text-gray-400 transition hover:text-white">Settings</Link>
-              <Link href="/home" className="text-sm text-gray-400 transition hover:text-white">← Home</Link>
-            </div>
-          </div>
-        </header>
-      )}
+      <WebAppHeader links={[...WORKSPACE_HEADER_LINKS]} />
 
-      <div className={`mx-auto w-full min-w-0 max-w-6xl px-4 sm:px-6 ${!isDesktop ? 'pt-14 pb-8' : 'pb-8 pt-6'}`}>
+      <div className={`mx-auto w-full min-w-0 max-w-6xl px-4 sm:px-6 ${!isDesktop ? 'pb-8 pt-6' : 'pb-8 pt-6'}`}>
         <Breadcrumbs crumbs={[{ label: 'Home', href: '/home' }, { label: title }]} />
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8 mt-4">
           <h1 className="font-display text-2xl font-bold sm:text-3xl">{title}</h1>
@@ -396,7 +380,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
           </p>
         </motion.div>
 
-        <div className="grid min-w-0 gap-8 lg:grid-cols-3">
+        <div className="grid min-w-0 gap-8 md:grid-cols-2 xl:grid-cols-3">
           <div className="min-w-0 lg:col-span-1">
             <div className="relative mb-4 flex rounded-xl bg-surface-900/50 p-1">
               {ENV_OPTIONS.map((opt) => (
@@ -617,33 +601,7 @@ export function WorkspaceContent({ mode }: WorkspaceContentProps) {
                       </div>
                     </div>
                     {sessionsMiningOnly.length > 0 && (
-                      <div className="mt-4 overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b border-white/10 text-left text-xs text-gray-500">
-                              <th className="pb-2 pr-3 font-medium">Network</th>
-                              <th className="pb-2 pr-3 font-medium">Hashrate</th>
-                              <th className="pb-2 pr-3 font-medium">Shares</th>
-                              <th className="pb-2 pr-3 font-medium">Est. earnings</th>
-                              <th className="pb-2 font-medium">Uptime</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {sessionsMiningOnly.map(({ session, network }) => {
-                              const elapsed = session.startedAt ? Date.now() - session.startedAt : 0;
-                              return (
-                                <tr key={sessionListKey(session)} className="border-b border-white/5">
-                                  <td className="py-2.5 pr-3 font-medium text-white">{network.name}</td>
-                                  <td className="py-2.5 pr-3 font-mono text-accent-cyan">{session.hashrate} H/s</td>
-                                  <td className="py-2.5 pr-3 font-mono text-gray-300">{session.shares}</td>
-                                  <td className="py-2.5 pr-3 font-mono text-accent-emerald">{session.estimatedEarnings} {network.symbol}</td>
-                                  <td className="py-2.5 font-mono text-gray-400">{formatDuration(elapsed)}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
+                      <MiningSessionSummaryTable rows={sessionsMiningOnly} formatDuration={formatDuration} />
                     )}
                   </motion.section>
                   <div className="space-y-3">
