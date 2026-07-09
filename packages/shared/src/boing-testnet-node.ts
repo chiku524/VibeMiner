@@ -26,8 +26,8 @@
 /** JSON-RPC method for live rule registry (Boing Observer / transparency). Requires recent boing-node. */
 export const BOING_RPC_METHOD_GET_QA_REGISTRY = 'boing_getQaRegistry';
 
-/** Pinned release for default downloads when no listing overrides exist (includes DEX discovery RPC + `boing_getQaRegistry`). */
-export const BOING_TESTNET_DEFAULT_DOWNLOAD_TAG = 'testnet-v0.1.9';
+/** Pinned release for default downloads when no listing overrides exist (50k faucet + stake one-click). */
+export const BOING_TESTNET_DEFAULT_DOWNLOAD_TAG = 'testnet-v0.1.10';
 
 /**
  * Bootnode multiaddrs — keep in sync with `website/src/config/testnet.ts` (`PUBLIC_BOOTNODES` fallback).
@@ -89,13 +89,13 @@ export const BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL = `https://github.
  * Refresh from `website/scripts/network-listings-release-sql.mjs <tag>` when you cut a new release, or run `node scripts/print-boing-testnet-zip-shas.mjs <tag>`.
  */
 export const BOING_TESTNET_ZIP_SHA256_WINDOWS =
-  '0e5c9d42a603dbaf4471feb4ea367f89146bd21b11dde4b5b70cc430997fff37';
+  '76c89f0e25069bb4462244778291c673590b818547f637af9205b1efa2ffce8e';
 
 export const BOING_TESTNET_ZIP_SHA256_LINUX =
-  '037807bd7cf57b1049d82739f764567f1ea55bb6852b6680917e833c865e6514';
+  'b576df6288d9ead28dd9ba380850e97738b7f9cf058ab95ed925293162409561';
 
 export const BOING_TESTNET_ZIP_SHA256_MACOS_AARCH64 =
-  'a5830f7d492917cb830a7d7a69e254fff382c038fa6a97cb26d60ed67ea1dc8b';
+  '5ddd479223be9a195dd6b33f60cd1001836af754720bde5766f44e0e8d7b984f';
 
 /** Full node + faucet (matches Boing testnet join / INFRASTRUCTURE-SETUP). */
 export const BOING_TESTNET_DEFAULT_WINDOWS_COMMAND_TEMPLATE =
@@ -183,7 +183,7 @@ export function applyBoingBootnodesToCommandTemplate(
 const CANONICAL_BOING_GITHUB_ORG_PATH = 'github.com/Boing-Network/boing.network/';
 const CANONICAL_BOING_RELEASE_DL = `${CANONICAL_BOING_GITHUB_ORG_PATH}releases/download/`;
 /** Tags before QA transparency RPC (`boing_getQaRegistry`) existed in published Windows zips. */
-const STALE_TESTNET_TAG_RE = /\/download\/(testnet-v0\.1\.(?:0|1|2|3|4|5|6|7|8))\//;
+const STALE_TESTNET_TAG_RE = /\/download\/(testnet-v0\.1\.(?:0|1|2|3|4|5|6|7|8|9))\//;
 
 function zipSha256ForOfficialBoingUrl(url: string): string | undefined {
   let h: string;
