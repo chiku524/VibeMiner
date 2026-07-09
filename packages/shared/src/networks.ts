@@ -165,7 +165,7 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
     name: 'Boing (Testnet)',
     symbol: 'BOING',
     description:
-      'Boing testnet: full node or validator (boing-node) via presets below. Local RPC on 8545 with --faucet-enable; use it with the Boing SDK / Boing Express for deploys, reference token/NFT calldata, and QA preflight. Public RPC powers the faucet and observer; bootnodes match boing.network. Use a current boing-node release for boing_getQaRegistry / boing_qaPoolConfig on the public endpoint. PoS—stake BOING to validate.',
+      'Boing testnet: full node or local validator (boing-node) via presets below. Local RPC on 8545 with --faucet-enable; use it with the Boing SDK / Boing Express for deploys, reference token/NFT calldata, and QA preflight. Public RPC powers the faucet and observer; bootnodes match boing.network. Use a current boing-node release for boing_getQaRegistry / boing_qaPoolConfig on the public endpoint. Prefer the full-node preset to sync the public testnet. Validator presets add --validator for local block production (solo/dev); joining the public stake-derived set needs --validator-set stake and a validator key outside this one-click flow.',
     icon: '◎',
     algorithm: 'PoS',
     environment: 'devnet',
@@ -187,8 +187,9 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
       },
       {
         presetId: 'windows-validator',
-        label: 'Windows (x86_64) — validator',
-        description: 'Same binary; adds --validator for block production (stake BOING).',
+        label: 'Windows (x86_64) — local validator (dev)',
+        description:
+          'Same binary; adds --validator for local block production. Not the public stake-derived set (needs --validator-set stake + key).',
         commandTemplate: BOING_TESTNET_DEFAULT_WINDOWS_VALIDATOR_COMMAND_TEMPLATE,
       },
       {
@@ -199,7 +200,9 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
       },
       {
         presetId: 'linux-validator',
-        label: 'Linux (x86_64) — validator',
+        label: 'Linux (x86_64) — local validator (dev)',
+        description:
+          'Same binary; adds --validator for local block production. Not the public stake-derived set (needs --validator-set stake + key).',
         nodeDownloadUrl: BOING_TESTNET_DEFAULT_LINUX_DOWNLOAD_URL,
         commandTemplate: BOING_TESTNET_DEFAULT_LINUX_VALIDATOR_COMMAND_TEMPLATE,
       },
@@ -211,7 +214,9 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
       },
       {
         presetId: 'macos-arm64-validator',
-        label: 'macOS (Apple Silicon) — validator',
+        label: 'macOS (Apple Silicon) — local validator (dev)',
+        description:
+          'Same binary; adds --validator for local block production. Not the public stake-derived set (needs --validator-set stake + key).',
         nodeDownloadUrl: BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL,
         commandTemplate: BOING_TESTNET_DEFAULT_MACOS_AARCH64_VALIDATOR_COMMAND_TEMPLATE,
       },

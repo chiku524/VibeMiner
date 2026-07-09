@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applyBoingBootnodesToCommandTemplate,
   BOING_TESTNET_CANONICAL_NATIVE_ENV,
   BOING_TESTNET_DEFAULT_WINDOWS_DOWNLOAD_URL,
   BOING_TESTNET_ZIP_SHA256_LINUX,
@@ -19,6 +20,32 @@ describe('BOING_TESTNET_CANONICAL_NATIVE_ENV', () => {
     expect(BOING_TESTNET_CANONICAL_NATIVE_ENV.BOING_DEX_TOKEN_METADATA_SCAN_BLOCKS).toBe('8192');
     expect(BOING_TESTNET_CANONICAL_NATIVE_ENV.BOING_DEX_DISCOVERY_MAX_RECEIPT_SCANS).toBe('500000');
     expect(BOING_TESTNET_CANONICAL_NATIVE_ENV.BOING_DEX_TOKEN_DECIMALS_JSON).toBe('{}');
+  });
+
+  it('injects public testnet chain id / name for wallet-facing RPC metadata', () => {
+    expect(BOING_TESTNET_CANONICAL_NATIVE_ENV.BOING_CHAIN_ID).toBe('6913');
+    expect(BOING_TESTNET_CANONICAL_NATIVE_ENV.BOING_CHAIN_NAME).toBe('Boing Testnet');
+  });
+});
+
+describe('applyBoingBootnodesToCommandTemplate', () => {
+  it('replaces existing --bootnodes list', () => {
+    const out = applyBoingBootnodesToCommandTemplate(
+      'boing-node.exe --data-dir {dataDir} --bootnodes /ip4/9.9.9.9/tcp/4001 --rpc-port 8545',
+      ['/ip4/1.2.3.4/tcp/4001', '/ip4/5.6.7.8/tcp/4001'],
+    );
+    expect(out).toContain('--bootnodes /ip4/1.2.3.4/tcp/4001,/ip4/5.6.7.8/tcp/4001');
+    expect(out).not.toContain('9.9.9.9');
+  });
+
+  it('inserts --bootnodes before --rpc-port when missing', () => {
+    const out = applyBoingBootnodesToCommandTemplate(
+      'boing-node.exe --data-dir {dataDir} --rpc-port 8545',
+      ['/ip4/1.2.3.4/tcp/4001'],
+    );
+    expect(out).toBe(
+      'boing-node.exe --data-dir {dataDir} --bootnodes /ip4/1.2.3.4/tcp/4001 --rpc-port 8545',
+    );
   });
 });
 

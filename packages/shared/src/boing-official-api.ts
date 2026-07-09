@@ -5,6 +5,11 @@
  * @see https://github.com/Boing-Network/boing.network/blob/main/docs/VIBEMINER-INTEGRATION.md §3.1 / §6
  */
 
+import {
+  applyBoingBootnodesToCommandTemplate,
+  ensureBoingFaucetInCommandTemplate,
+} from './boing-testnet-node';
+
 export const BOING_OFFICIAL_NETWORKS_API_URL = 'https://boing.network/api/networks';
 
 export interface BoingOfficialNetworksMeta {
@@ -144,9 +149,21 @@ function appendValidatorFlag(template: string): string {
   return `${t} --validator`;
 }
 
+/** Normalize official templates: live bootnodes + faucet, then optional `--validator`. */
+function finalizeBoingCommandTemplate(
+  template: string,
+  official: BoingOfficialNetworksBundle,
+  isValidator: boolean,
+): string {
+  let t = applyBoingBootnodesToCommandTemplate(template, official.meta.official_bootnodes);
+  t = ensureBoingFaucetInCommandTemplate(t);
+  return isValidator ? appendValidatorFlag(t) : t;
+}
+
 /**
  * When Boing API returns rows, overlay download URL, SHA, and command templates onto `boing-devnet` presets.
  * Validator presets reuse the same OS row with `--validator` appended to the official full-node template.
+ * Always re-applies faucet + `meta.official_bootnodes` so D1/API drift cannot drop them.
  */
 export function mergeBoingDevnetFromOfficialApi(
   n: Record<string, unknown>,
@@ -187,8 +204,13 @@ export function mergeBoingDevnetFromOfficialApi(
     }
 
     if (typeof row.node_command_template === 'string' && row.node_command_template.trim()) {
-      const base = row.node_command_template.trim();
-      p.commandTemplate = isValidator ? appendValidatorFlag(base) : base;
+      p.commandTemplate = finalizeBoingCommandTemplate(
+        row.node_command_template.trim(),
+        official,
+        isValidator,
+      );
+    } else if (typeof p.commandTemplate === 'string' && p.commandTemplate.trim()) {
+      p.commandTemplate = finalizeBoingCommandTemplate(p.commandTemplate.trim(), official, isValidator);
     }
   }
 
@@ -198,7 +220,11 @@ export function mergeBoingDevnetFromOfficialApi(
       out.nodeDownloadUrl = win.node_download_url.trim();
     }
     if (typeof win.node_command_template === 'string' && win.node_command_template.trim()) {
-      out.nodeCommandTemplate = win.node_command_template.trim();
+      out.nodeCommandTemplate = finalizeBoingCommandTemplate(
+        win.node_command_template.trim(),
+        official,
+        false,
+      );
     }
     if (typeof win.node_binary_sha256 === 'string' && /^[a-fA-F0-9]{64}$/.test(win.node_binary_sha256)) {
       out.nodeBinarySha256 = win.node_binary_sha256.toLowerCase();

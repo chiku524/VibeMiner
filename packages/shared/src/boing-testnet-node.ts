@@ -50,7 +50,12 @@ export const BOING_TESTNET_PUBLIC_RPC_URL = 'https://testnet-rpc.boing.network/'
  * `boing.network/tools/boing-node-public-testnet.env.example` and `node.rs` (`BOING_TESTNET_CANONICAL_NATIVE_DEFAULTS`).
  * **Source of truth:** `boing-sdk` `canonicalTestnet.ts` + `canonicalTestnetDex.ts` (live testnet stack on public RPC).
  */
+export const BOING_TESTNET_CHAIN_ID = '6913';
+export const BOING_TESTNET_CHAIN_NAME = 'Boing Testnet';
+
 export const BOING_TESTNET_CANONICAL_NATIVE_ENV: Readonly<Record<string, string>> = {
+  BOING_CHAIN_ID: BOING_TESTNET_CHAIN_ID,
+  BOING_CHAIN_NAME: BOING_TESTNET_CHAIN_NAME,
   BOING_CANONICAL_NATIVE_CP_POOL:
     '0x7247ddc3180fdc4d3fd1e716229bfa16bad334a07d28aa9fda9ad1bfa7bdacc3',
   BOING_CANONICAL_NATIVE_DEX_FACTORY:
@@ -130,6 +135,28 @@ export function ensureBoingFaucetInCommandTemplate(template: string): string {
     return `${t.slice(0, i)} --faucet-enable${t.slice(i)}`;
   }
   return `${t} --faucet-enable`;
+}
+
+/**
+ * Replace or insert `--bootnodes` using live `meta.official_bootnodes` (comma-joined).
+ * No-op when `bootnodes` is empty.
+ */
+export function applyBoingBootnodesToCommandTemplate(
+  template: string,
+  bootnodes: readonly string[],
+): string {
+  const t = template.trim();
+  if (!t || bootnodes.length === 0) return t;
+  const cli = bootnodes.map((b) => b.trim()).filter(Boolean).join(',');
+  if (!cli) return t;
+  if (/\s--bootnodes\s+\S+/.test(t)) {
+    return t.replace(/\s--bootnodes\s+\S+/, ` --bootnodes ${cli}`);
+  }
+  const rpc = t.match(/\s--rpc-port(?:\s|$)/);
+  if (rpc && rpc.index != null) {
+    return `${t.slice(0, rpc.index)} --bootnodes ${cli}${t.slice(rpc.index)}`;
+  }
+  return `${t} --bootnodes ${cli}`;
 }
 
 /** Canonical GitHub org for official node zips (see Boing `HANDOFF-DEPENDENT-PROJECTS.md`). */

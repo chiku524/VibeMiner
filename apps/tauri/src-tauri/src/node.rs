@@ -408,6 +408,8 @@ pub const VIBEMINER_SKIP_BOING_CANONICAL_DEFAULTS_ENV: &str = "VIBEMINER_SKIP_BO
 /// Keep in sync with `boing.network/tools/boing-node-public-testnet.env.example` and
 /// `packages/shared/src/boing-testnet-node.ts` (`BOING_TESTNET_CANONICAL_NATIVE_ENV`).
 const BOING_TESTNET_CANONICAL_NATIVE_DEFAULTS: &[(&str, &str)] = &[
+    ("BOING_CHAIN_ID", "6913"),
+    ("BOING_CHAIN_NAME", "Boing Testnet"),
     (
         "BOING_CANONICAL_NATIVE_CP_POOL",
         "0x7247ddc3180fdc4d3fd1e716229bfa16bad334a07d28aa9fda9ad1bfa7bdacc3",

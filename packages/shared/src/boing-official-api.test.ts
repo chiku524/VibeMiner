@@ -87,7 +87,7 @@ function sampleOfficialBundle(): BoingOfficialNetworksBundle {
       boing_testnet_download_tag: 'testnet-v0.1.9',
       chain_id_hex: '0xabc',
       public_testnet_rpc_url: 'https://testnet-rpc.boing.network/',
-      official_bootnodes: [],
+      official_bootnodes: ['/ip4/1.2.3.4/tcp/4001'],
       cli_long_flags: '',
     },
     byId: new Map([
@@ -97,7 +97,8 @@ function sampleOfficialBundle(): BoingOfficialNetworksBundle {
           id: 'boing-devnet',
           node_download_url: 'https://win.zip',
           node_binary_sha256: 'b'.repeat(64),
-          node_command_template: 'boing-node-win.exe --data-dir {dataDir} --rpc-port 8545',
+          node_command_template:
+            'boing-node-win.exe --data-dir {dataDir} --bootnodes /ip4/9.9.9.9/tcp/4001 --rpc-port 8545',
         },
       ],
       [
@@ -106,7 +107,7 @@ function sampleOfficialBundle(): BoingOfficialNetworksBundle {
           id: 'boing-devnet-linux',
           node_download_url: 'https://linux.zip',
           node_binary_sha256: 'c'.repeat(64),
-          node_command_template: 'boing-node-linux --data-dir {dataDir}',
+          node_command_template: 'boing-node-linux --data-dir {dataDir} --rpc-port 8545',
         },
       ],
       [
@@ -114,7 +115,7 @@ function sampleOfficialBundle(): BoingOfficialNetworksBundle {
         {
           id: 'boing-devnet-macos',
           node_download_url: 'https://mac.zip',
-          node_command_template: 'boing-node-macos --data-dir {dataDir}',
+          node_command_template: 'boing-node-macos --data-dir {dataDir} --rpc-port 8545',
         },
       ],
     ]),
@@ -158,12 +159,16 @@ describe('mergeBoingDevnetFromOfficialApi', () => {
     expect(presets[0].nodeDownloadUrl).toBe('https://win.zip');
     expect(presets[0].nodeBinarySha256).toBe('b'.repeat(64));
     expect(presets[0].commandTemplate).toBe(
-      'boing-node-win.exe --data-dir {dataDir} --rpc-port 8545',
+      'boing-node-win.exe --data-dir {dataDir} --bootnodes /ip4/1.2.3.4/tcp/4001 --rpc-port 8545 --faucet-enable',
     );
     expect(presets[1].nodeDownloadUrl).toBe('https://linux.zip');
+    expect(presets[1].commandTemplate).toContain('--bootnodes /ip4/1.2.3.4/tcp/4001');
+    expect(presets[1].commandTemplate).toContain('--faucet-enable');
     expect(presets[2].nodeDownloadUrl).toBe('https://mac.zip');
     expect(out.nodeDownloadUrl).toBe('https://win.zip');
-    expect(out.nodeCommandTemplate).toBe('boing-node-win.exe --data-dir {dataDir} --rpc-port 8545');
+    expect(out.nodeCommandTemplate).toBe(
+      'boing-node-win.exe --data-dir {dataDir} --bootnodes /ip4/1.2.3.4/tcp/4001 --rpc-port 8545 --faucet-enable',
+    );
     expect(out.nodeBinarySha256).toBe('b'.repeat(64));
   });
 
@@ -177,7 +182,7 @@ describe('mergeBoingDevnetFromOfficialApi', () => {
     );
     const presets = out.nodePresets as Record<string, unknown>[];
     expect(presets[0].commandTemplate).toBe(
-      'boing-node-win.exe --data-dir {dataDir} --rpc-port 8545 --validator',
+      'boing-node-win.exe --data-dir {dataDir} --bootnodes /ip4/1.2.3.4/tcp/4001 --rpc-port 8545 --faucet-enable --validator',
     );
   });
 
@@ -186,7 +191,8 @@ describe('mergeBoingDevnetFromOfficialApi', () => {
     const row = official.byId.get('boing-devnet')!;
     official.byId.set('boing-devnet', {
       ...row,
-      node_command_template: 'boing.exe --data-dir {dataDir} --validator',
+      node_command_template:
+        'boing.exe --data-dir {dataDir} --bootnodes /ip4/9.9.9.9/tcp/4001 --rpc-port 8545 --validator',
     });
     const out = mergeBoingDevnetFromOfficialApi(
       {
@@ -196,7 +202,9 @@ describe('mergeBoingDevnetFromOfficialApi', () => {
       official,
     );
     const presets = out.nodePresets as Record<string, unknown>[];
-    expect(presets[0].commandTemplate).toBe('boing.exe --data-dir {dataDir} --validator');
+    expect(presets[0].commandTemplate).toBe(
+      'boing.exe --data-dir {dataDir} --bootnodes /ip4/1.2.3.4/tcp/4001 --rpc-port 8545 --faucet-enable --validator',
+    );
   });
 
   it('ignores invalid preset SHA256 from official row', () => {
