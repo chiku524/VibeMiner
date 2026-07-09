@@ -84,7 +84,7 @@ export const BlockchainNetworkSchema = z.object({
   ),
   nodeCommandTemplate: z.string().max(1024).optional(),
   /** Multiple node modes (OS-specific zips and/or run modes). Presets may override download URL per row. */
-  nodePresets: z.array(NetworkNodePresetSchema).max(8).optional(),
+  nodePresets: z.array(NetworkNodePresetSchema).max(12).optional(),
   nodeDiskGb: z.number().int().min(1).max(2000).optional(),
   nodeRamMb: z.number().int().min(256).max(65536).optional(),
   nodeBinarySha256: z.string().regex(/^[a-fA-F0-9]{64}$/).optional(),

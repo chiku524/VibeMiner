@@ -28,6 +28,8 @@
           "is_node_running",
           "list_running_nodes",
           "get_node_log_snapshot",
+          "get_boing_validator_identity",
+          "join_boing_stake_validator",
           "get_tunnel_settings",
           "set_tunnel_settings",
           "start_cloudflare_tunnel",

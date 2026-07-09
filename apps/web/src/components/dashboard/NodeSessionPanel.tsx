@@ -7,6 +7,7 @@ import type { BlockchainNetwork } from '@vibeminer/shared';
 import {
   BOING_RPC_METHOD_GET_QA_REGISTRY,
   isBoingNetworkId,
+  isBoingPublicStakeValidatorPreset,
   resolveNodePresets,
   sanitizeNodePresetId,
 } from '@vibeminer/shared';
@@ -15,6 +16,7 @@ import { NodeProcessLog } from '@/components/dashboard/NodeProcessLog';
 import { CloudflareTunnelPanel } from '@/components/dashboard/CloudflareTunnelPanel';
 import { BoingTestnetToolkit } from '@/components/dashboard/BoingTestnetToolkit';
 import { Server } from 'lucide-react';
+import { useToast } from '@/contexts/ToastContext';
 
 interface NodeSessionPanelProps {
   session: MiningSessionNode;
@@ -83,16 +85,22 @@ function BoingRpcTransparencyHint() {
 }
 
 export function NodeSessionPanel({ session, network, onStop, onDismiss, compact = false }: NodeSessionPanelProps) {
+  const { addToast } = useToast();
   const [confirming, setConfirming] = useState(false);
   const processExited = session.nodeProcessExitedAt != null;
   const [compactLogOpen, setCompactLogOpen] = useState(processExited);
   const [elapsed, setElapsed] = useState(() =>
     session.startedAt ? Date.now() - session.startedAt : 0
   );
+  const [validatorAccountId, setValidatorAccountId] = useState<string | null>(null);
+  const [stakeJoinBusy, setStakeJoinBusy] = useState(false);
+  const [stakeJoinNote, setStakeJoinNote] = useState<string | null>(null);
 
   const presetLabel =
     resolveNodePresets(network).find((p) => sanitizeNodePresetId(p.presetId) === session.presetId)?.label ??
     session.presetId;
+  const isPublicStake =
+    isBoingNetworkId(network.id) && isBoingPublicStakeValidatorPreset(session.presetId);
 
   useEffect(() => {
     if (!session.startedAt || processExited) return;
@@ -104,6 +112,44 @@ export function NodeSessionPanel({ session, network, onStop, onDismiss, compact 
   useEffect(() => {
     if (processExited) setCompactLogOpen(true);
   }, [processExited]);
+
+  useEffect(() => {
+    if (!isPublicStake || typeof window === 'undefined' || !window.desktopAPI?.getBoingValidatorIdentity) {
+      return;
+    }
+    let cancelled = false;
+    window.desktopAPI
+      .getBoingValidatorIdentity(session.networkId, session.environment, session.presetId)
+      .then((id) => {
+        if (!cancelled && id?.accountIdHex) setValidatorAccountId(id.accountIdHex);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isPublicStake, session.networkId, session.environment, session.presetId]);
+
+  async function handleJoinStakeSet() {
+    if (!window.desktopAPI?.joinBoingStakeValidator || stakeJoinBusy) return;
+    setStakeJoinBusy(true);
+    setStakeJoinNote(null);
+    try {
+      const result = await window.desktopAPI.joinBoingStakeValidator({
+        networkId: session.networkId,
+        environment: session.environment,
+        nodePresetId: session.presetId,
+      });
+      if (result.accountIdHex) setValidatorAccountId(result.accountIdHex);
+      setStakeJoinNote(result.message);
+      addToast(result.message, result.ok ? undefined : 'error');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setStakeJoinNote(msg);
+      addToast(msg, 'error');
+    } finally {
+      setStakeJoinBusy(false);
+    }
+  }
 
   const ranForMs =
     processExited && session.nodeProcessExitedAt != null && session.startedAt
@@ -205,6 +251,27 @@ export function NodeSessionPanel({ session, network, onStop, onDismiss, compact 
         </div>
         {isBoingNetworkId(network.id) && (
           <div className="space-y-2 px-4 pb-2">
+            {isPublicStake && (
+              <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-3 py-2 text-left">
+                <p className="text-xs font-medium text-emerald-200">Public stake validator</p>
+                {validatorAccountId && (
+                  <p className="mt-1 break-all font-mono text-[10px] text-gray-400">{validatorAccountId}</p>
+                )}
+                {!processExited && (
+                  <button
+                    type="button"
+                    disabled={stakeJoinBusy}
+                    onClick={() => void handleJoinStakeSet()}
+                    className="mt-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-50"
+                  >
+                    {stakeJoinBusy ? 'Bonding…' : 'Faucet + Bond (retry)'}
+                  </button>
+                )}
+                {stakeJoinNote && (
+                  <p className="mt-1 text-[11px] leading-relaxed text-gray-400">{stakeJoinNote}</p>
+                )}
+              </div>
+            )}
             <BoingRpcTransparencyHint />
             <BoingTestnetToolkit variant="compact" />
             <CloudflareTunnelPanel embedded />
@@ -292,6 +359,31 @@ export function NodeSessionPanel({ session, network, onStop, onDismiss, compact 
 
       {isBoingNetworkId(network.id) && (
         <div className="space-y-3 px-5 pb-4">
+          {isPublicStake && (
+            <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-3 py-2.5 text-left">
+              <p className="text-xs font-medium text-emerald-200">Public stake-derived validator set</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-gray-400">
+                This node uses <code className="rounded bg-black/40 px-1 font-mono text-gray-300">BOING_VALIDATOR_SET=stake</code>
+                . Start already faucets and Bonds min stake on the public testnet RPC; use retry if the faucet rate-limited.
+              </p>
+              {validatorAccountId && (
+                <p className="mt-2 break-all font-mono text-[11px] text-gray-300">{validatorAccountId}</p>
+              )}
+              {!processExited && (
+                <button
+                  type="button"
+                  disabled={stakeJoinBusy}
+                  onClick={() => void handleJoinStakeSet()}
+                  className="mt-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-50"
+                >
+                  {stakeJoinBusy ? 'Bonding…' : 'Faucet + Bond (retry)'}
+                </button>
+              )}
+              {stakeJoinNote && (
+                <p className="mt-2 text-[11px] leading-relaxed text-gray-400">{stakeJoinNote}</p>
+              )}
+            </div>
+          )}
           <BoingRpcTransparencyHint />
           <BoingTestnetToolkit variant="compact" />
           <CloudflareTunnelPanel embedded />

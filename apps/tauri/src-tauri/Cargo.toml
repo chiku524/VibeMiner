@@ -33,6 +33,10 @@ regex = "1"
 chrono = "0.4"
 lazy_static = "1"
 sysinfo = "0.30"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+rand = "0.8"
+hex = "0.4"
+blake3 = "1"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

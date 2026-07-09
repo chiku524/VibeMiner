@@ -114,6 +114,26 @@ export const BOING_TESTNET_DEFAULT_LINUX_VALIDATOR_COMMAND_TEMPLATE = `${BOING_T
 
 export const BOING_TESTNET_DEFAULT_MACOS_AARCH64_VALIDATOR_COMMAND_TEMPLATE = `${BOING_TESTNET_DEFAULT_MACOS_AARCH64_COMMAND_TEMPLATE} --validator`;
 
+/**
+ * Public stake-derived validator: same CLI as local validator (`--validator`).
+ * VibeMiner injects `BOING_VALIDATOR_SET=stake`, `BOING_VALIDATOR_KEY`, and `BOING_LEADER_ELECTION=vrf`,
+ * then faucets + Bonds on the public testnet RPC (min stake 10_000).
+ */
+export const BOING_TESTNET_DEFAULT_WINDOWS_PUBLIC_VALIDATOR_COMMAND_TEMPLATE =
+  BOING_TESTNET_DEFAULT_WINDOWS_VALIDATOR_COMMAND_TEMPLATE;
+
+export const BOING_TESTNET_DEFAULT_LINUX_PUBLIC_VALIDATOR_COMMAND_TEMPLATE =
+  BOING_TESTNET_DEFAULT_LINUX_VALIDATOR_COMMAND_TEMPLATE;
+
+export const BOING_TESTNET_DEFAULT_MACOS_AARCH64_PUBLIC_VALIDATOR_COMMAND_TEMPLATE =
+  BOING_TESTNET_DEFAULT_MACOS_AARCH64_VALIDATOR_COMMAND_TEMPLATE;
+
+/** Preset ids containing these substrings get stake-set env + one-click Bond. */
+export function isBoingPublicStakeValidatorPreset(presetId: string): boolean {
+  const p = presetId.toLowerCase();
+  return p.includes('public-validator') || p.includes('stake-validator');
+}
+
 /** Suggested disk (GiB) for testnet — aligned with VIBEMINER-INTEGRATION.md / heavier receipts+state. */
 export const BOING_TESTNET_SUGGESTED_NODE_DISK_GB = 10;
 

@@ -18,6 +18,7 @@ import {
   effectivePresetNodeDownloadUrl,
   sanitizeNodePresetId,
   isBoingNetworkId,
+  isBoingPublicStakeValidatorPreset,
 } from '@vibeminer/shared';
 import { BoingTestnetToolkit } from '@/components/dashboard/BoingTestnetToolkit';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
@@ -42,7 +43,7 @@ function pickPresetIdForPlatform(presets: NetworkNodePreset[], platform: string)
           ? 'linux'
           : null;
   if (!token) return presets[0].presetId;
-  const hit = presets.find((p) => {
+  const matchesOs = (p: NetworkNodePreset) => {
     const id = p.presetId.toLowerCase();
     const label = p.label.toLowerCase();
     if (token === 'macos') {
@@ -54,7 +55,15 @@ function pickPresetIdForPlatform(presets: NetworkNodePreset[], platform: string)
       );
     }
     return id.includes(token) || label.includes(token);
+  };
+  // Prefer plain full-node for the OS (not *-validator / *-public-validator).
+  const full = presets.find((p) => {
+    if (!matchesOs(p)) return false;
+    const id = p.presetId.toLowerCase();
+    return !id.includes('validator') && !id.includes('stake');
   });
+  if (full) return full.presetId;
+  const hit = presets.find(matchesOs);
   return hit?.presetId ?? presets[0].presetId;
 }
 
@@ -65,12 +74,38 @@ function getFocusables(container: HTMLElement): HTMLElement[] {
   );
 }
 
+type StartNodeParsed =
+  | {
+      ok: true;
+      stakeJoinMessage?: string;
+      stakeJoinOk?: boolean;
+      accountIdHex?: string;
+    }
+  | { ok: false; error: string };
+
 /** Tauri returns `serde_json::Value`; tolerate odd shapes and verify with `isNodeRunning` if needed. */
-function parseStartNodeResult(raw: unknown): { ok: true } | { ok: false; error: string } {
+function parseStartNodeResult(raw: unknown): StartNodeParsed {
   if (raw == null) return { ok: false, error: 'No response from desktop' };
   if (typeof raw === 'object' && raw !== null && 'ok' in raw) {
-    const o = raw as { ok?: unknown; error?: unknown };
-    if (o.ok === true) return { ok: true };
+    const o = raw as {
+      ok?: unknown;
+      error?: unknown;
+      stakeJoin?: { ok?: unknown; message?: unknown; accountIdHex?: unknown; bonded?: unknown };
+      validatorIdentity?: { accountIdHex?: unknown };
+    };
+    if (o.ok === true) {
+      const join = o.stakeJoin;
+      const stakeJoinMessage =
+        join && typeof join.message === 'string' && join.message.trim() ? join.message : undefined;
+      const stakeJoinOk = join ? join.ok === true || join.bonded === true : undefined;
+      const accountIdHex =
+        (join && typeof join.accountIdHex === 'string' && join.accountIdHex) ||
+        (o.validatorIdentity &&
+          typeof o.validatorIdentity.accountIdHex === 'string' &&
+          o.validatorIdentity.accountIdHex) ||
+        undefined;
+      return { ok: true, stakeJoinMessage, stakeJoinOk, accountIdHex };
+    }
     const err =
       typeof o.error === 'string' && o.error.trim()
         ? o.error
@@ -499,7 +534,26 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                               environment: network.environment ?? 'mainnet',
                               presetId: selectedPreset.presetId,
                             });
-                            addToast(`${network.name} node started`);
+                            if (
+                              isBoingPublicStakeValidatorPreset(selectedPreset.presetId) &&
+                              parsed.stakeJoinMessage
+                            ) {
+                              addToast(
+                                parsed.stakeJoinOk === false
+                                  ? `Node started; stake join: ${parsed.stakeJoinMessage}`
+                                  : parsed.stakeJoinMessage,
+                                parsed.stakeJoinOk === false ? 'error' : undefined
+                              );
+                            } else if (
+                              isBoingPublicStakeValidatorPreset(selectedPreset.presetId) &&
+                              parsed.accountIdHex
+                            ) {
+                              addToast(
+                                `${network.name} public stake validator started · ${parsed.accountIdHex.slice(0, 12)}…`
+                              );
+                            } else {
+                              addToast(`${network.name} node started`);
+                            }
                             onClose();
                             router.push('/dashboard/sessions');
                           } else {
@@ -523,15 +577,26 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                       }}
                       className="rounded-xl border border-sky-500/40 bg-sky-500/10 px-4 py-2 text-sm font-medium text-sky-300 transition hover:bg-sky-500/20 disabled:opacity-50"
                     >
-                      {nodeStarting ? 'Starting…' : 'Run node'}
+                      {nodeStarting
+                        ? isBoingPublicStakeValidatorPreset(selectedPreset.presetId)
+                          ? 'Joining stake set…'
+                          : 'Starting…'
+                        : isBoingPublicStakeValidatorPreset(selectedPreset.presetId)
+                          ? 'Join public stake set'
+                          : 'Run node'}
                     </button>
                     {nodeStarting ? (
                       <p className="max-w-md text-xs text-gray-400" aria-live="polite">
-                        {nodeProgressText ?? 'Contacting desktop…'}
+                        {nodeProgressText ??
+                          (isBoingPublicStakeValidatorPreset(selectedPreset.presetId)
+                            ? 'Starting node, then faucet + Bond on public testnet…'
+                            : 'Contacting desktop…')}
                       </p>
                     ) : (
                       <p className="max-w-md text-xs text-gray-500">
-                        The desktop app runs the node process directly (no bundled PowerShell or Command Prompt window). First run downloads and extracts the binary and can take several minutes on a slow connection.
+                        {isBoingPublicStakeValidatorPreset(selectedPreset.presetId)
+                          ? 'One click: generate a validator key, start with the stake-derived set, faucet and Bond 10_000 BOING on the public testnet RPC. First run may download the binary.'
+                          : 'The desktop app runs the node process directly (no bundled PowerShell or Command Prompt window). First run downloads and extracts the binary and can take several minutes on a slow connection.'}
                       </p>
                     )}
                     {lastNodeError && !nodeStarting && (

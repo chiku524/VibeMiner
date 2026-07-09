@@ -107,6 +107,27 @@
           node_preset_id: nodePresetId != null && nodePresetId !== '' ? nodePresetId : null,
         });
       },
+      getBoingValidatorIdentity: function (networkId, environment, nodePresetId) {
+        return invoke('get_boing_validator_identity', {
+          network_id: networkId,
+          environment: environment,
+          node_preset_id: nodePresetId != null && nodePresetId !== '' ? nodePresetId : null,
+        });
+      },
+      joinBoingStakeValidator: function (opts) {
+        var o = opts || {};
+        return invoke('join_boing_stake_validator', {
+          network_id: o.networkId,
+          environment: o.environment,
+          node_preset_id: o.nodePresetId != null && o.nodePresetId !== '' ? o.nodePresetId : null,
+          rpc_url: o.rpcUrl != null && o.rpcUrl !== '' ? o.rpcUrl : null,
+          use_local_rpc: o.useLocalRpc === true,
+          node_command_template:
+            o.nodeCommandTemplate != null && o.nodeCommandTemplate !== ''
+              ? o.nodeCommandTemplate
+              : null,
+        });
+      },
       onNodeDownloadProgress: function (cb) {
         return function () {};
       },

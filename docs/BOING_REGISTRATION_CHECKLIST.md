@@ -18,11 +18,14 @@ Shipped under network id **`boing-devnet`** in `packages/shared/src/networks.ts`
 | `presetId` | Label (UI) | Download (default) | Notes |
 |------------|------------|--------------------|--------|
 | `windows` | Windows (x86_64) — full node | Windows zip from `BOING_TESTNET_DEFAULT_WINDOWS_DOWNLOAD_URL` | Inherits listing URL if preset omits URL |
-| `windows-validator` | Windows (x86_64) — validator | Same zip as `windows` | Template adds `--validator` |
+| `windows-validator` | Windows (x86_64) — local validator (dev) | Same zip as `windows` | Template adds `--validator` |
+| `windows-public-validator` | Windows — public stake validator | Same zip as `windows` | `--validator` + desktop stake env + Bond |
 | `linux` | Linux (x86_64) — full node | Linux zip (`BOING_TESTNET_DEFAULT_LINUX_DOWNLOAD_URL`) | |
-| `linux-validator` | Linux (x86_64) — validator | Same zip as `linux` | `--validator` |
+| `linux-validator` | Linux (x86_64) — local validator (dev) | Same zip as `linux` | `--validator` |
+| `linux-public-validator` | Linux — public stake validator | Same zip as `linux` | stake env + Bond (see NODE_RUNNING.md) |
 | `macos-arm64` | macOS (Apple Silicon) — full node | macOS aarch64 zip (`BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL`) | |
-| `macos-arm64-validator` | macOS (Apple Silicon) — validator | Same zip as `macos-arm64` | `--validator` |
+| `macos-arm64-validator` | macOS (Apple Silicon) — local validator (dev) | Same zip as `macos-arm64` | `--validator` |
+| `macos-arm64-public-validator` | macOS — public stake validator | Same zip as `macos-arm64` | stake env + Bond |
 
 Shared P2P/RPC flags for all presets: `BOING_TESTNET_NODE_ARGS_CORE` in `boing-testnet-node.ts` (`--p2p-listen`, `--bootnodes`, `--rpc-port 8545`, `--faucet-enable`).
 

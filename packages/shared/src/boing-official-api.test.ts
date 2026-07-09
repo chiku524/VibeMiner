@@ -186,6 +186,21 @@ describe('mergeBoingDevnetFromOfficialApi', () => {
     );
   });
 
+  it('appends --validator for public-validator presets', () => {
+    const out = mergeBoingDevnetFromOfficialApi(
+      {
+        id: 'boing-devnet',
+        nodePresets: [{ presetId: 'windows-public-validator', commandTemplate: 'old' }],
+      },
+      sampleOfficialBundle(),
+    );
+    const presets = out.nodePresets as Record<string, unknown>[];
+    expect(presets[0].commandTemplate).toBe(
+      'boing-node-win.exe --data-dir {dataDir} --bootnodes /ip4/1.2.3.4/tcp/4001 --rpc-port 8545 --faucet-enable --validator',
+    );
+    expect(presets[0].nodeDownloadUrl).toBe('https://win.zip');
+  });
+
   it('does not append duplicate --validator', () => {
     const official = sampleOfficialBundle();
     const row = official.byId.get('boing-devnet')!;

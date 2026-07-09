@@ -673,7 +673,7 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
                 className="mt-1 rounded border-white/20"
               />
               <span>
-                Offer multiple node modes (e.g. Windows / Linux / macOS builds or validator vs full node). Up to 8 modes; each has its own command. Use a shared URL above, or leave it blank and set a download URL per mode.
+                Offer multiple node modes (e.g. Windows / Linux / macOS builds or validator vs full node). Up to 12 modes; each has its own command. Use a shared URL above, or leave it blank and set a download URL per mode.
               </span>
             </label>
             {useMultiPresets ? (
@@ -835,7 +835,7 @@ export function RequestListingForm({ editId, initialData }: RequestListingFormPr
                     </div>
                   </div>
                 ))}
-                {presetRows.length < 8 && (
+                {presetRows.length < 12 && (
                   <button
                     type="button"
                     onClick={() => setPresetRows((rows) => [...rows, emptyPresetRow()])}

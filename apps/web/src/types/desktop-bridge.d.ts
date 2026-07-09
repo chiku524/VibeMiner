@@ -87,6 +87,30 @@ declare global {
         environment: string,
         nodePresetId?: string
       ) => Promise<Array<{ stream: string; line: string }>>;
+      getBoingValidatorIdentity?: (
+        networkId: string,
+        environment: string,
+        nodePresetId?: string
+      ) => Promise<{
+        accountIdHex: string;
+        keyPath: string;
+        isPublicStakePreset: boolean;
+      } | null>;
+      joinBoingStakeValidator?: (opts: {
+        networkId: string;
+        environment: string;
+        nodePresetId?: string;
+        rpcUrl?: string;
+        useLocalRpc?: boolean;
+        nodeCommandTemplate?: string;
+      }) => Promise<{
+        ok: boolean;
+        accountIdHex: string;
+        balance: string;
+        stake: string;
+        bonded: boolean;
+        message: string;
+      }>;
       onMinerDownloadProgress?: (cb: unknown) => () => void;
       onNodeDownloadProgress?: (cb: unknown) => () => void;
       getTunnelSettings?: () => Promise<{

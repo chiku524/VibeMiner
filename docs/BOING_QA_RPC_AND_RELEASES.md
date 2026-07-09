@@ -62,7 +62,7 @@ After VibeMiner merges D1 + static and runs **`patchBlockchainNetworkJsonForBoin
 |------|--------|
 | 1 | Tag Boing release (`testnet-v0.1.x`) — CI attaches `release-*-x86_64.zip`; **`testnet*`** tags publish as **non-draft** so `/releases/download/` works immediately. |
 | 2 | Update [BOING_REGISTRATION_CHECKLIST.md](./BOING_REGISTRATION_CHECKLIST.md) URLs/tag. |
-| 3 | Bump `BOING_TESTNET_DEFAULT_DOWNLOAD_TAG` and the matching URLs in `boing-testnet-node.ts` (Windows/Linux/macOS); static `boing-devnet` in `networks.ts` uses those constants, **`BOING_TESTNET_BOOTNODES_CLI`** (aligned with `website/src/config/testnet.ts`), and **six** `nodePresets` (full node + validator per OS). |
+| 3 | Bump `BOING_TESTNET_DEFAULT_DOWNLOAD_TAG` and the matching URLs in `boing-testnet-node.ts` (Windows/Linux/macOS); static `boing-devnet` in `networks.ts` uses those constants, **`BOING_TESTNET_BOOTNODES_CLI`** (aligned with `website/src/config/testnet.ts`), and **nine** `nodePresets` (full node + local validator + public stake validator per OS). |
 | 3b | **Before a new zip exists:** desktop operators can set **`VIBEMINER_BOING_NODE_EXE`** to an absolute path to a locally built `boing-node` so VibeMiner skips the GitHub download for Boing networks; see [NODE_RUNNING.md](./NODE_RUNNING.md) § Boing local binary. |
 | 4 | Document in Boing [RPC-API-SPEC.md](https://github.com/Boing-Network/boing.network/blob/main/docs/RPC-API-SPEC.md). |
 

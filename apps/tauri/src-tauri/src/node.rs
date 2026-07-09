@@ -333,7 +333,7 @@ pub fn shutdown_all_node_processes(user_data: &Path) {
 }
 
 /// Folder name under `nodes/`. Cannot contain `:` — Windows rejects it in a path component (os error 123).
-fn node_dir_key(network_id: &str, environment: &str) -> String {
+pub fn node_dir_key(network_id: &str, environment: &str) -> String {
     let sanitize = |s: &str| {
         s.chars()
             .map(|c| match c {
@@ -350,7 +350,7 @@ fn legacy_node_dir_key(network_id: &str, environment: &str) -> String {
     format!("{}:{}", environment, network_id)
 }
 
-fn sanitize_preset_id(raw: &str) -> String {
+pub fn sanitize_preset_id(raw: &str) -> String {
     let t = raw.trim().to_lowercase();
     if t.is_empty() {
         return "default".to_string();
@@ -775,7 +775,8 @@ pub fn start_node(
     node_command_template: &str,
     bin_dir: &Path,
     data_dir: &Path,
-) -> Result<(), String> {
+    user_data: &Path,
+) -> Result<Option<crate::boing_validator::BoingValidatorIdentity>, String> {
     let preset_stored = sanitize_preset_id(node_preset_id);
     let key = process_key(&network_id, &environment, node_preset_id);
     {
@@ -814,6 +815,13 @@ pub fn start_node(
         // If the node is a Rust binary, panics may otherwise omit a backtrace when stderr is a pipe.
         .env("RUST_BACKTRACE", "1");
     apply_boing_testnet_canonical_env_defaults(&mut cmd, &network_id);
+    let stake_identity = crate::boing_validator::apply_public_stake_validator_env(
+        &mut cmd,
+        user_data,
+        &network_id,
+        &environment,
+        node_preset_id,
+    )?;
     #[cfg(unix)]
     {
         use std::os::unix::process::CommandExt;
@@ -856,6 +864,20 @@ pub fn start_node(
         "meta",
         format!("$ {}", cmd_str),
     );
+    if let Some(ref id) = stake_identity {
+        emit_and_store_node_log_line(
+            app,
+            &ring_key,
+            &network_id,
+            &environment,
+            &preset_stored,
+            "meta",
+            format!(
+                "Public stake validator: AccountId {} (BOING_VALIDATOR_SET=stake, key via env)",
+                id.account_id_hex
+            ),
+        );
+    }
     forward_pipe_to_logs(
         app.clone(),
         ring_key.clone(),
@@ -900,7 +922,14 @@ pub fn start_node(
                 node_preset_id: preset_stored,
             },
         );
-    Ok(())
+    Ok(stake_identity)
+}
+
+/// Parse `--rpc-port` from a command template (after `{dataDir}` substitution is optional).
+pub fn rpc_port_from_command_template(network_id: &str, template: &str) -> u16 {
+    let parts = split_command_args(template.trim());
+    let args: Vec<String> = parts.iter().skip(1).cloned().collect();
+    effective_rpc_port_for_preflight(network_id, &args).unwrap_or(8545)
 }
 
 pub fn stop_node(

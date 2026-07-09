@@ -68,6 +68,16 @@ When `VIBEMINER_BOING_NODE_EXE` is set to an **absolute path** to an existing bi
 
 **Public testnet RPC** (`https://testnet-rpc.boing.network`) is a **separate** deployment: upgrading your local VibeMiner binary does not change what that URL serves. To fix QA / RPC for everyone hitting public RPC, operators must deploy a newer `boing-node` behind the tunnel and (when applicable) publish a new GitHub release zip — see [BOING_QA_RPC_AND_RELEASES.md](./BOING_QA_RPC_AND_RELEASES.md).
 
+### Boing: one-click public stake validator
+
+Presets whose id contains **`public-validator`** or **`stake-validator`** (e.g. `windows-public-validator`):
+
+1. Generate or load an Ed25519 validator key under app data (`nodes/<env>__<network>/keys/`).
+2. Start `boing-node` with `--validator` plus env: `BOING_VALIDATOR_KEY`, `BOING_VALIDATOR_SET=stake`, `BOING_LEADER_ELECTION=vrf` (secret never appears in the logged argv).
+3. Against **public** testnet RPC: faucet until balance ≥ 10_000 + fee reserve, then submit a signed **`Bond`** for 10_000 BOING.
+
+Requires a faucet that dispenses enough for min stake (Boing `FAUCET_DISPENSE_AMOUNT` ≥ 50_000 on current nodes). Session UI shows the AccountId and a **Faucet + Bond (retry)** action if the first join hits rate limits. Top-N epoch membership still depends on stake ranking after Bond.
+
 ## Database
 
 Run the migration for existing D1 databases:

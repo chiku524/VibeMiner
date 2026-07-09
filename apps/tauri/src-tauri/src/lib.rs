@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod boing_validator;
 mod mining;
 mod node;
 mod settings;
@@ -433,7 +434,7 @@ async fn start_node(
     } else {
         template
     };
-    node::start_node(
+    let stake_identity = node::start_node(
         &app,
         network_id.clone(),
         env.clone(),
@@ -441,6 +442,7 @@ async fn start_node(
         &template_run,
         &bin_dir,
         &data_dir,
+        &user_data,
     )?;
     if let Ok(path) = app.path().app_data_dir() {
         let s = settings::load(&path);
@@ -448,7 +450,115 @@ async fn start_node(
             tunnel::try_start_cloudflare_tunnel_for_boing_node(&app, &s);
         }
     }
-    Ok(serde_json::json!({ "ok": true }))
+
+    // One-click public stake join: faucet + Bond on public testnet RPC after spawn.
+    let mut join_result: Option<serde_json::Value> = None;
+    if boing_validator::is_public_stake_validator_preset(&preset_raw) {
+        let ud = user_data.clone();
+        let nid = network_id.clone();
+        let envj = env.clone();
+        let preset = preset_raw.clone();
+        match tauri::async_runtime::spawn_blocking(move || {
+            // Few attempts: current faucet dispenses 50k (≥ min stake + fees). Retry via join_boing_stake_validator.
+            boing_validator::join_stake_validator(
+                &ud,
+                &nid,
+                &envj,
+                &preset,
+                None,
+                None,
+                4,
+            )
+        })
+        .await
+        {
+            Ok(Ok(r)) => {
+                join_result = Some(serde_json::to_value(&r).unwrap_or(serde_json::json!({
+                    "ok": r.ok,
+                    "message": r.message,
+                    "accountIdHex": r.account_id_hex,
+                    "bonded": r.bonded,
+                })));
+            }
+            Ok(Err(e)) => {
+                join_result = Some(serde_json::json!({
+                    "ok": false,
+                    "message": e,
+                    "accountIdHex": stake_identity.as_ref().map(|i| i.account_id_hex.clone()),
+                    "bonded": false,
+                }));
+            }
+            Err(e) => {
+                join_result = Some(serde_json::json!({
+                    "ok": false,
+                    "message": format!("join stake task failed: {e}"),
+                    "bonded": false,
+                }));
+            }
+        }
+    }
+
+    Ok(serde_json::json!({
+        "ok": true,
+        "validatorIdentity": stake_identity,
+        "stakeJoin": join_result,
+    }))
+}
+
+#[tauri::command]
+fn get_boing_validator_identity(
+    app: tauri::AppHandle,
+    network_id: String,
+    environment: String,
+    node_preset_id: Option<String>,
+) -> Result<Option<boing_validator::BoingValidatorIdentity>, String> {
+    let pid = node_preset_id.as_deref().unwrap_or("default");
+    if !boing_validator::is_public_stake_validator_preset(pid) {
+        return Ok(None);
+    }
+    let user_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    Ok(Some(boing_validator::ensure_validator_key(
+        &user_data,
+        &network_id,
+        &environment,
+        pid,
+    )?))
+}
+
+#[tauri::command]
+async fn join_boing_stake_validator(
+    app: tauri::AppHandle,
+    network_id: String,
+    environment: String,
+    node_preset_id: Option<String>,
+    rpc_url: Option<String>,
+    use_local_rpc: Option<bool>,
+    node_command_template: Option<String>,
+) -> Result<boing_validator::JoinStakeValidatorResult, String> {
+    let pid = node_preset_id.unwrap_or_else(|| "default".to_string());
+    let user_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let local_port = if use_local_rpc.unwrap_or(false) {
+        Some(node::rpc_port_from_command_template(
+            &network_id,
+            node_command_template.as_deref().unwrap_or(""),
+        ))
+    } else {
+        None
+    };
+    let rpc_override = rpc_url.filter(|s| !s.trim().is_empty());
+    tauri::async_runtime::spawn_blocking(move || {
+        boing_validator::join_stake_validator(
+            &user_data,
+            &network_id,
+            &environment,
+            &pid,
+            rpc_override.as_deref(),
+            local_port,
+            40,
+        )
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -594,6 +704,8 @@ pub fn run() {
             is_node_running,
             list_running_nodes,
             get_node_log_snapshot,
+            get_boing_validator_identity,
+            join_boing_stake_validator,
             get_tunnel_settings,
             set_tunnel_settings,
             start_cloudflare_tunnel,
