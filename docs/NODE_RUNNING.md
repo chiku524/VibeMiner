@@ -48,6 +48,18 @@ VibeMiner runs the **downloaded** `boing-node` binary; it does not proxy or filt
 
 See **[BOING_QA_RPC_AND_RELEASES.md](./BOING_QA_RPC_AND_RELEASES.md)** for a full maintainer checklist.
 
+### Boing: one-click default (local validator)
+
+Desktop **Run node** defaults to **local validator (recommended)** for the current OS (`pickBoingNodePresetIdForPlatform`). That preset uses `--validator` so tip advances on this PC even when public bootnodes are down — this is the supported one-click path for local RPC + faucet.
+
+- **Full node** — sync-only; stays at height 0 without peers/bootnodes (optional advanced mode).
+- **Public stake validator** — Bonds on the shared public RPC; preflight fails clearly if public tip is height 0.
+- **Custom bootnodes** — optional lab override when a second PC must sync to your local validator and mDNS/public bootnodes are unavailable.
+
+Desktop health polling shows local **`boing_chainHeight`** in the session status (e.g. `height 12`, or `height 0 — not syncing…` after ~45s).
+
+Disk cache folder `devnet__boing-devnet` is `{environment}__{network_id}` only — product copy is **Boing (Testnet)**; see [BOING_TESTNET_PIN_SYNC.md](./BOING_TESTNET_PIN_SYNC.md).
+
 ### Boing: local node vs Cloudflare / indexer (no restart needed)
 
 Deploying **Workers**, **D1**, or the **native DEX indexer** on Cloudflare does **not** require restarting a `boing-node` you run in VibeMiner. Those services talk to **public** RPC or their own storage. Restart the local node only when you want a **new `boing-node` binary** (new RPC methods, bugfixes) or when you change **`BOING_CANONICAL_NATIVE_*`** or **`BOING_DEX_*`** env overrides and want the process to pick up defaults injected at spawn.

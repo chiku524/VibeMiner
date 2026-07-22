@@ -168,7 +168,7 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
     name: 'Boing (Testnet)',
     symbol: 'BOING',
     description:
-      'Boing testnet: full node, local validator (dev), or one-click public stake validator via presets. Local RPC on 8545 with --faucet-enable for SDK/Express work. Public stake presets generate a key, run with BOING_VALIDATOR_SET=stake, and Bond min stake (10_000) on the public testnet RPC. Prefer the full-node preset to sync; use public-validator to join the stake-derived set.',
+      'Boing testnet: one-click defaults to a local validator so tip advances even if public bootnodes are down (RPC :8545 + faucet). Full-node syncs from peers/bootnodes; public stake validator Bonds 10_000 BOING on the shared public testnet RPC when that tip is live.',
     icon: '◎',
     algorithm: 'PoS',
     environment: 'devnet',
@@ -183,66 +183,68 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
     /** Nine presets: full node + local validator + public stake validator × OS — see docs/BOING_REGISTRATION_CHECKLIST.md */
     nodePresets: [
       {
-        presetId: 'windows',
-        label: 'Windows (x86_64) — full node',
-        description: `Testnet zip; bootnodes match boing.network. Public RPC: ${BOING_TESTNET_PUBLIC_RPC_URL}`,
-        commandTemplate: BOING_TESTNET_DEFAULT_WINDOWS_COMMAND_TEMPLATE,
+        presetId: 'windows-validator',
+        label: 'Windows (x86_64) — local validator (recommended)',
+        description:
+          'One-click default: --validator produces blocks locally (works offline / when public bootnodes are down). Faucet on :8545. Not the public stake-derived set.',
+        commandTemplate: BOING_TESTNET_DEFAULT_WINDOWS_VALIDATOR_COMMAND_TEMPLATE,
       },
       {
-        presetId: 'windows-validator',
-        label: 'Windows (x86_64) — local validator (dev)',
-        description:
-          'Same binary; adds --validator for local block production. Not the public stake-derived set.',
-        commandTemplate: BOING_TESTNET_DEFAULT_WINDOWS_VALIDATOR_COMMAND_TEMPLATE,
+        presetId: 'windows',
+        label: 'Windows (x86_64) — full node',
+        description: `Sync-only (no block production). Needs reachable bootnodes/peers. Public RPC: ${BOING_TESTNET_PUBLIC_RPC_URL}`,
+        commandTemplate: BOING_TESTNET_DEFAULT_WINDOWS_COMMAND_TEMPLATE,
       },
       {
         presetId: 'windows-public-validator',
         label: 'Windows (x86_64) — public stake validator',
         description:
-          'One-click: generates a validator key, runs with stake-derived set + VRF, faucets and Bonds 10_000 BOING on the public testnet RPC. Keep the node online to compete in top-N epochs.',
+          'Joins the shared public testnet stake set (faucet + Bond 10_000 on public RPC). Requires a live public tip — not a solo chain.',
         commandTemplate: BOING_TESTNET_DEFAULT_WINDOWS_PUBLIC_VALIDATOR_COMMAND_TEMPLATE,
+      },
+      {
+        presetId: 'linux-validator',
+        label: 'Linux (x86_64) — local validator (recommended)',
+        description:
+          'One-click default: --validator produces blocks locally (works offline / when public bootnodes are down). Faucet on :8545.',
+        nodeDownloadUrl: BOING_TESTNET_DEFAULT_LINUX_DOWNLOAD_URL,
+        commandTemplate: BOING_TESTNET_DEFAULT_LINUX_VALIDATOR_COMMAND_TEMPLATE,
       },
       {
         presetId: 'linux',
         label: 'Linux (x86_64) — full node',
+        description: 'Sync-only (no block production). Needs reachable bootnodes/peers.',
         nodeDownloadUrl: BOING_TESTNET_DEFAULT_LINUX_DOWNLOAD_URL,
         commandTemplate: BOING_TESTNET_DEFAULT_LINUX_COMMAND_TEMPLATE,
-      },
-      {
-        presetId: 'linux-validator',
-        label: 'Linux (x86_64) — local validator (dev)',
-        description:
-          'Same binary; adds --validator for local block production. Not the public stake-derived set.',
-        nodeDownloadUrl: BOING_TESTNET_DEFAULT_LINUX_DOWNLOAD_URL,
-        commandTemplate: BOING_TESTNET_DEFAULT_LINUX_VALIDATOR_COMMAND_TEMPLATE,
       },
       {
         presetId: 'linux-public-validator',
         label: 'Linux (x86_64) — public stake validator',
         description:
-          'One-click: generates a validator key, runs with stake-derived set + VRF, faucets and Bonds 10_000 BOING on the public testnet RPC.',
+          'Joins the shared public testnet stake set (faucet + Bond 10_000 on public RPC). Requires a live public tip.',
         nodeDownloadUrl: BOING_TESTNET_DEFAULT_LINUX_DOWNLOAD_URL,
         commandTemplate: BOING_TESTNET_DEFAULT_LINUX_PUBLIC_VALIDATOR_COMMAND_TEMPLATE,
       },
       {
-        presetId: 'macos-arm64',
-        label: 'macOS (Apple Silicon) — full node',
-        nodeDownloadUrl: BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL,
-        commandTemplate: BOING_TESTNET_DEFAULT_MACOS_AARCH64_COMMAND_TEMPLATE,
-      },
-      {
         presetId: 'macos-arm64-validator',
-        label: 'macOS (Apple Silicon) — local validator (dev)',
+        label: 'macOS (Apple Silicon) — local validator (recommended)',
         description:
-          'Same binary; adds --validator for local block production. Not the public stake-derived set.',
+          'One-click default: --validator produces blocks locally (works offline / when public bootnodes are down). Faucet on :8545.',
         nodeDownloadUrl: BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL,
         commandTemplate: BOING_TESTNET_DEFAULT_MACOS_AARCH64_VALIDATOR_COMMAND_TEMPLATE,
+      },
+      {
+        presetId: 'macos-arm64',
+        label: 'macOS (Apple Silicon) — full node',
+        description: 'Sync-only (no block production). Needs reachable bootnodes/peers.',
+        nodeDownloadUrl: BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL,
+        commandTemplate: BOING_TESTNET_DEFAULT_MACOS_AARCH64_COMMAND_TEMPLATE,
       },
       {
         presetId: 'macos-arm64-public-validator',
         label: 'macOS (Apple Silicon) — public stake validator',
         description:
-          'One-click: generates a validator key, runs with stake-derived set + VRF, faucets and Bonds 10_000 BOING on the public testnet RPC.',
+          'Joins the shared public testnet stake set (faucet + Bond 10_000 on public RPC). Requires a live public tip.',
         nodeDownloadUrl: BOING_TESTNET_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL,
         commandTemplate: BOING_TESTNET_DEFAULT_MACOS_AARCH64_PUBLIC_VALIDATOR_COMMAND_TEMPLATE,
       },

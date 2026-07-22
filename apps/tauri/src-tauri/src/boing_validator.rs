@@ -319,6 +319,25 @@ pub fn join_stake_validator(
     };
     wait_for_rpc(&url, 40)?;
 
+    // Public stake join needs a producing tip; height 0 means faucet txs never commit.
+    let using_public = rpc_url_override
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .is_none()
+        && local_rpc_port.is_none();
+    if using_public {
+        let tip = json_rpc(&url, "boing_chainHeight", serde_json::json!([]))?;
+        let height = tip.as_u64().or_else(|| tip.as_str().and_then(|s| s.parse().ok()));
+        if height == Some(0) || height.is_none() {
+            return Err(
+                "Public testnet tip is height 0 (bootnodes/validators not producing). \
+                 Use the local validator (recommended) preset for one-click RPC + faucet on this PC, \
+                 or wait until https://testnet-rpc.boing.network reports a rising tip."
+                    .into(),
+            );
+        }
+    }
+
     let account = identity.account_id_hex.clone();
 
     // Fund via faucet until we can Bond (50k dispense on current nodes; older nodes dispense 1k).

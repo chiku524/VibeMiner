@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyBoingBootnodesToCommandTemplate,
+  parseBoingBootnodesInput,
+  pickBoingNodePresetIdForPlatform,
   BOING_TESTNET_CANONICAL_NATIVE_ENV,
   BOING_TESTNET_DEFAULT_WINDOWS_DOWNLOAD_URL,
   BOING_TESTNET_ZIP_SHA256_LINUX,
@@ -46,6 +48,35 @@ describe('applyBoingBootnodesToCommandTemplate', () => {
     expect(out).toBe(
       'boing-node.exe --data-dir {dataDir} --bootnodes /ip4/1.2.3.4/tcp/4001 --rpc-port 8545',
     );
+  });
+});
+
+describe('parseBoingBootnodesInput', () => {
+  it('splits comma / newline lists and trims', () => {
+    expect(
+      parseBoingBootnodesInput('/ip4/1.2.3.4/tcp/4001, /ip4/5.6.7.8/tcp/4001\n/ip4/9.9.9.9/tcp/4001'),
+    ).toEqual([
+      '/ip4/1.2.3.4/tcp/4001',
+      '/ip4/5.6.7.8/tcp/4001',
+      '/ip4/9.9.9.9/tcp/4001',
+    ]);
+  });
+});
+
+describe('pickBoingNodePresetIdForPlatform', () => {
+  const presets = [
+    { presetId: 'windows', label: 'Windows full' },
+    { presetId: 'windows-validator', label: 'Windows local validator' },
+    { presetId: 'windows-public-validator', label: 'Windows public stake' },
+    { presetId: 'linux-validator', label: 'Linux local validator' },
+  ];
+
+  it('prefers local validator over full node and public stake', () => {
+    expect(pickBoingNodePresetIdForPlatform(presets, 'windows')).toBe('windows-validator');
+  });
+
+  it('picks linux local validator on linux', () => {
+    expect(pickBoingNodePresetIdForPlatform(presets, 'linux')).toBe('linux-validator');
   });
 });
 

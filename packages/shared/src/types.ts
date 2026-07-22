@@ -30,6 +30,8 @@ export interface MiningSessionNode {
   presetId: string;
   /** Last status line from desktop getNodeStatus, if any */
   nodeStatus?: string | null;
+  /** Boing local tip from desktop health probe, if reported */
+  chainHeight?: number | null;
   /**
    * When the desktop process exits, this is set so the session row (and log) stay until the user dismisses.
    */

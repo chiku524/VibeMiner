@@ -19,6 +19,10 @@ import {
   sanitizeNodePresetId,
   isBoingNetworkId,
   isBoingPublicStakeValidatorPreset,
+  applyBoingBootnodesToCommandTemplate,
+  parseBoingBootnodesInput,
+  pickBoingNodePresetIdForPlatform,
+  BOING_CUSTOM_BOOTNODES_STORAGE_KEY,
 } from '@vibeminer/shared';
 import { BoingTestnetToolkit } from '@/components/dashboard/BoingTestnetToolkit';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
@@ -56,7 +60,7 @@ function pickPresetIdForPlatform(presets: NetworkNodePreset[], platform: string)
     }
     return id.includes(token) || label.includes(token);
   };
-  // Prefer plain full-node for the OS (not *-validator / *-public-validator).
+  // Prefer plain full-node for non-Boing networks (Boing uses pickBoingNodePresetIdForPlatform).
   const full = presets.find((p) => {
     if (!matchesOs(p)) return false;
     const id = p.presetId.toLowerCase();
@@ -130,6 +134,8 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
   const [nodeStatus, setNodeStatus] = useState<string | null>(null);
   const [lastNodeError, setLastNodeError] = useState<string | null>(null);
   const [selectedPresetId, setSelectedPresetId] = useState<string>('default');
+  /** Optional custom `--bootnodes` for Boing two-PC / lab (replaces defaults when non-empty). */
+  const [customBootnodes, setCustomBootnodes] = useState('');
 
   const nodePresets = useMemo(
     () => (network ? resolveNodePresets(network) : []),
@@ -148,6 +154,11 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
     setSelectedPresetId(fallback);
     if (isDesktop && window.desktopAPI?.getPlatform) {
       void window.desktopAPI.getPlatform().then((plat) => {
+        if (network && isBoingNetworkId(network.id)) {
+          const boingPick = pickBoingNodePresetIdForPlatform(list, plat);
+          setSelectedPresetId(boingPick ?? pickPresetIdForPlatform(list, plat));
+          return;
+        }
         setSelectedPresetId(pickPresetIdForPlatform(list, plat));
       });
     }
@@ -156,6 +167,19 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
   useEffect(() => {
     if (!network) setLastNodeError(null);
   }, [network]);
+
+  useEffect(() => {
+    if (!network || !isBoingNetworkId(network.id)) {
+      setCustomBootnodes('');
+      return;
+    }
+    try {
+      const saved = localStorage.getItem(BOING_CUSTOM_BOOTNODES_STORAGE_KEY);
+      setCustomBootnodes(typeof saved === 'string' ? saved : '');
+    } catch {
+      setCustomBootnodes('');
+    }
+  }, [network?.id]);
 
   const displayDiskGb = network ? selectedPreset?.nodeDiskGb ?? network.nodeDiskGb : undefined;
   const displayRamMb = network ? selectedPreset?.nodeRamMb ?? network.nodeRamMb : undefined;
@@ -409,6 +433,34 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                   {nodePresets.length === 1 && selectedPreset.description && (
                     <p className="w-full text-xs text-gray-500">{selectedPreset.description}</p>
                   )}
+                  {isBoingNetworkId(network.id) && !nodeRunning && (
+                    <div className="w-full min-w-0 max-w-xl">
+                      <label htmlFor="boing-custom-bootnodes" className="block text-xs text-gray-400 mb-1">
+                        Custom bootnodes (optional)
+                      </label>
+                      <input
+                        id="boing-custom-bootnodes"
+                        type="text"
+                        value={customBootnodes}
+                        disabled={nodeStarting}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setCustomBootnodes(v);
+                          try {
+                            localStorage.setItem(BOING_CUSTOM_BOOTNODES_STORAGE_KEY, v);
+                          } catch {
+                            /* ignore quota */
+                          }
+                        }}
+                        placeholder="/ip4/<validator-pc-ip>/tcp/4001"
+                        className="w-full rounded-lg border border-white/10 bg-surface-850 px-3 py-2 font-mono text-xs text-white placeholder:text-gray-600 focus:border-accent-cyan/50 focus:outline-none disabled:opacity-50"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        For two PCs: put the validator machine&apos;s LAN/public multiaddr here so the full
+                        node can sync when the public bootnode is down. Leave empty for official defaults.
+                      </p>
+                    </div>
+                  )}
                   {nodeRunning ? (
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-accent-emerald animate-pulse" />
@@ -504,12 +556,22 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                             addToast(msg, 'error');
                             return;
                           }
+                          let commandTemplate = selectedPreset.commandTemplate;
+                          if (isBoingNetworkId(network.id)) {
+                            const bootnodes = parseBoingBootnodesInput(customBootnodes);
+                            if (bootnodes.length > 0) {
+                              commandTemplate = applyBoingBootnodesToCommandTemplate(
+                                commandTemplate,
+                                bootnodes
+                              );
+                            }
+                          }
                           const rawResult = await window.desktopAPI.startNode({
                             network: {
                               id: network.id,
                               environment: network.environment ?? 'mainnet',
                               nodeDownloadUrl: effUrl,
-                              nodeCommandTemplate: selectedPreset.commandTemplate,
+                              nodeCommandTemplate: commandTemplate,
                               nodeBinarySha256: effSha,
                               nodePresetId: selectedPreset.presetId,
                             },
@@ -595,8 +657,10 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                     ) : (
                       <p className="max-w-md text-xs text-gray-500">
                         {isBoingPublicStakeValidatorPreset(selectedPreset.presetId)
-                          ? 'One click: generate a validator key, start with the stake-derived set, faucet and Bond 10_000 BOING on the public testnet RPC. First run may download the binary.'
-                          : 'The desktop app runs the node process directly (no bundled PowerShell or Command Prompt window). First run downloads and extracts the binary and can take several minutes on a slow connection.'}
+                          ? 'Requires a live public testnet tip. If public RPC height is 0, use local validator (recommended) instead until bootnodes recover.'
+                          : selectedPreset.presetId.toLowerCase().includes('validator')
+                            ? 'One-click local validator: produces blocks on this PC (works even if public bootnodes are down). First run may download the binary.'
+                            : 'Full node syncs from peers only — it will stay at height 0 if bootnodes/peers are unreachable. Prefer local validator for one-click RPC + faucet.'}
                       </p>
                     )}
                     {lastNodeError && !nodeStarting && (

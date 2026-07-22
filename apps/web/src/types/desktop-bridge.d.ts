@@ -68,7 +68,12 @@ declare global {
         networkId: string,
         environment: string,
         nodePresetId?: string
-      ) => Promise<{ status?: string; isActive?: boolean } | null>;
+      ) => Promise<{
+        status?: string;
+        isActive?: boolean;
+        chainHeight?: number | null;
+        rpcPort?: number | null;
+      } | null>;
       isNodeRunning?: (
         networkId: string,
         environment: string,

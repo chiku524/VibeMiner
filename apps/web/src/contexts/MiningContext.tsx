@@ -358,7 +358,11 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
         .filter(isMiningSessionNode)
         .filter((s) => s.nodeProcessExitedAt == null);
       if (nodeSessions.length === 0) return;
-      const updates: Array<{ key: string; status: string | null }> = [];
+      const updates: Array<{
+        key: string;
+        status: string | null;
+        chainHeight: number | null;
+      }> = [];
       for (const s of nodeSessions) {
         try {
           const st = await getNodeStatus(s.networkId, s.environment, s.presetId);
@@ -366,9 +370,16 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
             st && typeof st === 'object' && 'status' in st && typeof st.status === 'string'
               ? st.status
               : null;
-          updates.push({ key: sessionListKey(s), status });
+          const chainHeight =
+            st &&
+            typeof st === 'object' &&
+            'chainHeight' in st &&
+            typeof st.chainHeight === 'number'
+              ? st.chainHeight
+              : null;
+          updates.push({ key: sessionListKey(s), status, chainHeight });
         } catch {
-          updates.push({ key: sessionListKey(s), status: null });
+          updates.push({ key: sessionListKey(s), status: null, chainHeight: null });
         }
       }
       setSessions((prev) =>
@@ -376,7 +387,7 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
           if (!isMiningSessionNode(s)) return s;
           const u = updates.find((x) => x.key === sessionListKey(s));
           if (!u) return s;
-          return { ...s, nodeStatus: u.status };
+          return { ...s, nodeStatus: u.status, chainHeight: u.chainHeight };
         })
       );
     }

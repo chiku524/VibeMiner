@@ -179,6 +179,75 @@ export function applyBoingBootnodesToCommandTemplate(
   return `${t} --bootnodes ${cli}`;
 }
 
+/**
+ * Parse a user/operator bootnode field (comma or whitespace separated multiaddrs).
+ * Example: `/ip4/192.168.1.20/tcp/4001, /ip4/73.84.106.121/tcp/4001`
+ */
+export function parseBoingBootnodesInput(raw: string): string[] {
+  return raw
+    .split(/[\n,]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+/** localStorage key for optional custom Boing bootnodes (two-PC / lab). */
+export const BOING_CUSTOM_BOOTNODES_STORAGE_KEY = 'vibeminer.boing.customBootnodes';
+
+/**
+ * Default Boing one-click preset for an OS: **local validator** (produces blocks even when
+ * public bootnodes are unreachable). Full node and public-stake presets remain selectable.
+ */
+export function pickBoingNodePresetIdForPlatform(
+  presets: ReadonlyArray<{ presetId: string; label?: string }>,
+  platform: string,
+): string | null {
+  if (presets.length === 0) return null;
+  const os = platform.toLowerCase();
+  const token =
+    os === 'windows'
+      ? 'windows'
+      : os === 'macos' || os === 'darwin'
+        ? 'macos'
+        : os === 'linux'
+          ? 'linux'
+          : null;
+  if (!token) return presets[0]?.presetId ?? null;
+
+  const matchesOs = (p: { presetId: string; label?: string }) => {
+    const id = p.presetId.toLowerCase();
+    const label = (p.label ?? '').toLowerCase();
+    if (token === 'macos') {
+      return (
+        id.includes('mac') ||
+        id.includes('darwin') ||
+        label.includes('mac') ||
+        label.includes('darwin')
+      );
+    }
+    return id.includes(token) || label.includes(token);
+  };
+
+  const localValidator = presets.find((p) => {
+    if (!matchesOs(p)) return false;
+    const id = p.presetId.toLowerCase();
+    return (
+      id.includes('validator') &&
+      !id.includes('public') &&
+      !id.includes('stake')
+    );
+  });
+  if (localValidator) return localValidator.presetId;
+
+  const full = presets.find((p) => {
+    if (!matchesOs(p)) return false;
+    const id = p.presetId.toLowerCase();
+    return !id.includes('validator') && !id.includes('stake');
+  });
+  if (full) return full.presetId;
+
+  return presets.find(matchesOs)?.presetId ?? presets[0]?.presetId ?? null;
+}
+
 /** Canonical GitHub org for official node zips (see Boing `HANDOFF-DEPENDENT-PROJECTS.md`). */
 const CANONICAL_BOING_GITHUB_ORG_PATH = 'github.com/Boing-Network/boing.network/';
 const CANONICAL_BOING_RELEASE_DL = `${CANONICAL_BOING_GITHUB_ORG_PATH}releases/download/`;

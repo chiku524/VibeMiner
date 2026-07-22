@@ -587,7 +587,9 @@ fn get_node_status(network_id: String, environment: String, node_preset_id: Opti
         serde_json::json!({
             "startedAt": s.started_at,
             "status": s.status,
-            "isActive": s.is_active
+            "isActive": s.is_active,
+            "chainHeight": s.chain_height,
+            "rpcPort": s.rpc_port,
         })
     })
 }

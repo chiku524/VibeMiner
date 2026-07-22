@@ -11,10 +11,17 @@ use sysinfo::System;
 use tauri::{AppHandle, Emitter, Manager};
 
 #[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NodeStatus {
     pub started_at: u64,
     pub status: String,
     pub is_active: bool,
+    /// Local JSON-RPC tip when probe succeeds (Boing `boing_chainHeight`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chain_height: Option<u64>,
+    /// RPC port used for health probes (from command template).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rpc_port: Option<u16>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -32,6 +39,7 @@ struct NodeEntry {
     network_id: String,
     environment: String,
     node_preset_id: String,
+    rpc_port: u16,
 }
 
 lazy_static::lazy_static! {
@@ -897,6 +905,7 @@ pub fn start_node(
         stderr,
     );
 
+    let rpc_port = effective_rpc_port_for_preflight(&network_id, &args).unwrap_or(8545);
     let started_at = chrono::Utc::now().timestamp_millis() as u64;
     NODE_STATS
         .lock()
@@ -907,6 +916,8 @@ pub fn start_node(
                 started_at,
                 status: "syncing".to_string(),
                 is_active: true,
+                chain_height: None,
+                rpc_port: Some(rpc_port),
             },
         );
     ACTIVE_NODES
@@ -920,9 +931,57 @@ pub fn start_node(
                 network_id,
                 environment,
                 node_preset_id: preset_stored,
+                rpc_port,
             },
         );
     Ok(stake_identity)
+}
+
+/// Probe local Boing JSON-RPC for tip height (best-effort; never panics).
+fn probe_local_boing_chain_height(rpc_port: u16) -> Option<u64> {
+    let url = format!("http://127.0.0.1:{rpc_port}/");
+    let client = reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(2))
+        .build()
+        .ok()?;
+    let body = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "boing_chainHeight",
+        "params": []
+    });
+    let res = client
+        .post(&url)
+        .header("content-type", "application/json")
+        .header("user-agent", "vibeminer-node-health/1")
+        .json(&body)
+        .send()
+        .ok()?;
+    if !res.status().is_success() {
+        return None;
+    }
+    let v: serde_json::Value = res.json().ok()?;
+    match v.get("result") {
+        Some(serde_json::Value::Number(n)) => n.as_u64(),
+        Some(serde_json::Value::String(s)) => s.parse().ok(),
+        _ => None,
+    }
+}
+
+fn status_label_for_boing_tip(height: Option<u64>, started_at_ms: u64) -> String {
+    let Some(h) = height else {
+        return "rpc unreachable".to_string();
+    };
+    if h > 0 {
+        return format!("height {h}");
+    }
+    let age_ms = chrono::Utc::now().timestamp_millis() as u64;
+    let age_secs = age_ms.saturating_sub(started_at_ms) / 1000;
+    if age_secs >= 45 {
+        "height 0 — not syncing (check bootnodes / validator peer)".to_string()
+    } else {
+        "height 0 — waiting for tip".to_string()
+    }
 }
 
 /// Parse `--rpc-port` from a command template (after `{dataDir}` substitution is optional).
@@ -989,7 +1048,29 @@ pub fn stop_node(
 pub fn get_node_status(network_id: &str, environment: &str, node_preset_id: &str) -> Option<NodeStatus> {
     reap_exited_node_children();
     let key = process_key(network_id, environment, node_preset_id);
-    NODE_STATS.lock().ok().and_then(|m| m.get(&key).cloned())
+    let rpc_port = ACTIVE_NODES
+        .lock()
+        .ok()
+        .and_then(|m| m.get(&key).map(|e| e.rpc_port));
+    let mut st = NODE_STATS.lock().ok().and_then(|m| m.get(&key).cloned())?;
+    if !st.is_active {
+        return Some(st);
+    }
+    if network_id.to_lowercase().contains("boing") {
+        let port = rpc_port.or(st.rpc_port).unwrap_or(8545);
+        let height = probe_local_boing_chain_height(port);
+        st.chain_height = height;
+        st.rpc_port = Some(port);
+        st.status = status_label_for_boing_tip(height, st.started_at);
+        if let Ok(mut m) = NODE_STATS.lock() {
+            if let Some(slot) = m.get_mut(&key) {
+                slot.chain_height = st.chain_height;
+                slot.rpc_port = st.rpc_port;
+                slot.status = st.status.clone();
+            }
+        }
+    }
+    Some(st)
 }
 
 pub fn is_node_running(network_id: &str, environment: &str, node_preset_id: &str) -> bool {
