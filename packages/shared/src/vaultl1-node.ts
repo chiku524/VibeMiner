@@ -157,7 +157,7 @@ export function applyVaultL1PeerHostToCommandTemplate(
   if (!/^[0-9a-zA-Z.:_-]+$/.test(host) || host.length > 64) {
     return template;
   }
-  return template.replaceAll('{peerHost}', host);
+  return template.split('{peerHost}').join(host);
 }
 
 export function buildVaultL1NodePresets(): Array<{
