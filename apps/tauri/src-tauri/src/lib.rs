@@ -387,19 +387,8 @@ async fn start_node(
         .clone()
         .unwrap_or_else(|| "default".to_string());
     let local_boing_exe = node::boing_local_exe_from_env(&network_id)?;
-    let local_vault_exe = if vaultl1::is_vaultl1_network_id(&network_id) {
-        match vaultl1::resolve_vaultd_exe() {
-            Ok(p) => Some(p),
-            Err(e) => {
-                if url.is_empty() {
-                    return Ok(serde_json::json!({ "ok": false, "error": e }));
-                }
-                None
-            }
-        }
-    } else {
-        None
-    };
+    // Optional override only (like Boing). Otherwise download zip from preset URL.
+    let local_vault_exe = vaultl1::vault_local_exe_from_env(&network_id)?;
     if local_boing_exe.is_none() && local_vault_exe.is_none() && url.is_empty() {
         return Ok(serde_json::json!({ "ok": false, "error": "No node download URL" }));
     }
@@ -465,21 +454,17 @@ async fn start_node(
     let mut template_run = if let Some(ref exe_path) = local_for_blocking {
         node::replace_command_template_exe(&template, exe_path)?
     } else {
-        template
+        template.clone()
     };
     let mut vault_prepare: Option<serde_json::Value> = None;
     if vaultl1::is_vaultl1_network_id(&network_id) {
-        let vaultd = match local_vault_exe.as_ref() {
-            Some(p) => p.clone(),
-            None => {
-                // Binary may have come from zip extract — prefer first token of template.
-                match vaultl1::resolve_vaultd_exe() {
-                    Ok(p) => p,
-                    Err(e) => {
-                        return Ok(serde_json::json!({ "ok": false, "error": e }));
-                    }
-                }
-            }
+        let vaultd = match vaultl1::resolve_vaultd_for_start(
+            local_vault_exe.as_deref(),
+            &bin_dir,
+            &template_run,
+        ) {
+            Ok(p) => p,
+            Err(e) => return Ok(serde_json::json!({ "ok": false, "error": e })),
         };
         template_run =
             match vaultl1::apply_peer_host_template(&template_run, &vault_opts, &preset_raw) {

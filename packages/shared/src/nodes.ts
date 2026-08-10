@@ -226,13 +226,6 @@ export function hasNodeConfig(network: {
   nodeCommandTemplate?: string | null;
   nodePresets?: NetworkNodePreset[] | null;
 }): boolean {
-  // VaultL1 is local-binary only (no required download host).
-  if (network.id && typeof network.id === 'string' && network.id.toLowerCase().includes('vaultl1')) {
-    if (Array.isArray(network.nodePresets) && network.nodePresets.length > 0) {
-      return network.nodePresets.some((p) => !!p.commandTemplate?.trim());
-    }
-    return !!network.nodeCommandTemplate?.trim();
-  }
   if (Array.isArray(network.nodePresets) && network.nodePresets.length > 0) {
     const baseUrl = network.nodeDownloadUrl?.trim() ?? '';
     return network.nodePresets.some((p) => {

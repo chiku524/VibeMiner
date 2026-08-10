@@ -1,7 +1,11 @@
 /**
- * VaultL1 one-click node policy for VibeMiner desktop.
- * Binary: `vaultd` (set VIBEMINER_VAULTD_EXE or let the desktop auto-discover a local build).
- * Two equal validators → both machines must stay online for blocks (2/3 power quorum).
+ * VaultL1 one-click node policy for VibeMiner desktop — mirrors Boing testnet layout:
+ * OS download zips from GitHub releases + role presets (PC A / PC B / local dual).
+ *
+ * Binary inside each zip is selected by the command template first token
+ * (e.g. `vaultd-windows-x86_64.exe`). Optional override: `VIBEMINER_VAULTD_EXE`.
+ *
+ * Two equal validators → both machines online for blocks (2/3 power quorum).
  */
 
 export const VAULTL1_NETWORK_ID = 'vaultl1-local';
@@ -12,10 +16,28 @@ export const VAULTL1_CHAIN_ID_LOCAL = 'vault-net-local';
 export const VAULTL1_SUGGESTED_NODE_DISK_GB = 2;
 export const VAULTL1_SUGGESTED_NODE_RAM_MB = 512;
 
-/** Env var: absolute path to vaultd / vaultd.exe (skip download). */
+/** Pinned GitHub release of prebuilt vaultd (VibeMiner downloads these zips). */
+export const VAULTL1_DEFAULT_DOWNLOAD_TAG = 'v0.5.0';
+
+const VAULTL1_RELEASE_BASE = `https://github.com/chiku524/vaultl1/releases/download/${VAULTL1_DEFAULT_DOWNLOAD_TAG}`;
+
+export const VAULTL1_DEFAULT_WINDOWS_DOWNLOAD_URL = `${VAULTL1_RELEASE_BASE}/release-windows-x86_64.zip`;
+export const VAULTL1_DEFAULT_LINUX_DOWNLOAD_URL = `${VAULTL1_RELEASE_BASE}/release-linux-x86_64.zip`;
+export const VAULTL1_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL = `${VAULTL1_RELEASE_BASE}/release-macos-aarch64.zip`;
+
+/** Optional SHA-256 of official GitHub zip assets (refresh when cutting a new tag). */
+export const VAULTL1_ZIP_SHA256_WINDOWS = '';
+export const VAULTL1_ZIP_SHA256_LINUX = '';
+export const VAULTL1_ZIP_SHA256_MACOS_AARCH64 = '';
+
+export const VAULTL1_WINDOWS_BINARY = 'vaultd-windows-x86_64.exe';
+export const VAULTL1_LINUX_BINARY = 'vaultd-linux-x86_64';
+export const VAULTL1_MACOS_AARCH64_BINARY = 'vaultd-macos-aarch64';
+
+/** Env var: absolute path to vaultd (skip zip download). Same pattern as Boing. */
 export const VIBEMINER_VAULTD_EXE_ENV = 'VIBEMINER_VAULTD_EXE';
 
-/** localStorage keys for LAN join form (per machine role in the webview). */
+/** localStorage keys for LAN join form. */
 export const VAULTL1_PEER_HOST_STORAGE_KEY = 'vibeminer.vaultl1.peerHost';
 export const VAULTL1_PEER_ADDRESS_STORAGE_KEY = 'vibeminer.vaultl1.peerAddress';
 export const VAULTL1_PEER_PUBKEY_STORAGE_KEY = 'vibeminer.vaultl1.peerPubKey';
@@ -26,6 +48,7 @@ export function isVaultL1NetworkId(id: string): boolean {
 }
 
 export type VaultL1Role = 'pc-a' | 'pc-b' | 'local-a' | 'local-b';
+export type VaultL1OsKey = 'windows' | 'linux' | 'macos-arm64';
 
 /** Role inferred from preset id (substring match). */
 export function vaultL1RoleFromPresetId(presetId: string): VaultL1Role | null {
@@ -46,8 +69,39 @@ export function isVaultL1JoinerRole(role: VaultL1Role | null): boolean {
   return role === 'pc-b' || role === 'local-b';
 }
 
+function tpl(
+  binary: string,
+  moniker: string,
+  peerPlaceholder: string,
+  ports: { rpc: number; api: number; p2p: number },
+  bind: 'lan' | 'loopback',
+): string {
+  const host = bind === 'lan' ? '0.0.0.0' : '127.0.0.1';
+  return [
+    binary,
+    'start',
+    '--home {dataDir}',
+    `--rpc-addr ${host}:${ports.rpc}`,
+    `--api-addr ${host}:${ports.api}`,
+    `--p2p-listen ${host}:${ports.p2p}`,
+    `--peers ${peerPlaceholder}`,
+    '--node-key validator',
+    `--moniker ${moniker}`,
+  ].join(' ');
+}
+
+function commandsForBinary(binary: string): Record<VaultL1Role, string> {
+  return {
+    'pc-a': tpl(binary, 'machine-a', '{peerHost}:26656', { rpc: 26657, api: 1317, p2p: 26656 }, 'lan'),
+    'pc-b': tpl(binary, 'machine-b', '{peerHost}:26656', { rpc: 26657, api: 1317, p2p: 26656 }, 'lan'),
+    'local-a': tpl(binary, 'node-a', '127.0.0.1:26666', { rpc: 26657, api: 1317, p2p: 26656 }, 'loopback'),
+    'local-b': tpl(binary, 'node-b', '127.0.0.1:26656', { rpc: 26667, api: 1327, p2p: 26666 }, 'loopback'),
+  };
+}
+
 /**
- * Default one-click: LAN coordinator for OS, else local dual A.
+ * Default one-click: **PC A (LAN coordinator)** for the current OS
+ * (same idea as Boing preferring local validator for platform).
  */
 export function pickVaultL1NodePresetIdForPlatform(
   presets: ReadonlyArray<{ presetId: string; label?: string }>,
@@ -64,88 +118,28 @@ export function pickVaultL1NodePresetIdForPlatform(
           ? 'linux'
           : null;
 
-  const score = (id: string) => {
+  const matchesOs = (id: string, label: string) => {
     const p = id.toLowerCase();
-    let s = 0;
-    if (token) {
-      if (token === 'macos') {
-        if (p.includes('mac') || p.includes('darwin')) s += 10;
-      } else if (p.includes(token)) s += 10;
+    const l = label.toLowerCase();
+    if (token === 'macos') {
+      return p.includes('mac') || p.includes('darwin') || l.includes('mac');
     }
-    if (p.includes('pc-a') || p.includes('machine-a')) s += 5;
-    if (p.includes('local-a')) s += 3;
-    return s;
+    if (!token) return true;
+    return p.includes(token) || l.includes(token);
   };
 
-  let best = presets[0]!;
-  let bestScore = score(best.presetId);
-  for (const p of presets.slice(1)) {
-    const sc = score(p.presetId);
-    if (sc > bestScore) {
-      best = p;
-      bestScore = sc;
-    }
+  const preferredRoles = ['pc-a', 'local-a', 'pc-b', 'local-b'];
+  for (const role of preferredRoles) {
+    const hit = presets.find((p) => {
+      if (!matchesOs(p.presetId, p.label ?? '')) return false;
+      return vaultL1RoleFromPresetId(p.presetId) === role;
+    });
+    if (hit) return hit.presetId;
   }
-  // Prefer OS-scoped pc-a if available
-  const osPcA = presets.find((p) => {
-    const id = p.presetId.toLowerCase();
-    if (!token) return false;
-    const osMatch =
-      token === 'macos'
-        ? id.includes('mac') || id.includes('darwin')
-        : id.includes(token);
-    return osMatch && (id.includes('pc-a') || id.includes('machine-a'));
-  });
-  if (osPcA) return osPcA.presetId;
-  return best.presetId;
+
+  const anyOs = presets.find((p) => matchesOs(p.presetId, p.label ?? ''));
+  return anyOs?.presetId ?? presets[0]?.presetId ?? null;
 }
-
-function tpl(
-  moniker: string,
-  peerPlaceholder: string,
-  ports: { rpc: number; api: number; p2p: number },
-  bind: 'lan' | 'loopback',
-): string {
-  const host = bind === 'lan' ? '0.0.0.0' : '127.0.0.1';
-  return [
-    'vaultd start',
-    '--home {dataDir}',
-    `--rpc-addr ${host}:${ports.rpc}`,
-    `--api-addr ${host}:${ports.api}`,
-    `--p2p-listen ${host}:${ports.p2p}`,
-    `--peers ${peerPlaceholder}`,
-    '--node-key validator',
-    `--moniker ${moniker}`,
-  ].join(' ');
-}
-
-/** LAN PC A (coordinator): default P2P ports, peers other host:26656 */
-export const VAULTL1_CMD_PC_A = tpl('machine-a', '{peerHost}:26656', {
-  rpc: 26657,
-  api: 1317,
-  p2p: 26656,
-}, 'lan');
-
-/** LAN PC B (joiner) */
-export const VAULTL1_CMD_PC_B = tpl('machine-b', '{peerHost}:26656', {
-  rpc: 26657,
-  api: 1317,
-  p2p: 26656,
-}, 'lan');
-
-/** Same-PC dual A */
-export const VAULTL1_CMD_LOCAL_A = tpl('node-a', '127.0.0.1:26666', {
-  rpc: 26657,
-  api: 1317,
-  p2p: 26656,
-}, 'loopback');
-
-/** Same-PC dual B */
-export const VAULTL1_CMD_LOCAL_B = tpl('node-b', '127.0.0.1:26656', {
-  rpc: 26667,
-  api: 1327,
-  p2p: 26666,
-}, 'loopback');
 
 /** Replace `{peerHost}` in a VaultL1 start template. */
 export function applyVaultL1PeerHostToCommandTemplate(
@@ -153,90 +147,108 @@ export function applyVaultL1PeerHostToCommandTemplate(
   peerHost: string,
 ): string {
   const host = peerHost.trim() || '127.0.0.1';
-  // Reject path chars / shell — host or IPv4 / IPv6-ish only
   if (!/^[0-9a-zA-Z.:_-]+$/.test(host) || host.length > 64) {
     return template;
   }
   return template.split('{peerHost}').join(host);
 }
 
-export function buildVaultL1NodePresets(): Array<{
+type PresetRow = {
   presetId: string;
   label: string;
   description: string;
   commandTemplate: string;
+  nodeDownloadUrl: string;
+  nodeBinarySha256?: string;
   nodeDiskGb: number;
   nodeRamMb: number;
-}> {
+};
+
+/**
+ * Up to 12 presets: 3 OS × 4 roles (LAN A/B + local dual A/B).
+ * Each row carries its own download URL (Boing-style).
+ */
+export function buildVaultL1NodePresets(): PresetRow[] {
   const disk = VAULTL1_SUGGESTED_NODE_DISK_GB;
   const ram = VAULTL1_SUGGESTED_NODE_RAM_MB;
-  const rows: Array<{
-    os: string;
+
+  const osSpecs: Array<{
+    os: VaultL1OsKey;
     osLabel: string;
+    binary: string;
+    downloadUrl: string;
+    sha: string;
+  }> = [
+    {
+      os: 'windows',
+      osLabel: 'Windows (x86_64)',
+      binary: VAULTL1_WINDOWS_BINARY,
+      downloadUrl: VAULTL1_DEFAULT_WINDOWS_DOWNLOAD_URL,
+      sha: VAULTL1_ZIP_SHA256_WINDOWS,
+    },
+    {
+      os: 'linux',
+      osLabel: 'Linux (x86_64)',
+      binary: VAULTL1_LINUX_BINARY,
+      downloadUrl: VAULTL1_DEFAULT_LINUX_DOWNLOAD_URL,
+      sha: VAULTL1_ZIP_SHA256_LINUX,
+    },
+    {
+      os: 'macos-arm64',
+      osLabel: 'macOS (Apple Silicon)',
+      binary: VAULTL1_MACOS_AARCH64_BINARY,
+      downloadUrl: VAULTL1_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL,
+      sha: VAULTL1_ZIP_SHA256_MACOS_AARCH64,
+    },
+  ];
+
+  const roleMeta: Array<{
     role: VaultL1Role;
-    label: string;
+    short: string;
     description: string;
-    commandTemplate: string;
-  }> = [];
-
-  for (const [os, osLabel] of [
-    ['windows', 'Windows'],
-    ['linux', 'Linux'],
-    ['macos-arm64', 'macOS (Apple Silicon)'],
-  ] as const) {
-    rows.push(
-      {
-        os,
-        osLabel,
-        role: 'pc-a',
-        label: `${osLabel} — PC A (LAN coordinator)`,
-        description:
-          'Builds shared genesis after you paste PC B address+pubkey. Share genesis-shared.json with B. Peers B_IP:26656.',
-        commandTemplate: VAULTL1_CMD_PC_A,
-      },
-      {
-        os,
-        osLabel,
-        role: 'pc-b',
-        label: `${osLabel} — PC B (LAN joiner)`,
-        description:
-          'Creates validator key (copy address+pubkey to A). Import genesis JSON from A, set A_IP, then start.',
-        commandTemplate: VAULTL1_CMD_PC_B,
-      },
-    );
-  }
-
-  // Same-PC dual (one OS of command; works on all — use any). Capped under schema max 12 presets.
-  rows.push(
+  }> = [
     {
-      os: 'any',
-      osLabel: 'Any OS',
+      role: 'pc-a',
+      short: 'LAN PC A (coordinator)',
+      description:
+        'Default for a first machine on the LAN. Paste PC B address+pubkey, set B’s IP, Run. Share genesis-shared.json with B.',
+    },
+    {
+      role: 'pc-b',
+      short: 'LAN PC B (joiner)',
+      description:
+        'Second LAN machine. Run once to reveal identity for A, then import genesis from A and set A’s IP.',
+    },
+    {
       role: 'local-a',
-      label: 'Local dual — node A (same PC)',
+      short: 'Local dual — node A',
       description:
-        'First of two processes on one machine (ports 26656/26657/1317). Start B after and keep both running.',
-      commandTemplate: VAULTL1_CMD_LOCAL_A,
+        'Same PC only. Start this first (ports 26656/26657/1317). Then start local dual B.',
     },
     {
-      os: 'any',
-      osLabel: 'Any OS',
       role: 'local-b',
-      label: 'Local dual — node B (same PC)',
+      short: 'Local dual — node B',
       description:
-        'Second process (ports 26666/26667/1327). Same genesis — desktop builds local dual genesis automatically.',
-      commandTemplate: VAULTL1_CMD_LOCAL_B,
+        'Same PC only. Ports 26666/26667/1327. Requires local dual A first (auto-shared genesis).',
     },
-  );
+  ];
 
-  return rows.map((r) => ({
-    presetId:
-      r.role === 'local-a' || r.role === 'local-b'
-        ? r.role
-        : `${r.os}-${r.role}`,
-    label: r.label,
-    description: r.description,
-    commandTemplate: r.commandTemplate,
-    nodeDiskGb: disk,
-    nodeRamMb: ram,
-  }));
+  const out: PresetRow[] = [];
+  for (const os of osSpecs) {
+    const cmds = commandsForBinary(os.binary);
+    for (const r of roleMeta) {
+      const sha = os.sha.trim();
+      out.push({
+        presetId: `${os.os}-${r.role}`,
+        label: `${os.osLabel} — ${r.short}`,
+        description: r.description,
+        commandTemplate: cmds[r.role],
+        nodeDownloadUrl: os.downloadUrl,
+        ...(sha && /^[a-fA-F0-9]{64}$/.test(sha) ? { nodeBinarySha256: sha } : {}),
+        nodeDiskGb: disk,
+        nodeRamMb: ram,
+      });
+    }
+  }
+  return out;
 }

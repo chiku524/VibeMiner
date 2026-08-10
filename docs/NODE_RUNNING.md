@@ -20,9 +20,11 @@ Before accepting node config from registration, we run validation that acts like
 
 4. **Transparency** — Users see resource requirements (disk, RAM) and can inspect what will run before starting.
 
-### VaultL1 (local binary, PC A / PC B)
+### VaultL1 (Boing-style presets + download)
 
-**VaultL1 (LAN)** is a built-in devnet listing with no mandatory download URL. The desktop resolves `vaultd` via **`VIBEMINER_VAULTD_EXE`**, common `~/Desktop/Jackal/vaultl1/build` paths, or `PATH`. See **[VAULTL1_NODES.md](./VAULTL1_NODES.md)** for the A↔B genesis wizard and ports.
+**VaultL1 (LAN)** mirrors Boing: each OS×role preset has a **GitHub zip** + command template. Desktop downloads `vaultd`, then prepares genesis per role (PC A / PC B / local dual). See **[VAULTL1_NODES.md](./VAULTL1_NODES.md)**.
+
+Optional local binary override: `VIBEMINER_VAULTD_EXE` (same pattern as `VIBEMINER_BOING_NODE_EXE`).
 
 ## Resource Tiers
 

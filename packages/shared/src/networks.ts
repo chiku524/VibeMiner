@@ -22,6 +22,7 @@ import {
   VAULTL1_NETWORK_ID,
   VAULTL1_SUGGESTED_NODE_DISK_GB,
   VAULTL1_SUGGESTED_NODE_RAM_MB,
+  VAULTL1_DEFAULT_WINDOWS_DOWNLOAD_URL,
   buildVaultL1NodePresets,
 } from './vaultl1-node';
 
@@ -261,7 +262,7 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
     name: 'VaultL1 (LAN)',
     symbol: 'VAULT',
     description:
-      'Dependency-free personal L1: one-click PC A (coordinator) + PC B (joiner) or local dual on one machine. Uses vaultd (set VIBEMINER_VAULTD_EXE). Both validators must stay online for blocks.',
+      'Dependency-free personal L1. Select node type (LAN PC A / PC B, or local dual) and Run — VibeMiner downloads vaultd like Boing. Both equal validators must stay online.',
     icon: '◆',
     algorithm: 'PoA',
     environment: 'devnet',
@@ -271,10 +272,8 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
     minPayout: 'N/A',
     nodeDiskGb: VAULTL1_SUGGESTED_NODE_DISK_GB,
     nodeRamMb: VAULTL1_SUGGESTED_NODE_RAM_MB,
-    nodePresets: (() => {
-      const presets = buildVaultL1NodePresets();
-      return presets;
-    })(),
+    nodeDownloadUrl: VAULTL1_DEFAULT_WINDOWS_DOWNLOAD_URL,
+    nodePresets: buildVaultL1NodePresets(),
   },
 ];
 

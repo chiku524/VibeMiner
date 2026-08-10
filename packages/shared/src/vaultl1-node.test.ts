@@ -5,8 +5,9 @@ import {
   isVaultL1NetworkId,
   pickVaultL1NodePresetIdForPlatform,
   vaultL1RoleFromPresetId,
-  VAULTL1_CMD_PC_A,
+  VAULTL1_DEFAULT_WINDOWS_DOWNLOAD_URL,
   VAULTL1_NETWORK_ID,
+  VAULTL1_WINDOWS_BINARY,
 } from './vaultl1-node';
 import { hasNodeConfig } from './nodes';
 import { parseNetwork } from './schema';
@@ -20,20 +21,24 @@ describe('vaultl1-node', () => {
   it('parses roles from preset ids', () => {
     expect(vaultL1RoleFromPresetId('windows-pc-a')).toBe('pc-a');
     expect(vaultL1RoleFromPresetId('linux-pc-b')).toBe('pc-b');
-    expect(vaultL1RoleFromPresetId('local-a')).toBe('local-a');
-    expect(vaultL1RoleFromPresetId('local-b')).toBe('local-b');
+    expect(vaultL1RoleFromPresetId('macos-arm64-local-a')).toBe('local-a');
+    expect(vaultL1RoleFromPresetId('windows-local-b')).toBe('local-b');
   });
 
   it('substitutes peer host safely', () => {
-    const out = applyVaultL1PeerHostToCommandTemplate(VAULTL1_CMD_PC_A, '192.168.1.20');
+    const presets = buildVaultL1NodePresets();
+    const pcA = presets.find((p) => p.presetId === 'windows-pc-a')!;
+    const out = applyVaultL1PeerHostToCommandTemplate(pcA.commandTemplate, '192.168.1.20');
     expect(out).toContain('--peers 192.168.1.20:26656');
+    expect(out).toContain(VAULTL1_WINDOWS_BINARY);
     expect(out).not.toContain('{peerHost}');
   });
 
-  it('builds valid listing for schema/hasNodeConfig', () => {
+  it('builds Boing-style presets with download URLs (3 OS × 4 roles)', () => {
     const presets = buildVaultL1NodePresets();
-    expect(presets.length).toBeGreaterThanOrEqual(6);
-    expect(presets.length).toBeLessThanOrEqual(12);
+    expect(presets.length).toBe(12);
+    expect(presets.every((p) => p.nodeDownloadUrl.startsWith('https://github.com/'))).toBe(true);
+    expect(presets.every((p) => p.commandTemplate.includes('start'))).toBe(true);
     const raw = {
       id: VAULTL1_NETWORK_ID,
       name: 'VaultL1 (LAN)',
@@ -43,6 +48,7 @@ describe('vaultl1-node', () => {
       algorithm: 'PoA',
       environment: 'devnet',
       status: 'live',
+      nodeDownloadUrl: VAULTL1_DEFAULT_WINDOWS_DOWNLOAD_URL,
       nodePresets: presets,
     };
     const parsed = parseNetwork(raw);

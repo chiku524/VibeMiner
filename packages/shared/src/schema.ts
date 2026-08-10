@@ -92,7 +92,6 @@ export const BlockchainNetworkSchema = z.object({
   .superRefine((val, ctx) => {
     const url = val.nodeDownloadUrl?.trim();
     const hasPresets = Array.isArray(val.nodePresets) && val.nodePresets.length > 0;
-    const localBinaryOnly = val.id.toLowerCase().includes('vaultl1');
 
     if (url && !isUrlHostAllowed(url)) {
       ctx.addIssue({
@@ -120,7 +119,7 @@ export const BlockchainNetworkSchema = z.object({
           });
         }
       });
-      if (!url && !localBinaryOnly) {
+      if (!url) {
         val.nodePresets!.forEach((p, i) => {
           if (!p.nodeDownloadUrl?.trim()) {
             ctx.addIssue({

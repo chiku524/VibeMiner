@@ -3,6 +3,8 @@ use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+/// Env: absolute path to `vaultd`. When set, VibeMiner **skips** the zip download for vaultl1
+/// networks (same idea as `VIBEMINER_BOING_NODE_EXE`).
 pub const VIBEMINER_VAULTD_EXE_ENV: &str = "VIBEMINER_VAULTD_EXE";
 
 const CHAIN_ID_LAN: &str = "vault-net-1";
@@ -40,6 +42,106 @@ pub struct VaultPrepareInfo {
 
 pub fn is_vaultl1_network_id(network_id: &str) -> bool {
     network_id.to_lowercase().contains("vaultl1")
+}
+
+/// Only when `VIBEMINER_VAULTD_EXE` is set (Boing-style). Auto-discovery is not used for
+/// production one-click — downloads come from the network preset URL.
+pub fn vault_local_exe_from_env(network_id: &str) -> Result<Option<PathBuf>, String> {
+    if !is_vaultl1_network_id(network_id) {
+        return Ok(None);
+    }
+    let raw = match std::env::var(VIBEMINER_VAULTD_EXE_ENV) {
+        Ok(s) => s,
+        Err(_) => return Ok(None),
+    };
+    let t = raw.trim();
+    if t.is_empty() {
+        return Ok(None);
+    }
+    let p = PathBuf::from(t);
+    if !p.is_absolute() {
+        return Err(format!(
+            "{VIBEMINER_VAULTD_EXE_ENV} must be an absolute path (got {t})"
+        ));
+    }
+    if !p.exists() {
+        return Err(format!(
+            "{VIBEMINER_VAULTD_EXE_ENV} file not found: {}",
+            p.display()
+        ));
+    }
+    Ok(Some(p))
+}
+
+/// Resolve vaultd for prepare/start: preferred env path, else first token of template under bin_dir.
+pub fn resolve_vaultd_for_start(
+    local_env_exe: Option<&Path>,
+    bin_dir: &Path,
+    command_template: &str,
+) -> Result<PathBuf, String> {
+    if let Some(p) = local_env_exe {
+        return Ok(p.to_path_buf());
+    }
+    let parts: Vec<&str> = command_template.split_whitespace().collect();
+    let token = parts
+        .first()
+        .map(|s| s.trim_matches('"'))
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| "Empty VaultL1 command template".to_string())?;
+    let candidate = if Path::new(token).is_absolute() {
+        PathBuf::from(token)
+    } else {
+        bin_dir.join(token)
+    };
+    if candidate.exists() {
+        return Ok(candidate);
+    }
+    #[cfg(windows)]
+    {
+        if !token.ends_with(".exe") {
+            let with_exe = bin_dir.join(format!("{token}.exe"));
+            if with_exe.exists() {
+                return Ok(with_exe);
+            }
+        }
+    }
+    // Fallbacks after zip extract (release ships both named + short)
+    for name in ["vaultd.exe", "vaultd", "vaultd-windows-x86_64.exe", "vaultd-linux-x86_64", "vaultd-macos-aarch64"] {
+        let p = bin_dir.join(name);
+        if p.exists() {
+            return Ok(p);
+        }
+    }
+    // Nested extract (zip root folder)
+    if let Ok(rd) = std::fs::read_dir(bin_dir) {
+        for ent in rd.flatten() {
+            let p = ent.path();
+            if p.is_file() {
+                let n = p.file_name().and_then(|x| x.to_str()).unwrap_or("");
+                if n.starts_with("vaultd") {
+                    return Ok(p);
+                }
+            }
+            if p.is_dir() {
+                for name in [
+                    "vaultd.exe",
+                    "vaultd",
+                    "vaultd-windows-x86_64.exe",
+                    "vaultd-linux-x86_64",
+                    "vaultd-macos-aarch64",
+                ] {
+                    let nested = p.join(name);
+                    if nested.exists() {
+                        return Ok(nested);
+                    }
+                }
+            }
+        }
+    }
+    Err(format!(
+        "vaultd not found under {} (download failed or wrong release zip). Template binary: {token}",
+        bin_dir.display()
+    ))
 }
 
 pub fn role_from_preset_id(preset_id: &str) -> Option<VaultRole> {
@@ -217,87 +319,6 @@ fn sanitize_address(raw: &str) -> Result<String, String> {
         return Err("Peer validator address must be alphanumeric".into());
     }
     Ok(t.to_string())
-}
-
-/// Resolve `vaultd` path: env, common build dirs, PATH.
-pub fn resolve_vaultd_exe() -> Result<PathBuf, String> {
-    if let Ok(raw) = std::env::var(VIBEMINER_VAULTD_EXE_ENV) {
-        let t = raw.trim();
-        if !t.is_empty() {
-            let p = PathBuf::from(t);
-            if !p.is_absolute() {
-                return Err(format!(
-                    "{VIBEMINER_VAULTD_EXE_ENV} must be an absolute path (got {t})"
-                ));
-            }
-            if !p.exists() {
-                return Err(format!(
-                    "{VIBEMINER_VAULTD_EXE_ENV} file not found: {}",
-                    p.display()
-                ));
-            }
-            return Ok(p);
-        }
-    }
-
-    let mut candidates: Vec<PathBuf> = Vec::new();
-    if let Ok(home) = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME")) {
-        let base = PathBuf::from(home);
-        for rel in [
-            "Desktop/Jackal/vaultl1/build/vaultd.exe",
-            "Desktop/Jackal/vaultl1/build/vaultd",
-            "Desktop/vaultl1/build/vaultd.exe",
-            "Desktop/vaultl1/build/vaultd",
-            "Desktop/vibe-code/../Jackal/vaultl1/build/vaultd.exe",
-        ] {
-            candidates.push(base.join(rel));
-        }
-        // Canonical Jackal sibling of vibe-code
-        candidates.push(base.join("Desktop/Jackal/vaultl1/build/vaultd.exe"));
-        candidates.push(base.join("Desktop/Jackal/vaultl1/build/vaultd"));
-    }
-    // Relative to CWD (dev from monorepo)
-    for rel in [
-        "../Jackal/vaultl1/build/vaultd.exe",
-        "../Jackal/vaultl1/build/vaultd",
-        "../../Jackal/vaultl1/build/vaultd.exe",
-        "../../Jackal/vaultl1/build/vaultd",
-        "build/vaultd.exe",
-        "build/vaultd",
-    ] {
-        candidates.push(PathBuf::from(rel));
-    }
-
-    for c in candidates {
-        if let Ok(canon) = c.canonicalize() {
-            if canon.is_file() {
-                return Ok(canon);
-            }
-        } else if c.is_file() {
-            return Ok(c);
-        }
-    }
-
-    // PATH
-    #[cfg(windows)]
-    let which = Command::new("where").arg("vaultd").output();
-    #[cfg(not(windows))]
-    let which = Command::new("which").arg("vaultd").output();
-    if let Ok(out) = which {
-        if out.status.success() {
-            if let Some(line) = String::from_utf8_lossy(&out.stdout).lines().next() {
-                let p = PathBuf::from(line.trim());
-                if p.exists() {
-                    return Ok(p);
-                }
-            }
-        }
-    }
-
-    Err(format!(
-        "vaultd not found. Build VaultL1 (`go build -o build/vaultd ./cmd/vaultd`) and set \
-         {VIBEMINER_VAULTD_EXE_ENV} to the absolute binary path, then restart VibeMiner."
-    ))
 }
 
 /// Local dual: shared genesis dir under network node cache (sibling of data/).

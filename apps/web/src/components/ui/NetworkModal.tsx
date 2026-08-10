@@ -514,9 +514,10 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                   {isVaultL1NetworkId(network.id) && !nodeRunning && (
                     <div className="w-full min-w-0 max-w-xl space-y-3 rounded-lg border border-white/10 bg-surface-900/60 p-3">
                       <p className="text-xs text-gray-400">
-                        VaultL1 two-validator PoA. Open firewall TCP <strong className="text-gray-300">26656</strong>.
-                        Need a built <code className="text-gray-300">vaultd</code> (
-                        <code className="text-gray-300">VIBEMINER_VAULTD_EXE</code>).
+                        Select a <strong className="text-gray-300">node type</strong> above (LAN PC A /
+                        PC B or local dual). VibeMiner downloads <code className="text-gray-300">vaultd</code>{' '}
+                        for your OS (like Boing), then prepares genesis. Open firewall TCP{' '}
+                        <strong className="text-gray-300">26656</strong> for LAN.
                       </p>
                       {(vaultRole === 'pc-a' || vaultRole === 'pc-b') && (
                         <div>
@@ -589,8 +590,8 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                             />
                           </div>
                           <p className="text-xs text-gray-500">
-                            Start PC B once without genesis to reveal identity, paste here, then Run on A. Share
-                            genesis-shared.json path from A with B.
+                            On PC B: choose <strong className="text-gray-300">LAN PC B</strong> and Run once
+                            (no genesis) to show identity. Paste here, Run A, then send genesis-shared.json to B.
                           </p>
                         </>
                       )}
