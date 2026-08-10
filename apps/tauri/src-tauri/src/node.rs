@@ -724,13 +724,37 @@ fn rpc_port_from_args(args: &[String]) -> Option<u16> {
     None
 }
 
+/// Parse host:port from `--rpc-addr` / `--rpc-addr=` (VaultL1 / tendermint-style).
+fn rpc_port_from_rpc_addr_args(args: &[String]) -> Option<u16> {
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        let val = if let Some(rest) = a.strip_prefix("--rpc-addr=") {
+            rest.to_string()
+        } else if a == "--rpc-addr" {
+            it.next()?.clone()
+        } else {
+            continue;
+        };
+        if let Some((_, port_s)) = val.rsplit_once(':') {
+            return port_s.parse().ok();
+        }
+    }
+    None
+}
+
 /// Boing node defaults JSON-RPC to 8545 when `--rpc-port` is omitted (`main.rs` `default_value = "8545"`).
 fn effective_rpc_port_for_preflight(network_id: &str, args: &[String]) -> Option<u16> {
     if let Some(p) = rpc_port_from_args(args) {
         return Some(p);
     }
+    if let Some(p) = rpc_port_from_rpc_addr_args(args) {
+        return Some(p);
+    }
     if network_id.to_lowercase().contains("boing") {
         return Some(8545);
+    }
+    if network_id.to_lowercase().contains("vaultl1") {
+        return Some(26657);
     }
     None
 }
@@ -984,6 +1008,41 @@ fn status_label_for_boing_tip(height: Option<u64>, started_at_ms: u64) -> String
     }
 }
 
+/// Probe VaultL1 REST `/vaultl1/node_info` for tip height.
+fn probe_local_vaultl1_chain_height(api_port: u16) -> Option<u64> {
+    let url = format!("http://127.0.0.1:{api_port}/vaultl1/node_info");
+    let client = reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(2))
+        .build()
+        .ok()?;
+    let res = client.get(&url).send().ok()?;
+    if !res.status().is_success() {
+        return None;
+    }
+    let v: serde_json::Value = res.json().ok()?;
+    match v.get("height") {
+        Some(serde_json::Value::Number(n)) => n.as_u64(),
+        Some(serde_json::Value::String(s)) => s.parse().ok(),
+        _ => None,
+    }
+}
+
+fn status_label_for_vault_tip(height: Option<u64>, started_at_ms: u64) -> String {
+    let Some(h) = height else {
+        return "rpc unreachable".to_string();
+    };
+    if h > 0 {
+        return format!("height {h}");
+    }
+    let age_ms = chrono::Utc::now().timestamp_millis() as u64;
+    let age_secs = age_ms.saturating_sub(started_at_ms) / 1000;
+    if age_secs >= 45 {
+        "height 0 — waiting for peer/quorum (both validators must be online)".to_string()
+    } else {
+        "height 0 — waiting for tip".to_string()
+    }
+}
+
 /// Parse `--rpc-port` from a command template (after `{dataDir}` substitution is optional).
 pub fn rpc_port_from_command_template(network_id: &str, template: &str) -> u16 {
     let parts = split_command_args(template.trim());
@@ -1062,6 +1121,20 @@ pub fn get_node_status(network_id: &str, environment: &str, node_preset_id: &str
         st.chain_height = height;
         st.rpc_port = Some(port);
         st.status = status_label_for_boing_tip(height, st.started_at);
+        if let Ok(mut m) = NODE_STATS.lock() {
+            if let Some(slot) = m.get_mut(&key) {
+                slot.chain_height = st.chain_height;
+                slot.rpc_port = st.rpc_port;
+                slot.status = st.status.clone();
+            }
+        }
+    } else if network_id.to_lowercase().contains("vaultl1") {
+        let rpc = rpc_port.or(st.rpc_port).unwrap_or(26657);
+        let api = if rpc == 26667 { 1327 } else { 1317 };
+        let height = probe_local_vaultl1_chain_height(api);
+        st.chain_height = height;
+        st.rpc_port = Some(rpc);
+        st.status = status_label_for_vault_tip(height, st.started_at);
         if let Ok(mut m) = NODE_STATS.lock() {
             if let Some(slot) = m.get_mut(&key) {
                 slot.chain_height = st.chain_height;

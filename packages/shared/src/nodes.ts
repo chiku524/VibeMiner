@@ -221,10 +221,18 @@ export function effectivePresetNodeBinarySha256(
 
 /** Check if a network has runnable node config. */
 export function hasNodeConfig(network: {
+  id?: string | null;
   nodeDownloadUrl?: string | null;
   nodeCommandTemplate?: string | null;
   nodePresets?: NetworkNodePreset[] | null;
 }): boolean {
+  // VaultL1 is local-binary only (no required download host).
+  if (network.id && typeof network.id === 'string' && network.id.toLowerCase().includes('vaultl1')) {
+    if (Array.isArray(network.nodePresets) && network.nodePresets.length > 0) {
+      return network.nodePresets.some((p) => !!p.commandTemplate?.trim());
+    }
+    return !!network.nodeCommandTemplate?.trim();
+  }
   if (Array.isArray(network.nodePresets) && network.nodePresets.length > 0) {
     const baseUrl = network.nodeDownloadUrl?.trim() ?? '';
     return network.nodePresets.some((p) => {

@@ -18,6 +18,12 @@ import {
   BOING_TESTNET_SUGGESTED_NODE_DISK_GB,
   BOING_TESTNET_SUGGESTED_NODE_RAM_MB,
 } from './boing-testnet-node';
+import {
+  VAULTL1_NETWORK_ID,
+  VAULTL1_SUGGESTED_NODE_DISK_GB,
+  VAULTL1_SUGGESTED_NODE_RAM_MB,
+  buildVaultL1NodePresets,
+} from './vaultl1-node';
 
 /** Raw mainnet networks (production). Miners and networks stay in sync here. */
 const MAINNET_NETWORKS_RAW: unknown[] = [
@@ -249,6 +255,26 @@ const DEVNET_NETWORKS_RAW: unknown[] = [
         commandTemplate: BOING_TESTNET_DEFAULT_MACOS_AARCH64_PUBLIC_VALIDATOR_COMMAND_TEMPLATE,
       },
     ],
+  },
+  {
+    id: VAULTL1_NETWORK_ID,
+    name: 'VaultL1 (LAN)',
+    symbol: 'VAULT',
+    description:
+      'Dependency-free personal L1: one-click PC A (coordinator) + PC B (joiner) or local dual on one machine. Uses vaultd (set VIBEMINER_VAULTD_EXE). Both validators must stay online for blocks.',
+    icon: '◆',
+    algorithm: 'PoA',
+    environment: 'devnet',
+    website: 'https://github.com/chiku524/vaultl1',
+    status: 'live',
+    rewardRate: 'Lab only',
+    minPayout: 'N/A',
+    nodeDiskGb: VAULTL1_SUGGESTED_NODE_DISK_GB,
+    nodeRamMb: VAULTL1_SUGGESTED_NODE_RAM_MB,
+    nodePresets: (() => {
+      const presets = buildVaultL1NodePresets();
+      return presets;
+    })(),
   },
 ];
 

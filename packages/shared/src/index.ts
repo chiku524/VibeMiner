@@ -16,5 +16,6 @@ export * from './networks';
 export * from './boing-testnet-node';
 export * from './boing-official-api';
 export * from './boing-developer-resources';
+export * from './vaultl1-node';
 export * from './mining';
 export * from './nodes';

@@ -5,6 +5,7 @@ mod mining;
 mod node;
 mod settings;
 mod tunnel;
+mod vaultl1;
 
 use serde::Serialize;
 use serde_json::json;
@@ -343,6 +344,16 @@ struct NodeNetwork {
     node_command_template: Option<String>,
     node_binary_sha256: Option<String>,
     node_preset_id: Option<String>,
+    /// VaultL1: peer LAN IP (other machine) for `{peerHost}` templates.
+    vault_peer_host: Option<String>,
+    /// VaultL1 PC A: remote validator address (from PC B identity).
+    vault_peer_address: Option<String>,
+    /// VaultL1 PC A: remote validator pubkey hex.
+    vault_peer_pubkey: Option<String>,
+    /// VaultL1 PC B: absolute path to shared genesis JSON.
+    vault_genesis_path: Option<String>,
+    /// VaultL1 PC B: raw genesis JSON paste (optional alternative to path).
+    vault_genesis_json: Option<String>,
 }
 
 // Same `opts` wrapper as `start_real_mining` — required for `invoke('start_node', { opts: { network: … } })`.
@@ -376,12 +387,32 @@ async fn start_node(
         .clone()
         .unwrap_or_else(|| "default".to_string());
     let local_boing_exe = node::boing_local_exe_from_env(&network_id)?;
-    if local_boing_exe.is_none() && url.is_empty() {
+    let local_vault_exe = if vaultl1::is_vaultl1_network_id(&network_id) {
+        match vaultl1::resolve_vaultd_exe() {
+            Ok(p) => Some(p),
+            Err(e) => {
+                if url.is_empty() {
+                    return Ok(serde_json::json!({ "ok": false, "error": e }));
+                }
+                None
+            }
+        }
+    } else {
+        None
+    };
+    if local_boing_exe.is_none() && local_vault_exe.is_none() && url.is_empty() {
         return Ok(serde_json::json!({ "ok": false, "error": "No node download URL" }));
     }
     if template.is_empty() {
         return Ok(serde_json::json!({ "ok": false, "error": "No node command template" }));
     }
+    let vault_opts = vaultl1::VaultJoinOpts {
+        peer_host: n.vault_peer_host.clone(),
+        peer_address: n.vault_peer_address.clone(),
+        peer_pubkey: n.vault_peer_pubkey.clone(),
+        genesis_path: n.vault_genesis_path.clone(),
+        genesis_json: n.vault_genesis_json.clone(),
+    };
     let window_emit = window.clone();
     let user_data_path = user_data.clone();
     let id_for_ready = network_id.clone();
@@ -389,7 +420,9 @@ async fn start_node(
     let url_for_ready = url.clone();
     let preset_for_ready = preset_raw.clone();
     let sha_for_ready = sha.clone();
-    let local_for_blocking = local_boing_exe.clone();
+    let local_for_blocking = local_boing_exe
+        .clone()
+        .or_else(|| local_vault_exe.clone());
     let (bin_dir, data_dir) = if let Some(ref exe_path) = local_for_blocking {
         tauri::async_runtime::spawn_blocking({
             let exe_path = exe_path.clone();
@@ -429,11 +462,46 @@ async fn start_node(
         .await
         .map_err(|e| e.to_string())??
     };
-    let template_run = if let Some(ref exe_path) = local_boing_exe {
+    let mut template_run = if let Some(ref exe_path) = local_for_blocking {
         node::replace_command_template_exe(&template, exe_path)?
     } else {
         template
     };
+    let mut vault_prepare: Option<serde_json::Value> = None;
+    if vaultl1::is_vaultl1_network_id(&network_id) {
+        let vaultd = match local_vault_exe.as_ref() {
+            Some(p) => p.clone(),
+            None => {
+                // Binary may have come from zip extract — prefer first token of template.
+                match vaultl1::resolve_vaultd_exe() {
+                    Ok(p) => p,
+                    Err(e) => {
+                        return Ok(serde_json::json!({ "ok": false, "error": e }));
+                    }
+                }
+            }
+        };
+        template_run =
+            match vaultl1::apply_peer_host_template(&template_run, &vault_opts, &preset_raw) {
+                Ok(t) => t,
+                Err(e) => return Ok(serde_json::json!({ "ok": false, "error": e })),
+            };
+        let prepared = match tauri::async_runtime::spawn_blocking({
+            let vaultd = vaultd.clone();
+            let home = data_dir.clone();
+            let preset = preset_raw.clone();
+            let vault_opts = vault_opts.clone();
+            move || vaultl1::prepare_vaultl1_home(&vaultd, &home, &preset, &vault_opts)
+        })
+        .await
+        .map_err(|e| e.to_string())?
+        {
+            Ok(info) => info,
+            Err(e) => return Ok(serde_json::json!({ "ok": false, "error": e })),
+        };
+        vault_prepare = serde_json::to_value(&prepared).ok();
+        template_run = node::replace_command_template_exe(&template_run, &vaultd)?;
+    }
     let stake_identity = node::start_node(
         &app,
         network_id.clone(),
@@ -502,6 +570,7 @@ async fn start_node(
         "ok": true,
         "validatorIdentity": stake_identity,
         "stakeJoin": join_result,
+        "vaultPrepare": vault_prepare,
     }))
 }
 

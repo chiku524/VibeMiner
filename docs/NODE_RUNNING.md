@@ -20,6 +20,10 @@ Before accepting node config from registration, we run validation that acts like
 
 4. **Transparency** — Users see resource requirements (disk, RAM) and can inspect what will run before starting.
 
+### VaultL1 (local binary, PC A / PC B)
+
+**VaultL1 (LAN)** is a built-in devnet listing with no mandatory download URL. The desktop resolves `vaultd` via **`VIBEMINER_VAULTD_EXE`**, common `~/Desktop/Jackal/vaultl1/build` paths, or `PATH`. See **[VAULTL1_NODES.md](./VAULTL1_NODES.md)** for the A↔B genesis wizard and ports.
+
 ## Resource Tiers
 
 Networks are categorized by disk/RAM:

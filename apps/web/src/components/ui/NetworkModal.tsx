@@ -23,6 +23,16 @@ import {
   parseBoingBootnodesInput,
   pickBoingNodePresetIdForPlatform,
   BOING_CUSTOM_BOOTNODES_STORAGE_KEY,
+  isVaultL1NetworkId,
+  vaultL1RoleFromPresetId,
+  isVaultL1CoordinatorRole,
+  isVaultL1JoinerRole,
+  pickVaultL1NodePresetIdForPlatform,
+  applyVaultL1PeerHostToCommandTemplate,
+  VAULTL1_PEER_HOST_STORAGE_KEY,
+  VAULTL1_PEER_ADDRESS_STORAGE_KEY,
+  VAULTL1_PEER_PUBKEY_STORAGE_KEY,
+  VAULTL1_GENESIS_PATH_STORAGE_KEY,
 } from '@vibeminer/shared';
 import { BoingTestnetToolkit } from '@/components/dashboard/BoingTestnetToolkit';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
@@ -136,6 +146,13 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
   const [selectedPresetId, setSelectedPresetId] = useState<string>('default');
   /** Optional custom `--bootnodes` for Boing two-PC / lab (replaces defaults when non-empty). */
   const [customBootnodes, setCustomBootnodes] = useState('');
+  /** VaultL1 LAN join fields */
+  const [vaultPeerHost, setVaultPeerHost] = useState('');
+  const [vaultPeerAddress, setVaultPeerAddress] = useState('');
+  const [vaultPeerPubKey, setVaultPeerPubKey] = useState('');
+  const [vaultGenesisPath, setVaultGenesisPath] = useState('');
+  const [vaultGenesisJson, setVaultGenesisJson] = useState('');
+  const [vaultIdentityHint, setVaultIdentityHint] = useState<string | null>(null);
 
   const nodePresets = useMemo(
     () => (network ? resolveNodePresets(network) : []),
@@ -159,6 +176,11 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
           setSelectedPresetId(boingPick ?? pickPresetIdForPlatform(list, plat));
           return;
         }
+        if (network && isVaultL1NetworkId(network.id)) {
+          const pick = pickVaultL1NodePresetIdForPlatform(list, plat);
+          setSelectedPresetId(pick ?? pickPresetIdForPlatform(list, plat));
+          return;
+        }
         setSelectedPresetId(pickPresetIdForPlatform(list, plat));
       });
     }
@@ -180,6 +202,34 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
       setCustomBootnodes('');
     }
   }, [network?.id]);
+
+  useEffect(() => {
+    if (!network || !isVaultL1NetworkId(network.id)) {
+      setVaultPeerHost('');
+      setVaultPeerAddress('');
+      setVaultPeerPubKey('');
+      setVaultGenesisPath('');
+      setVaultGenesisJson('');
+      setVaultIdentityHint(null);
+      return;
+    }
+    try {
+      setVaultPeerHost(localStorage.getItem(VAULTL1_PEER_HOST_STORAGE_KEY) ?? '');
+      setVaultPeerAddress(localStorage.getItem(VAULTL1_PEER_ADDRESS_STORAGE_KEY) ?? '');
+      setVaultPeerPubKey(localStorage.getItem(VAULTL1_PEER_PUBKEY_STORAGE_KEY) ?? '');
+      setVaultGenesisPath(localStorage.getItem(VAULTL1_GENESIS_PATH_STORAGE_KEY) ?? '');
+    } catch {
+      /* ignore */
+    }
+  }, [network?.id]);
+
+  const vaultRole = useMemo(
+    () =>
+      network && isVaultL1NetworkId(network.id)
+        ? vaultL1RoleFromPresetId(selectedPresetId)
+        : null,
+    [network, selectedPresetId]
+  );
 
   const displayDiskGb = network ? selectedPreset?.nodeDiskGb ?? network.nodeDiskGb : undefined;
   const displayRamMb = network ? selectedPreset?.nodeRamMb ?? network.nodeRamMb : undefined;
@@ -461,6 +511,142 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                       </p>
                     </div>
                   )}
+                  {isVaultL1NetworkId(network.id) && !nodeRunning && (
+                    <div className="w-full min-w-0 max-w-xl space-y-3 rounded-lg border border-white/10 bg-surface-900/60 p-3">
+                      <p className="text-xs text-gray-400">
+                        VaultL1 two-validator PoA. Open firewall TCP <strong className="text-gray-300">26656</strong>.
+                        Need a built <code className="text-gray-300">vaultd</code> (
+                        <code className="text-gray-300">VIBEMINER_VAULTD_EXE</code>).
+                      </p>
+                      {(vaultRole === 'pc-a' || vaultRole === 'pc-b') && (
+                        <div>
+                          <label htmlFor="vault-peer-host" className="mb-1 block text-xs text-gray-400">
+                            Other PC LAN IP
+                          </label>
+                          <input
+                            id="vault-peer-host"
+                            type="text"
+                            value={vaultPeerHost}
+                            disabled={nodeStarting}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setVaultPeerHost(v);
+                              try {
+                                localStorage.setItem(VAULTL1_PEER_HOST_STORAGE_KEY, v);
+                              } catch {
+                                /* ignore */
+                              }
+                            }}
+                            placeholder={vaultRole === 'pc-a' ? '192.168.1.20 (PC B)' : '192.168.1.10 (PC A)'}
+                            className="w-full rounded-lg border border-white/10 bg-surface-850 px-3 py-2 font-mono text-xs text-white placeholder:text-gray-600 focus:border-accent-cyan/50 focus:outline-none disabled:opacity-50"
+                          />
+                        </div>
+                      )}
+                      {isVaultL1CoordinatorRole(vaultRole) && vaultRole === 'pc-a' && (
+                        <>
+                          <div>
+                            <label htmlFor="vault-peer-addr" className="mb-1 block text-xs text-gray-400">
+                              PC B validator address
+                            </label>
+                            <input
+                              id="vault-peer-addr"
+                              type="text"
+                              value={vaultPeerAddress}
+                              disabled={nodeStarting}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setVaultPeerAddress(v);
+                                try {
+                                  localStorage.setItem(VAULTL1_PEER_ADDRESS_STORAGE_KEY, v);
+                                } catch {
+                                  /* ignore */
+                                }
+                              }}
+                              placeholder="vlt…"
+                              className="w-full rounded-lg border border-white/10 bg-surface-850 px-3 py-2 font-mono text-xs text-white placeholder:text-gray-600 focus:border-accent-cyan/50 focus:outline-none disabled:opacity-50"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="vault-peer-pk" className="mb-1 block text-xs text-gray-400">
+                              PC B validator pubkey (hex)
+                            </label>
+                            <input
+                              id="vault-peer-pk"
+                              type="text"
+                              value={vaultPeerPubKey}
+                              disabled={nodeStarting}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setVaultPeerPubKey(v);
+                                try {
+                                  localStorage.setItem(VAULTL1_PEER_PUBKEY_STORAGE_KEY, v);
+                                } catch {
+                                  /* ignore */
+                                }
+                              }}
+                              placeholder="ed25519 pub hex"
+                              className="w-full rounded-lg border border-white/10 bg-surface-850 px-3 py-2 font-mono text-xs text-white placeholder:text-gray-600 focus:border-accent-cyan/50 focus:outline-none disabled:opacity-50"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Start PC B once without genesis to reveal identity, paste here, then Run on A. Share
+                            genesis-shared.json path from A with B.
+                          </p>
+                        </>
+                      )}
+                      {isVaultL1JoinerRole(vaultRole) && vaultRole === 'pc-b' && (
+                        <>
+                          <div>
+                            <label htmlFor="vault-genesis-path" className="mb-1 block text-xs text-gray-400">
+                              Path to genesis-shared.json (from PC A)
+                            </label>
+                            <input
+                              id="vault-genesis-path"
+                              type="text"
+                              value={vaultGenesisPath}
+                              disabled={nodeStarting}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setVaultGenesisPath(v);
+                                try {
+                                  localStorage.setItem(VAULTL1_GENESIS_PATH_STORAGE_KEY, v);
+                                } catch {
+                                  /* ignore */
+                                }
+                              }}
+                              placeholder="C:\\…\\genesis-shared.json"
+                              className="w-full rounded-lg border border-white/10 bg-surface-850 px-3 py-2 font-mono text-xs text-white placeholder:text-gray-600 focus:border-accent-cyan/50 focus:outline-none disabled:opacity-50"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="vault-genesis-json" className="mb-1 block text-xs text-gray-400">
+                              Or paste genesis JSON
+                            </label>
+                            <textarea
+                              id="vault-genesis-json"
+                              value={vaultGenesisJson}
+                              disabled={nodeStarting}
+                              onChange={(e) => setVaultGenesisJson(e.target.value)}
+                              rows={3}
+                              placeholder='{"chain_id":…}'
+                              className="w-full rounded-lg border border-white/10 bg-surface-850 px-3 py-2 font-mono text-xs text-white placeholder:text-gray-600 focus:border-accent-cyan/50 focus:outline-none disabled:opacity-50"
+                            />
+                          </div>
+                        </>
+                      )}
+                      {vaultRole === 'local-a' || vaultRole === 'local-b' ? (
+                        <p className="text-xs text-gray-500">
+                          Same-PC dual: start <strong className="text-gray-300">node A</strong> first, then{' '}
+                          <strong className="text-gray-300">node B</strong>. Both processes must stay running.
+                        </p>
+                      ) : null}
+                      {vaultIdentityHint && (
+                        <pre className="max-h-28 overflow-auto whitespace-pre-wrap rounded border border-amber-500/20 bg-amber-500/5 p-2 font-mono text-[11px] text-amber-100/90">
+                          {vaultIdentityHint}
+                        </pre>
+                      )}
+                    </div>
+                  )}
                   {nodeRunning ? (
                     <div className="flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full bg-accent-emerald animate-pulse" />
@@ -550,7 +736,8 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                             selectedPreset,
                             network.nodeBinarySha256
                           );
-                          if (!effUrl?.trim()) {
+                          const isVault = isVaultL1NetworkId(network.id);
+                          if (!effUrl?.trim() && !isVault) {
                             const msg = 'No download URL for this node mode.';
                             setLastNodeError(msg);
                             addToast(msg, 'error');
@@ -566,17 +753,41 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                               );
                             }
                           }
+                          if (isVault) {
+                            commandTemplate = applyVaultL1PeerHostToCommandTemplate(
+                              commandTemplate,
+                              vaultPeerHost
+                            );
+                          }
                           const rawResult = await window.desktopAPI.startNode({
                             network: {
                               id: network.id,
                               environment: network.environment ?? 'mainnet',
-                              nodeDownloadUrl: effUrl,
+                              nodeDownloadUrl: effUrl ?? '',
                               nodeCommandTemplate: commandTemplate,
                               nodeBinarySha256: effSha,
                               nodePresetId: selectedPreset.presetId,
+                              ...(isVault
+                                ? {
+                                    vaultPeerHost: vaultPeerHost.trim() || undefined,
+                                    vaultPeerAddress: vaultPeerAddress.trim() || undefined,
+                                    vaultPeerPubkey: vaultPeerPubKey.trim() || undefined,
+                                    vaultGenesisPath: vaultGenesisPath.trim() || undefined,
+                                    vaultGenesisJson: vaultGenesisJson.trim() || undefined,
+                                  }
+                                : {}),
                             },
                           });
                           let parsed = parseStartNodeResult(rawResult);
+                          if (!parsed.ok && isVault && typeof rawResult === 'object' && rawResult) {
+                            const err =
+                              'error' in rawResult && typeof (rawResult as { error?: unknown }).error === 'string'
+                                ? (rawResult as { error: string }).error
+                                : '';
+                            if (err.includes('address=') || err.includes('pubkey=')) {
+                              setVaultIdentityHint(err);
+                            }
+                          }
                           if (!parsed.ok && window.desktopAPI?.isNodeRunning) {
                             try {
                               const running = await window.desktopAPI.isNodeRunning(
