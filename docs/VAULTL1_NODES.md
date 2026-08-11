@@ -1,6 +1,24 @@
 # VaultL1 in VibeMiner desktop
 
-Boing-style one-click: **select node type → Run**. VibeMiner downloads the official `vaultd` zip for your OS from [vaultl1 releases](https://github.com/chiku524/vaultl1/releases), then starts the role you chose.
+Boing-style one-click: **select node type → Run**. VibeMiner downloads the official `vaultd` zip for your OS from the **public VibeMiner rehost** release (private vaultl1 source), then starts the role you chose.
+
+## Binary pin
+
+| | |
+|--|--|
+| **Tag** | `vaultl1-bin-v0.5.1` |
+| **Code** | `VAULTL1_DEFAULT_DOWNLOAD_TAG` in `packages/shared/src/vaultl1-node.ts` |
+| **Source** | [vaultl1 v0.5.1](https://github.com/chiku524/vaultl1/releases/tag/v0.5.1) |
+| **Rehost** | [VibeMiner vaultl1-bin-v0.5.1](https://github.com/chiku524/VibeMiner/releases/tag/vaultl1-bin-v0.5.1) |
+
+### Chain features in this pin
+
+- `storage/CloseDeal` — owner closes deals; frees provider / plan capacity  
+- `access/GrantAccess` with `key_wrap` / `name_hint` / `grantee_pub`  
+- `access/RevokeAccess` — clears wrap after revoke  
+- REST `GET /vaultl1/access/grants?grantee=` / `?owner=` / `?cid=`
+
+Encrypted file CRUD + share UI lives in **[vaultl1-web](https://github.com/chiku524/vaultl1-web)** (points REST at your node `:1317`). VibeMiner is the **node launcher**.
 
 ## Node types (presets)
 
@@ -14,12 +32,19 @@ Default pick per OS: **LAN PC A**.
 
 ## Binary download
 
-Pinned public assets: VibeMiner release tag `vaultl1-bin-v0.5.0` (see `VAULTL1_DEFAULT_DOWNLOAD_TAG` in `packages/shared/src/vaultl1-node.ts`). Source builds can come from vaultl1; the desktop must use a **public** zip URL.
+Zips include SHA-256 pins in shared code. First start after an upgrade re-downloads from the new tag.
 
 Optional override (skips download), same idea as Boing:
 
 ```powershell
-$env:VIBEMINER_VAULTD_EXE = "C:\path\to\vaultd.exe"
+$env:VIBEMINER_VAULTD_EXE = "C:\Users\chiku\Projects\vaultl1\build\vaultd.exe"
+```
+
+Helper script (prefers `Projects\vaultl1\build`):
+
+```powershell
+. .\scripts\run-vibeminer-with-vaultl1.ps1
+npm run desktop
 ```
 
 ## LAN two PCs
@@ -39,3 +64,10 @@ Ports: P2P `26656`, RPC `26657`, REST `1317`.
 ## Never share private keys
 
 Only exchange **address + pubkey** and **genesis-shared.json**.
+
+## Upgrading from vaultl1-bin-v0.5.0
+
+1. Install/update VibeMiner (1.1.8+).
+2. Stop both validators.
+3. Start again so the app pulls **v0.5.1** binaries (or clear the old zip under the app nodes download cache).
+4. Existing `vault-net-1` homes keep working; CloseDeal/grants work once both nodes run the new binary (keep both PCs on the same pin).

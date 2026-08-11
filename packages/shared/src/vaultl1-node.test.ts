@@ -34,6 +34,14 @@ describe('vaultl1-node', () => {
     expect(out).not.toContain('{peerHost}');
   });
 
+  it('pins vaultl1-bin-v0.5.1 rehost with SHA256', () => {
+    const presets = buildVaultL1NodePresets();
+    expect(presets.every((p) => p.nodeDownloadUrl.includes('vaultl1-bin-v0.5.1'))).toBe(true);
+    expect(presets.every((p) => p.nodeBinarySha256 && p.nodeBinarySha256.length === 64)).toBe(
+      true,
+    );
+  });
+
   it('builds Boing-style presets with download URLs (3 OS × 4 roles)', () => {
     const presets = buildVaultL1NodePresets();
     expect(presets.length).toBe(12);

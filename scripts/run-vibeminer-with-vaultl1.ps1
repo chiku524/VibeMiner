@@ -1,12 +1,14 @@
-# Set VIBEMINER_VAULTD_EXE to a local vaultd build (sibling Jackal/vaultl1 if present).
+# Set VIBEMINER_VAULTD_EXE to a local vaultd build (Projects/vaultl1 or legacy Jackal path).
 # Dot-source, then start desktop from this shell:
 #   . .\scripts\run-vibeminer-with-vaultl1.ps1
 #   npm run desktop
 
 $ErrorActionPreference = "Stop"
 $candidates = @(
-  (Join-Path $PSScriptRoot "..\..\Jackal\vaultl1\build\vaultd.exe"),
-  (Join-Path $PSScriptRoot "..\..\Jackal\vaultl1\build\vaultd"),
+  (Join-Path $env:USERPROFILE "Projects\vaultl1\build\vaultd.exe"),
+  (Join-Path $env:USERPROFILE "Projects\vaultl1\build\vaultd"),
+  (Join-Path $PSScriptRoot "..\..\Projects\vaultl1\build\vaultd.exe"),
+  (Join-Path $PSScriptRoot "..\..\Projects\vaultl1\build\vaultd"),
   (Join-Path $env:USERPROFILE "Desktop\Jackal\vaultl1\build\vaultd.exe"),
   (Join-Path $env:USERPROFILE "Desktop\Jackal\vaultl1\build\vaultd")
 )
@@ -19,7 +21,7 @@ foreach ($c in $candidates) {
   }
 }
 if (-not $found) {
-  Write-Warning "vaultd not found. Build VaultL1 and set VIBEMINER_VAULTD_EXE manually."
+  Write-Warning "vaultd not found. Build vaultl1 (Projects/vaultl1) or set VIBEMINER_VAULTD_EXE manually."
   return
 }
 $env:VIBEMINER_VAULTD_EXE = $found
