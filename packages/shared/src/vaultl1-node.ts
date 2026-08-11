@@ -1,11 +1,9 @@
 /**
  * VaultL1 one-click node policy for VibeMiner desktop — mirrors Boing testnet layout:
- * OS download zips from GitHub releases + role presets (PC A / PC B / local dual).
+ * OS download zips from **public** GitHub releases + role presets (PC A / PC B / local dual).
  *
- * Binary inside each zip is selected by the command template first token
- * (e.g. `vaultd-windows-x86_64.exe`). Optional override: `VIBEMINER_VAULTD_EXE`.
- *
- * Two equal validators → both machines online for blocks (2/3 power quorum).
+ * Binaries are rehosted on the public VibeMiner release tag `vaultl1-bin-v0.5.0` so the desktop
+ * can download without auth (source vaultl1 repo may be private).
  */
 
 export const VAULTL1_NETWORK_ID = 'vaultl1-local';
@@ -16,10 +14,10 @@ export const VAULTL1_CHAIN_ID_LOCAL = 'vault-net-local';
 export const VAULTL1_SUGGESTED_NODE_DISK_GB = 2;
 export const VAULTL1_SUGGESTED_NODE_RAM_MB = 512;
 
-/** Pinned GitHub release of prebuilt vaultd (VibeMiner downloads these zips). */
-export const VAULTL1_DEFAULT_DOWNLOAD_TAG = 'v0.5.0';
+/** Pinned public zip rehost (vaultl1 repo may be private — assets published on VibeMiner releases). */
+export const VAULTL1_DEFAULT_DOWNLOAD_TAG = 'vaultl1-bin-v0.5.0';
 
-const VAULTL1_RELEASE_BASE = `https://github.com/chiku524/vaultl1/releases/download/${VAULTL1_DEFAULT_DOWNLOAD_TAG}`;
+const VAULTL1_RELEASE_BASE = `https://github.com/chiku524/VibeMiner/releases/download/${VAULTL1_DEFAULT_DOWNLOAD_TAG}`;
 
 export const VAULTL1_DEFAULT_WINDOWS_DOWNLOAD_URL = `${VAULTL1_RELEASE_BASE}/release-windows-x86_64.zip`;
 export const VAULTL1_DEFAULT_LINUX_DOWNLOAD_URL = `${VAULTL1_RELEASE_BASE}/release-linux-x86_64.zip`;

@@ -14,7 +14,7 @@ Default pick per OS: **LAN PC A**.
 
 ## Binary download
 
-Pinned tag: see `VAULTL1_DEFAULT_DOWNLOAD_TAG` in `packages/shared/src/vaultl1-node.ts`.
+Pinned public assets: VibeMiner release tag `vaultl1-bin-v0.5.0` (see `VAULTL1_DEFAULT_DOWNLOAD_TAG` in `packages/shared/src/vaultl1-node.ts`). Source builds can come from vaultl1; the desktop must use a **public** zip URL.
 
 Optional override (skips download), same idea as Boing:
 

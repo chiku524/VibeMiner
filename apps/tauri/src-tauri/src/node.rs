@@ -572,15 +572,42 @@ pub fn ensure_node_ready(
 
     let client = reqwest::blocking::Client::builder()
         .user_agent("VibeMiner/1.0")
+        .redirect(reqwest::redirect::Policy::limited(10))
         .build()
         .map_err(|e| e.to_string())?;
-    let bytes = client
+    let response = client
         .get(node_download_url)
         .header("Accept", "application/octet-stream")
         .send()
-        .map_err(|e| e.to_string())?
-        .bytes()
         .map_err(|e| e.to_string())?;
+    if !response.status().is_success() {
+        return Err(format!(
+            "Node download failed HTTP {} for {}",
+            response.status(),
+            node_download_url
+        ));
+    }
+    let bytes = response.bytes().map_err(|e| e.to_string())?;
+    if bytes.len() < 64 {
+        return Err(format!(
+            "Node download too small ({} bytes) — not a binary archive. URL: {}",
+            bytes.len(),
+            node_download_url
+        ));
+    }
+    // Private GitHub repos return HTML/"Not Found" without auth — catch before zip parse.
+    let url_lower = node_download_url.to_lowercase();
+    if url_lower.ends_with(".zip") {
+        if bytes.len() >= 4 && &(bytes[..4]) != b"PK\x03\x04" && &(bytes[..2]) != b"PK" {
+            let preview = String::from_utf8_lossy(&bytes[..bytes.len().min(80)]);
+            return Err(format!(
+                "Download is not a valid zip (header {:?}). Response starts with: {}. \
+                 If the file is on a private GitHub repo, publish a public release asset instead.",
+                &bytes[..bytes.len().min(4)],
+                preview.replace('\n', " ")
+            ));
+        }
+    }
     std::fs::write(&archive_path, &bytes).map_err(|e| e.to_string())?;
 
     if let Some(expected) = node_binary_sha256 {
@@ -595,10 +622,14 @@ pub fn ensure_node_ready(
 
     on_progress("extracting", 50, "Extracting…");
     std::fs::create_dir_all(&extract_path).map_err(|e| e.to_string())?;
-    let url_lower = node_download_url.to_lowercase();
     if url_lower.ends_with(".zip") {
         let file = std::fs::File::open(&archive_path).map_err(|e| e.to_string())?;
-        let mut archive = zip::ZipArchive::new(file).map_err(|e| e.to_string())?;
+        let mut archive = zip::ZipArchive::new(file).map_err(|e| {
+            format!(
+                "Invalid zip archive from {node_download_url}: {e}. \
+                 Confirm the release asset is a public downloadable zip."
+            )
+        })?;
         for i in 0..archive.len() {
             let mut file = archive.by_index(i).map_err(|e| e.to_string())?;
             let outpath = extract_path.join(file.name());

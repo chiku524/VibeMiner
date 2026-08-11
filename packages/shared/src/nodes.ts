@@ -267,6 +267,58 @@ export function resolveNodePresets(network: {
   return [];
 }
 
+/**
+ * When presets are tagged by OS in id/label (windows / linux / mac), keep only the current platform.
+ * If nothing matches, return the full list (dev / mixed listings).
+ */
+export function filterNodePresetsForPlatform(
+  presets: NetworkNodePreset[],
+  platform: string
+): NetworkNodePreset[] {
+  if (presets.length <= 1) return presets;
+  const os = platform.toLowerCase();
+  const token =
+    os === 'windows'
+      ? 'windows'
+      : os === 'macos' || os === 'darwin'
+        ? 'macos'
+        : os === 'linux'
+          ? 'linux'
+          : null;
+  if (!token) return presets;
+
+  const matchesOs = (p: NetworkNodePreset) => {
+    const id = p.presetId.toLowerCase();
+    const label = (p.label ?? '').toLowerCase();
+    if (token === 'macos') {
+      return (
+        id.includes('mac') ||
+        id.includes('darwin') ||
+        label.includes('mac') ||
+        label.includes('darwin') ||
+        label.includes('apple silicon')
+      );
+    }
+    return id.includes(token) || label.includes(token);
+  };
+
+  // Only filter when the listing actually has OS-scoped rows.
+  const anyOsTagged = presets.some((p) => {
+    const id = p.presetId.toLowerCase() + ' ' + (p.label ?? '').toLowerCase();
+    return (
+      id.includes('windows') ||
+      id.includes('linux') ||
+      id.includes('macos') ||
+      id.includes('darwin') ||
+      id.includes('mac os')
+    );
+  });
+  if (!anyOsTagged) return presets;
+
+  const filtered = presets.filter(matchesOs);
+  return filtered.length > 0 ? filtered : presets;
+}
+
 /** Normalize node fields after Zod parse: validates URL + commands, returns DB-ready values. */
 export function normalizeNodeFieldsForListing(input: {
   nodeDownloadUrl?: string | null;

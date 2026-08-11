@@ -37,7 +37,11 @@ describe('vaultl1-node', () => {
   it('builds Boing-style presets with download URLs (3 OS × 4 roles)', () => {
     const presets = buildVaultL1NodePresets();
     expect(presets.length).toBe(12);
-    expect(presets.every((p) => p.nodeDownloadUrl.startsWith('https://github.com/'))).toBe(true);
+    expect(
+      presets.every((p) =>
+        p.nodeDownloadUrl.startsWith('https://github.com/chiku524/VibeMiner/releases/download/')
+      )
+    ).toBe(true);
     expect(presets.every((p) => p.commandTemplate.includes('start'))).toBe(true);
     const raw = {
       id: VAULTL1_NETWORK_ID,

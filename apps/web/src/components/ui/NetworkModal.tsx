@@ -14,6 +14,7 @@ import {
   RESOURCE_TIER_DESCRIPTIONS,
   hasNodeConfig,
   resolveNodePresets,
+  filterNodePresetsForPlatform,
   effectivePresetNodeBinarySha256,
   effectivePresetNodeDownloadUrl,
   sanitizeNodePresetId,
@@ -43,6 +44,15 @@ import { NetworkMark } from '@/components/ui/NetworkMark';
 interface NetworkModalProps {
   network: BlockchainNetwork | null;
   onClose: () => void;
+}
+
+function detectBrowserOs(): string {
+  if (typeof navigator === 'undefined') return 'windows';
+  const p = `${navigator.platform || ''} ${navigator.userAgent || ''}`.toLowerCase();
+  if (p.includes('win')) return 'windows';
+  if (p.includes('mac')) return 'macos';
+  if (p.includes('linux') || p.includes('x11')) return 'linux';
+  return 'windows';
 }
 
 function pickPresetIdForPlatform(presets: NetworkNodePreset[], platform: string): string {
@@ -144,6 +154,8 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
   const [nodeStatus, setNodeStatus] = useState<string | null>(null);
   const [lastNodeError, setLastNodeError] = useState<string | null>(null);
   const [selectedPresetId, setSelectedPresetId] = useState<string>('default');
+  /** Desktop OS string from Tauri (`windows` | `linux` | `macos`). Used to filter OS-scoped presets. */
+  const [desktopPlatform, setDesktopPlatform] = useState<string | null>(null);
   /** Optional custom `--bootnodes` for Boing two-PC / lab (replaces defaults when non-empty). */
   const [customBootnodes, setCustomBootnodes] = useState('');
   /** VaultL1 LAN join fields */
@@ -154,37 +166,54 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
   const [vaultGenesisJson, setVaultGenesisJson] = useState('');
   const [vaultIdentityHint, setVaultIdentityHint] = useState<string | null>(null);
 
-  const nodePresets = useMemo(
+  const allNodePresets = useMemo(
     () => (network ? resolveNodePresets(network) : []),
     [network]
   );
+  const nodePresets = useMemo(() => {
+    const plat = desktopPlatform ?? detectBrowserOs();
+    return filterNodePresetsForPlatform(allNodePresets, plat);
+  }, [allNodePresets, desktopPlatform]);
   const selectedPreset = useMemo(() => {
     const p = nodePresets.find((x) => x.presetId === selectedPresetId);
     return p ?? nodePresets[0];
   }, [nodePresets, selectedPresetId]);
 
   useEffect(() => {
-    if (!network) return;
-    const list = resolveNodePresets(network);
-    const fallback = list[0]?.presetId ?? 'default';
-    // Apply a valid preset id immediately so <select value> matches an option (avoids layout jump / wrong IPC).
-    setSelectedPresetId(fallback);
+    let cancelled = false;
+    const apply = (plat: string) => {
+      if (!cancelled && plat.trim()) setDesktopPlatform(plat.trim().toLowerCase());
+    };
     if (isDesktop && window.desktopAPI?.getPlatform) {
       void window.desktopAPI.getPlatform().then((plat) => {
-        if (network && isBoingNetworkId(network.id)) {
-          const boingPick = pickBoingNodePresetIdForPlatform(list, plat);
-          setSelectedPresetId(boingPick ?? pickPresetIdForPlatform(list, plat));
-          return;
-        }
-        if (network && isVaultL1NetworkId(network.id)) {
-          const pick = pickVaultL1NodePresetIdForPlatform(list, plat);
-          setSelectedPresetId(pick ?? pickPresetIdForPlatform(list, plat));
-          return;
-        }
-        setSelectedPresetId(pickPresetIdForPlatform(list, plat));
+        if (typeof plat === 'string' && plat.trim()) apply(plat);
+        else apply(detectBrowserOs());
       });
+    } else {
+      apply(detectBrowserOs());
     }
-  }, [network, isDesktop]);
+    return () => {
+      cancelled = true;
+    };
+  }, [isDesktop]);
+
+  useEffect(() => {
+    if (!network) return;
+    if (nodePresets.length === 0) return;
+    const list = nodePresets;
+    const plat = desktopPlatform ?? detectBrowserOs();
+    if (isBoingNetworkId(network.id)) {
+      const boingPick = pickBoingNodePresetIdForPlatform(list, plat);
+      setSelectedPresetId(boingPick ?? pickPresetIdForPlatform(list, plat));
+      return;
+    }
+    if (isVaultL1NetworkId(network.id)) {
+      const pick = pickVaultL1NodePresetIdForPlatform(list, plat);
+      setSelectedPresetId(pick ?? pickPresetIdForPlatform(list, plat));
+      return;
+    }
+    setSelectedPresetId(pickPresetIdForPlatform(list, plat));
+  }, [network, desktopPlatform, nodePresets]);
 
   useEffect(() => {
     if (!network) setLastNodeError(null);
