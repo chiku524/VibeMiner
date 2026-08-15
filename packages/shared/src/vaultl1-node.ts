@@ -99,6 +99,7 @@ function tpl(
     `--peers ${peerPlaceholder}`,
     '--node-key validator',
     `--moniker ${moniker}`,
+    '--block-interval 1s',
   ].join(' ');
 }
 

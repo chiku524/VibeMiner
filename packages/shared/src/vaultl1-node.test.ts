@@ -42,6 +42,24 @@ describe('vaultl1-node', () => {
     );
   });
 
+  it('uses official vaultd start flags from vaultl1 v0.5.1', () => {
+    const presets = buildVaultL1NodePresets();
+    for (const p of presets) {
+      expect(p.commandTemplate).toContain('start');
+      expect(p.commandTemplate).toContain('--home {dataDir}');
+      expect(p.commandTemplate).toContain('--rpc-addr');
+      expect(p.commandTemplate).toContain('--api-addr');
+      expect(p.commandTemplate).toContain('--p2p-listen');
+      expect(p.commandTemplate).toContain('--peers');
+      expect(p.commandTemplate).toContain('--node-key validator');
+      expect(p.commandTemplate).toContain('--block-interval 1s');
+    }
+    const localB = presets.find((p) => p.presetId === 'windows-local-b')!;
+    expect(localB.commandTemplate).toContain('--rpc-addr 127.0.0.1:26667');
+    expect(localB.commandTemplate).toContain('--api-addr 127.0.0.1:1327');
+    expect(localB.commandTemplate).toContain('--p2p-listen 127.0.0.1:26666');
+  });
+
   it('builds Boing-style presets with download URLs (3 OS × 4 roles)', () => {
     const presets = buildVaultL1NodePresets();
     expect(presets.length).toBe(12);

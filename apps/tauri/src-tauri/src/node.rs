@@ -40,6 +40,8 @@ struct NodeEntry {
     environment: String,
     node_preset_id: String,
     rpc_port: u16,
+    /// VaultL1 REST (`--api-addr`); unused for other networks.
+    rest_port: Option<u16>,
 }
 
 lazy_static::lazy_static! {
@@ -757,11 +759,21 @@ fn rpc_port_from_args(args: &[String]) -> Option<u16> {
 
 /// Parse host:port from `--rpc-addr` / `--rpc-addr=` (VaultL1 / tendermint-style).
 fn rpc_port_from_rpc_addr_args(args: &[String]) -> Option<u16> {
+    port_from_host_port_flag(args, "--rpc-addr")
+}
+
+/// Parse host:port from `--api-addr` / `--api-addr=` (VaultL1 REST).
+fn api_port_from_api_addr_args(args: &[String]) -> Option<u16> {
+    port_from_host_port_flag(args, "--api-addr")
+}
+
+fn port_from_host_port_flag(args: &[String], flag: &str) -> Option<u16> {
+    let eq = format!("{flag}=");
     let mut it = args.iter();
     while let Some(a) = it.next() {
-        let val = if let Some(rest) = a.strip_prefix("--rpc-addr=") {
+        let val = if let Some(rest) = a.strip_prefix(&eq) {
             rest.to_string()
-        } else if a == "--rpc-addr" {
+        } else if a == flag {
             it.next()?.clone()
         } else {
             continue;
@@ -771,6 +783,17 @@ fn rpc_port_from_rpc_addr_args(args: &[String]) -> Option<u16> {
         }
     }
     None
+}
+
+fn vaultl1_rest_port_from_args(args: &[String], rpc: u16) -> u16 {
+    if let Some(p) = api_port_from_api_addr_args(args) {
+        return p;
+    }
+    if rpc == 26667 {
+        1327
+    } else {
+        1317
+    }
 }
 
 /// Boing node defaults JSON-RPC to 8545 when `--rpc-port` is omitted (`main.rs` `default_value = "8545"`).
@@ -961,6 +984,11 @@ pub fn start_node(
     );
 
     let rpc_port = effective_rpc_port_for_preflight(&network_id, &args).unwrap_or(8545);
+    let rest_port = if network_id.to_lowercase().contains("vaultl1") {
+        Some(vaultl1_rest_port_from_args(&args, rpc_port))
+    } else {
+        None
+    };
     let started_at = chrono::Utc::now().timestamp_millis() as u64;
     NODE_STATS
         .lock()
@@ -987,6 +1015,7 @@ pub fn start_node(
                 environment,
                 node_preset_id: preset_stored,
                 rpc_port,
+                rest_port,
             },
         );
     Ok(stake_identity)
@@ -1161,7 +1190,11 @@ pub fn get_node_status(network_id: &str, environment: &str, node_preset_id: &str
         }
     } else if network_id.to_lowercase().contains("vaultl1") {
         let rpc = rpc_port.or(st.rpc_port).unwrap_or(26657);
-        let api = if rpc == 26667 { 1327 } else { 1317 };
+        let api = ACTIVE_NODES
+            .lock()
+            .ok()
+            .and_then(|m| m.get(&key).and_then(|e| e.rest_port))
+            .unwrap_or(if rpc == 26667 { 1327 } else { 1317 });
         let height = probe_local_vaultl1_chain_height(api);
         st.chain_height = height;
         st.rpc_port = Some(rpc);
