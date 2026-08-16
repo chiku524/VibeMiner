@@ -545,7 +545,7 @@ export function NetworkModal({ network, onClose }: NetworkModalProps) {
                       <p className="text-xs text-gray-400">
                         Select a <strong className="text-gray-300">node type</strong> above (LAN PC A /
                         PC B or local dual). VibeMiner downloads <code className="text-gray-300">vaultd</code>{' '}
-                        <span className="text-gray-500">(v0.5.1 — CloseDeal, access key wraps)</span> for your
+                        <span className="text-gray-500">(v0.5.2 — hybrid blocks, CloseDeal, access key wraps)</span> for your
                         OS (like Boing), then prepares genesis. Open firewall TCP{' '}
                         <strong className="text-gray-300">26656</strong> for LAN. Use{' '}
                         <a

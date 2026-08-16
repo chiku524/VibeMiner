@@ -34,15 +34,15 @@ describe('vaultl1-node', () => {
     expect(out).not.toContain('{peerHost}');
   });
 
-  it('pins vaultl1-bin-v0.5.1 rehost with SHA256', () => {
+  it('pins vaultl1-bin-v0.5.2 rehost with SHA256', () => {
     const presets = buildVaultL1NodePresets();
-    expect(presets.every((p) => p.nodeDownloadUrl.includes('vaultl1-bin-v0.5.1'))).toBe(true);
+    expect(presets.every((p) => p.nodeDownloadUrl.includes('vaultl1-bin-v0.5.2'))).toBe(true);
     expect(presets.every((p) => p.nodeBinarySha256 && p.nodeBinarySha256.length === 64)).toBe(
       true,
     );
   });
 
-  it('uses official vaultd start flags from vaultl1 v0.5.1', () => {
+  it('uses official vaultd start flags from vaultl1 v0.5.2', () => {
     const presets = buildVaultL1NodePresets();
     for (const p of presets) {
       expect(p.commandTemplate).toContain('start');
@@ -53,6 +53,7 @@ describe('vaultl1-node', () => {
       expect(p.commandTemplate).toContain('--peers');
       expect(p.commandTemplate).toContain('--node-key validator');
       expect(p.commandTemplate).toContain('--block-interval 1s');
+      expect(p.commandTemplate).toContain('--empty-block-interval 30s');
     }
     const localB = presets.find((p) => p.presetId === 'windows-local-b')!;
     expect(localB.commandTemplate).toContain('--rpc-addr 127.0.0.1:26667');
