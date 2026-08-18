@@ -22,7 +22,7 @@ Before accepting node config from registration, we run validation that acts like
 
 ### VaultL1 (Boing-style presets + download)
 
-**VaultL1 (LAN)** mirrors Boing: each OS×role preset has a **GitHub zip** + command template. Desktop downloads `vaultd` (pin `vaultl1-bin-v0.6.2` — Merkle app_hash, faucet, query net, P2P hello version), then prepares genesis per role (PC A / PC B / local dual). See **[VAULTL1_NODES.md](./VAULTL1_NODES.md)**. Encrypted CRUD/share UI is separate: [vaultl1-web](https://github.com/chiku524/vaultl1-web) (or https://vaultl1-web.vercel.app) pointing REST at `http://127.0.0.1:1317`. Devnet faucet UI: [vaultl1-explorer](https://vaultl1-explorer.vercel.app/#/faucet). Homes from v0.5.x need a **new genesis**.
+**VaultL1 (LAN)** mirrors Boing: each OS×role preset has a **GitHub zip** + command template. Desktop downloads `vaultd` (pin `vaultl1-bin-v0.6.3` — empty-block spam fix, Merkle app_hash, faucet, query net), then prepares genesis per role (PC A / PC B / local dual). See **[VAULTL1_NODES.md](./VAULTL1_NODES.md)**. Encrypted CRUD/share UI is separate: [vaultl1-web](https://github.com/chiku524/vaultl1-web) (or https://vaultl1-web.vercel.app) pointing REST at `http://127.0.0.1:1317`. Devnet faucet UI: [vaultl1-explorer](https://vaultl1-explorer.vercel.app/#/faucet). Homes from v0.5.x need a **new genesis**.
 
 Optional local binary override: `VIBEMINER_VAULTD_EXE` (same pattern as `VIBEMINER_BOING_NODE_EXE`).
 

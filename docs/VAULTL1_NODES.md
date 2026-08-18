@@ -6,10 +6,10 @@ Boing-style one-click: **select node type → Run**. VibeMiner downloads the off
 
 | | |
 |--|--|
-| **Tag** | `vaultl1-bin-v0.6.2` |
+| **Tag** | `vaultl1-bin-v0.6.3` |
 | **Code** | `VAULTL1_DEFAULT_DOWNLOAD_TAG` in `packages/shared/src/vaultl1-node.ts` |
-| **Source** | [vaultl1 v0.6.2](https://github.com/chiku524/vaultl1/releases/tag/v0.6.2) |
-| **Rehost** | [VibeMiner vaultl1-bin-v0.6.2](https://github.com/chiku524/VibeMiner/releases/tag/vaultl1-bin-v0.6.2) |
+| **Source** | [vaultl1 v0.6.3](https://github.com/chiku524/vaultl1/releases/tag/v0.6.3) |
+| **Rehost** | [VibeMiner vaultl1-bin-v0.6.3](https://github.com/chiku524/VibeMiner/releases/tag/vaultl1-bin-v0.6.3) |
 
 Publishing a `vaultl1-bin-*` tag must **not** run the desktop installer workflow. That job only listens for `v1.2.3`-style tags (`v[0-9]*`).
 
@@ -74,10 +74,16 @@ Ports: P2P `26656`, RPC `26657`, REST `1317`.
 
 Only exchange **address + pubkey** and **genesis-shared.json**.
 
+## Upgrading from vaultl1-bin-v0.6.2
+
+1. Stop both validators.
+2. Start again so the app pulls **v0.6.3** (or set `VIBEMINER_VAULTD_EXE` to a v0.6.3 binary). No re-genesis.
+3. This pin drops mempool txs that cannot apply, so a stuck proof cannot spam empty LAN blocks.
+
 ## Upgrading from vaultl1-bin-v0.5.3
 
 1. Install/update VibeMiner with this pin (or run desktop from this repo).
 2. Stop both validators.
 3. **Re-genesis.** v0.6.0 changed `app_hash`. Old `vault-net-1` homes from v0.5.x will not agree with this pin. Delete the node data dirs (or pick fresh homes) and run PC B identity → PC A genesis → PC B import again.
-4. Start again so the app pulls **v0.6.2** binaries (or clear the old zip under the app nodes download cache).
+4. Start again so the app pulls **v0.6.3** binaries (or clear the old zip under the app nodes download cache).
 5. Both PCs must run the same pin. Confirm with `vaultd query net --peer http://OTHER:1317`.

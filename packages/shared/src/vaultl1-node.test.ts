@@ -34,15 +34,15 @@ describe('vaultl1-node', () => {
     expect(out).not.toContain('{peerHost}');
   });
 
-  it('pins vaultl1-bin-v0.6.2 rehost with SHA256', () => {
+  it('pins vaultl1-bin-v0.6.3 rehost with SHA256', () => {
     const presets = buildVaultL1NodePresets();
-    expect(presets.every((p) => p.nodeDownloadUrl.includes('vaultl1-bin-v0.6.2'))).toBe(true);
+    expect(presets.every((p) => p.nodeDownloadUrl.includes('vaultl1-bin-v0.6.3'))).toBe(true);
     expect(presets.every((p) => p.nodeBinarySha256 && p.nodeBinarySha256.length === 64)).toBe(
       true,
     );
   });
 
-  it('uses official vaultd start flags from vaultl1 v0.6.2', () => {
+  it('uses official vaultd start flags from vaultl1 v0.6.3', () => {
     const presets = buildVaultL1NodePresets();
     for (const p of presets) {
       expect(p.commandTemplate).toContain('start');
