@@ -4,7 +4,9 @@ This doc covers the **Tauri 2** desktop shell (`apps/tauri`), GitHub Releases, d
 
 ## 1. Installers and the download page
 
-**Releases from the “Release desktop app” workflow include installers.** The workflow runs when you **push a version tag** (`v*`) or when you run it manually with a tag. It builds Windows (`.exe`), macOS (`.dmg`), and Linux (`.AppImage`) and attaches them to the GitHub Release. Fixed asset names (`VibeMiner-Setup-latest.exe`, `VibeMiner-latest-arm64.dmg`, `VibeMiner-latest.AppImage`, plus versioned copies) keep `/releases/latest/download/...` and the site’s download API working.
+**Releases from the “Release desktop app” workflow include installers.** The workflow runs when you **push a desktop version tag** (`v1.2.3`, GitHub glob `v[0-9]*`) or when you run it manually with that tag. It builds Windows (`.exe`), macOS (`.dmg`), and Linux (`.AppImage`) and attaches them to the GitHub Release. Fixed asset names (`VibeMiner-Setup-latest.exe`, `VibeMiner-latest-arm64.dmg`, `VibeMiner-latest.AppImage`, plus versioned copies) keep `/releases/latest/download/...` and the site’s download API working.
+
+Do **not** use this for VaultL1 binary rehost tags (`vaultl1-bin-v0.5.x`). Those start with `v`, so the old `v*` filter used to fire a desktop build, write a non-semver `tauri.conf.json` version (`aultl1-bin-v0.5.3`), and fail on Windows, macOS, and Linux.
 
 ### Publish a new desktop release
 

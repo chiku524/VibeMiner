@@ -11,6 +11,8 @@ Boing-style one-click: **select node type → Run**. VibeMiner downloads the off
 | **Source** | [vaultl1 v0.5.3](https://github.com/chiku524/vaultl1/releases/tag/v0.5.3) |
 | **Rehost** | [VibeMiner vaultl1-bin-v0.5.3](https://github.com/chiku524/VibeMiner/releases/tag/vaultl1-bin-v0.5.3) |
 
+Publishing a `vaultl1-bin-*` tag must **not** run the desktop installer workflow. That job only listens for `v1.2.3`-style tags (`v[0-9]*`).
+
 ### Chain features in this pin
 
 - `storage/CloseDeal` — owner closes deals; frees provider / plan capacity  

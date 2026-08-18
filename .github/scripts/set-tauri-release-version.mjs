@@ -13,7 +13,18 @@ if (!tag) {
   console.error('RELEASE_TAG is required');
   process.exit(1);
 }
+if (!/^v\d+\.\d+\.\d+/.test(tag)) {
+  console.error(
+    `RELEASE_TAG must be a desktop version like v1.2.3 (got ${tag}). ` +
+      'Binary rehost tags such as vaultl1-bin-v0.5.3 must not run this workflow.',
+  );
+  process.exit(1);
+}
 const version = tag.replace(/^v/i, '');
+if (!/^\d+\.\d+\.\d+/.test(version)) {
+  console.error(`version from tag is not semver: ${version}`);
+  process.exit(1);
+}
 
 const tauriConfPath = path.join(root, 'apps/tauri/src-tauri/tauri.conf.json');
 const tauriConf = JSON.parse(fs.readFileSync(tauriConfPath, 'utf8'));

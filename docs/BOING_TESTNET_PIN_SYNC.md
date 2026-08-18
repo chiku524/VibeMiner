@@ -15,7 +15,7 @@ VibeMiner’s offline defaults and URL rewrite logic use **`BOING_TESTNET_DEFAUL
 4. Update **`boing.network`** **`website/functions/api/networks.js`**: **`BOING_TESTNET_DOWNLOAD_TAG`**, **`BOING_ZIP_SHA`**, same **`STALE_TESTNET_TAG_RE`** rule.
 5. Apply D1 migrations on **vibeminer-db** and **boing-network-db** (see **`apps/web/d1/migrations/009_boing_testnet_zip_urls_v0_1_9.sql`** pattern) or regenerate via Boing **`website/scripts/network-listings-release-sql.mjs`**.
 6. Deploy **boing.network** so **`/api/networks`** exposes the new **`meta.boing_testnet_download_tag`**.
-7. Bump the **VibeMiner desktop** version and push a **`v*`** tag if you are shipping a new desktop build.
+7. Bump the **VibeMiner desktop** version and push a **`v1.2.3`** tag if you are shipping a new desktop build (not `vaultl1-bin-*` rehost tags).
 
 ## Automation options
 
