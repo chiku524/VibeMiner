@@ -6,10 +6,10 @@ Boing-style one-click: **select node type → Run**. VibeMiner downloads the off
 
 | | |
 |--|--|
-| **Tag** | `vaultl1-bin-v0.5.2` |
+| **Tag** | `vaultl1-bin-v0.5.3` |
 | **Code** | `VAULTL1_DEFAULT_DOWNLOAD_TAG` in `packages/shared/src/vaultl1-node.ts` |
-| **Source** | [vaultl1 v0.5.2](https://github.com/chiku524/vaultl1/releases/tag/v0.5.2) |
-| **Rehost** | [VibeMiner vaultl1-bin-v0.5.2](https://github.com/chiku524/VibeMiner/releases/tag/vaultl1-bin-v0.5.2) |
+| **Source** | [vaultl1 v0.5.3](https://github.com/chiku524/vaultl1/releases/tag/v0.5.3) |
+| **Rehost** | [VibeMiner vaultl1-bin-v0.5.3](https://github.com/chiku524/VibeMiner/releases/tag/vaultl1-bin-v0.5.3) |
 
 ### Chain features in this pin
 
@@ -18,9 +18,11 @@ Boing-style one-click: **select node type → Run**. VibeMiner downloads the off
 - `access/RevokeAccess` — clears wrap after revoke  
 - REST `GET /vaultl1/access/grants?grantee=` / `?owner=` / `?cid=`
 - Hybrid blocks — propose when a tx arrives; empty heartbeat every 30s  
-- Two-validator unstick — slim state clone + P2P keepalive
+- Two-validator unstick — slim state clone + P2P keepalive  
+- REST faucet `GET/POST /vaultl1/faucet` (default key `alice`)  
+- Explorer history `GET /vaultl1/blocks`, `/vaultl1/txs/{hash}`, `/vaultl1/bank/accounts`
 
-Encrypted file CRUD + share UI lives in **[vaultl1-web](https://github.com/chiku524/vaultl1-web)** (points REST at your node `:1317`). VibeMiner is the **node launcher**.
+Encrypted file CRUD + share UI lives in **[vaultl1-web](https://github.com/chiku524/vaultl1-web)** (points REST at your node `:1317`). Devnet faucet: **[vaultl1-explorer](https://vaultl1-explorer.vercel.app/#/faucet)**. VibeMiner is the **node launcher**.
 
 ## Node types (presets)
 
@@ -67,9 +69,9 @@ Ports: P2P `26656`, RPC `26657`, REST `1317`.
 
 Only exchange **address + pubkey** and **genesis-shared.json**.
 
-## Upgrading from vaultl1-bin-v0.5.1
+## Upgrading from vaultl1-bin-v0.5.2
 
 1. Install/update VibeMiner with this pin (or run desktop from this repo).
 2. Stop both validators.
-3. Start again so the app pulls **v0.5.2** binaries (or clear the old zip under the app nodes download cache).
-4. Existing `vault-net-1` homes keep working. Both PCs must run the same pin so empty-block heartbeat and P2P keepalive match.
+3. Start again so the app pulls **v0.5.3** binaries (or clear the old zip under the app nodes download cache).
+4. Existing `vault-net-1` homes keep working. Both PCs must run the same pin so empty-block heartbeat, P2P keepalive, and the explorer faucet match.
