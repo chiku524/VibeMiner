@@ -2,7 +2,7 @@
  * VaultL1 one-click node policy for VibeMiner desktop — mirrors Boing testnet layout:
  * OS download zips from **public** GitHub releases + role presets (PC A / PC B / local dual).
  *
- * Binaries are rehosted on the public VibeMiner release tag `vaultl1-bin-v0.5.3` so the desktop
+ * Binaries are rehosted on the public VibeMiner release tag `vaultl1-bin-v0.6.2` so the desktop
  * can download without auth (source vaultl1 repo may be private).
  */
 
@@ -15,7 +15,7 @@ export const VAULTL1_SUGGESTED_NODE_DISK_GB = 2;
 export const VAULTL1_SUGGESTED_NODE_RAM_MB = 512;
 
 /** Pinned public zip rehost (vaultl1 repo may be private — assets published on VibeMiner releases). */
-export const VAULTL1_DEFAULT_DOWNLOAD_TAG = 'vaultl1-bin-v0.5.3';
+export const VAULTL1_DEFAULT_DOWNLOAD_TAG = 'vaultl1-bin-v0.6.2';
 
 const VAULTL1_RELEASE_BASE = `https://github.com/chiku524/VibeMiner/releases/download/${VAULTL1_DEFAULT_DOWNLOAD_TAG}`;
 
@@ -25,11 +25,11 @@ export const VAULTL1_DEFAULT_MACOS_AARCH64_DOWNLOAD_URL = `${VAULTL1_RELEASE_BAS
 
 /** Optional SHA-256 of official GitHub zip assets (refresh when cutting a new tag). */
 export const VAULTL1_ZIP_SHA256_WINDOWS =
-  'fc13620de06f0bf02bd49072295ef3cc5b14ef93574d2911f60e68f802d9aa71';
+  '66e912612c9d8674cd85f9d9d21bd6f0aeb5219b234cd0636286bab977d55a0d';
 export const VAULTL1_ZIP_SHA256_LINUX =
-  '745bb115795cfa3512bd3626abe67bdd209494e9ee2bfe579290e45367c2aff6';
+  'ba03512374f7d3db2865e5bd997d00851ce60287684e9677768cc5120821834c';
 export const VAULTL1_ZIP_SHA256_MACOS_AARCH64 =
-  'bda7fd6db15f558ce6ca8085c3d361af6424917fe92c61795c37642ec4fc09dd';
+  '79cd68fe540743596ba17ba0ef81e670f0f1a35e8690069d0013d5ca2b2260fc';
 
 export const VAULTL1_WINDOWS_BINARY = 'vaultd-windows-x86_64.exe';
 export const VAULTL1_LINUX_BINARY = 'vaultd-linux-x86_64';
@@ -38,7 +38,7 @@ export const VAULTL1_MACOS_AARCH64_BINARY = 'vaultd-macos-aarch64';
 /** Env var: absolute path to vaultd (skip zip download). Same pattern as Boing. */
 export const VIBEMINER_VAULTD_EXE_ENV = 'VIBEMINER_VAULTD_EXE';
 
-/** Supported chain features for this pin (vaultl1 v0.5.3+). */
+/** Supported chain features for this pin (vaultl1 v0.6.2+). */
 export const VAULTL1_FEATURE_CLOSE_DEAL = true;
 export const VAULTL1_FEATURE_ACCESS_KEY_WRAP = true;
 export const VAULTL1_FEATURE_ACCESS_REVOKE = true;
@@ -53,6 +53,9 @@ export const VAULTL1_FEATURE_NOTES = [
   'two-validator unstick — slim state clone + P2P keepalive',
   'REST faucet GET/POST /vaultl1/faucet (alice, 1e9 uvault / minute)',
   'explorer history GET /vaultl1/blocks and /vaultl1/txs/{hash}',
+  'light headers + bank Merkle proofs vs app_hash',
+  'P2P hello version (mixed 0.5.x / 0.6.x peers are dropped)',
+  'vaultd query net --peer for two-node compare',
 ] as const;
 
 /** localStorage keys for LAN join form. */

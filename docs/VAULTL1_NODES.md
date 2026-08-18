@@ -6,10 +6,10 @@ Boing-style one-click: **select node type → Run**. VibeMiner downloads the off
 
 | | |
 |--|--|
-| **Tag** | `vaultl1-bin-v0.5.3` |
+| **Tag** | `vaultl1-bin-v0.6.2` |
 | **Code** | `VAULTL1_DEFAULT_DOWNLOAD_TAG` in `packages/shared/src/vaultl1-node.ts` |
-| **Source** | [vaultl1 v0.5.3](https://github.com/chiku524/vaultl1/releases/tag/v0.5.3) |
-| **Rehost** | [VibeMiner vaultl1-bin-v0.5.3](https://github.com/chiku524/VibeMiner/releases/tag/vaultl1-bin-v0.5.3) |
+| **Source** | [vaultl1 v0.6.2](https://github.com/chiku524/vaultl1/releases/tag/v0.6.2) |
+| **Rehost** | [VibeMiner vaultl1-bin-v0.6.2](https://github.com/chiku524/VibeMiner/releases/tag/vaultl1-bin-v0.6.2) |
 
 Publishing a `vaultl1-bin-*` tag must **not** run the desktop installer workflow. That job only listens for `v1.2.3`-style tags (`v[0-9]*`).
 
@@ -23,6 +23,9 @@ Publishing a `vaultl1-bin-*` tag must **not** run the desktop installer workflow
 - Two-validator unstick — slim state clone + P2P keepalive  
 - REST faucet `GET/POST /vaultl1/faucet` (default key `alice`)  
 - Explorer history `GET /vaultl1/blocks`, `/vaultl1/txs/{hash}`, `/vaultl1/bank/accounts`
+- Light headers + bank Merkle proofs vs `app_hash`
+- P2P hello version (a 0.5.x binary is dropped by 0.6.x)
+- `vaultd query net --peer` to compare two validators
 
 Encrypted file CRUD + share UI lives in **[vaultl1-web](https://github.com/chiku524/vaultl1-web)** (points REST at your node `:1317`). Devnet faucet: **[vaultl1-explorer](https://vaultl1-explorer.vercel.app/#/faucet)**. VibeMiner is the **node launcher**.
 
@@ -71,9 +74,10 @@ Ports: P2P `26656`, RPC `26657`, REST `1317`.
 
 Only exchange **address + pubkey** and **genesis-shared.json**.
 
-## Upgrading from vaultl1-bin-v0.5.2
+## Upgrading from vaultl1-bin-v0.5.3
 
 1. Install/update VibeMiner with this pin (or run desktop from this repo).
 2. Stop both validators.
-3. Start again so the app pulls **v0.5.3** binaries (or clear the old zip under the app nodes download cache).
-4. Existing `vault-net-1` homes keep working. Both PCs must run the same pin so empty-block heartbeat, P2P keepalive, and the explorer faucet match.
+3. **Re-genesis.** v0.6.0 changed `app_hash`. Old `vault-net-1` homes from v0.5.x will not agree with this pin. Delete the node data dirs (or pick fresh homes) and run PC B identity → PC A genesis → PC B import again.
+4. Start again so the app pulls **v0.6.2** binaries (or clear the old zip under the app nodes download cache).
+5. Both PCs must run the same pin. Confirm with `vaultd query net --peer http://OTHER:1317`.
