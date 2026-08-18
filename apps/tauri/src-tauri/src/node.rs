@@ -267,15 +267,18 @@ fn normalize_path_for_prefix_match(p: &Path) -> String {
 /// Catches orphans when the in-memory [`Child`] handle was lost (app restart, UI desync) but the binary keeps running.
 ///
 /// On Windows, `Process::exe()` is sometimes empty until refreshed or differs from `canonicalize()` prefixes;
-/// we also match the command line against the cache folder name (e.g. `devnet__boing-devnet`).
+/// we also match the command line against the cache folder name (e.g. `devnet__boing-devnet`) and `--home` paths.
 fn kill_processes_executables_under(dir: &Path) -> u32 {
     if !sysinfo::IS_SUPPORTED_SYSTEM {
         return 0;
     }
-    let Ok(canonical) = dir.canonicalize() else {
+    let prefix = dir
+        .canonicalize()
+        .map(|p| normalize_path_for_prefix_match(&p))
+        .unwrap_or_else(|_| normalize_path_for_prefix_match(dir));
+    if prefix.len() < 8 {
         return 0;
-    };
-    let prefix = normalize_path_for_prefix_match(&canonical);
+    }
     let dir_marker = dir
         .file_name()
         .and_then(|n| n.to_str())
@@ -293,17 +296,54 @@ fn kill_processes_executables_under(dir: &Path) -> u32 {
                 matched = true;
             }
         }
-        if !matched && !dir_marker.is_empty() {
-            let cmd = process.cmd().join(" ").to_lowercase();
-            if cmd.contains(&dir_marker) {
-                matched = true;
-            }
+        let cmd = process.cmd().join(" ").to_lowercase().replace('/', "\\");
+        if !matched && cmd.contains(&prefix) {
+            matched = true;
+        }
+        if !matched && !dir_marker.is_empty() && cmd.contains(&dir_marker) {
+            matched = true;
         }
         if matched && process.kill() {
             killed += 1;
         }
     }
     killed
+}
+
+fn kill_spawned_node_process(child: &mut Child) {
+    let pid = child.id();
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        // taskkill /T first so grandchildren die; TerminateProcess on our handle does not.
+        if pid > 0 {
+            let _ = Command::new("taskkill")
+                .args(["/F", "/T", "/PID", &pid.to_string()])
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .creation_flags(0x0800_0000)
+                .status();
+        }
+        let _ = child.kill();
+    }
+    #[cfg(unix)]
+    {
+        if pid > 0 {
+            if let Ok(p) = i32::try_from(pid) {
+                unsafe {
+                    let _ = libc::kill(-p, libc::SIGKILL);
+                    let _ = libc::kill(p, libc::SIGKILL);
+                }
+            }
+        }
+        let _ = child.kill();
+    }
+    #[cfg(all(not(windows), not(unix)))]
+    {
+        let _ = child.kill();
+    }
+    let _ = child.wait();
 }
 
 /// On app exit: stop every node binary still running from our `nodes/` download cache.
@@ -926,7 +966,8 @@ pub fn start_node(
         use std::os::windows::process::CommandExt;
         // No extra conhost window when spawning console binaries from the Tauri GUI.
         const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        cmd.creation_flags(CREATE_NO_WINDOW);
+        const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
+        cmd.creation_flags(CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP);
     }
     let mut child = cmd.spawn().map_err(|e| e.to_string())?;
 
@@ -1117,50 +1158,59 @@ pub fn stop_node(
     node_preset_id: &str,
 ) {
     reap_exited_node_children();
-    let key = process_key(network_id, environment, node_preset_id);
-    let removed = if let Ok(mut nodes) = ACTIVE_NODES.lock() {
-        nodes.remove(&key)
-    } else {
-        None
-    };
-    if let Some(mut entry) = removed {
-        let pid = entry._child.id();
-        #[cfg(windows)]
-        {
-            // Terminate the handle we hold (TerminateProcess), then taskkill /T for any detached children.
-            let _ = entry._child.kill();
-            use std::os::windows::process::CommandExt;
-            if pid > 0 {
-                let _ = Command::new("taskkill")
-                    .args(["/F", "/T", "/PID", &pid.to_string()])
-                    .stdin(Stdio::null())
-                    .stdout(Stdio::null())
-                    .stderr(Stdio::null())
-                    .creation_flags(0x0800_0000)
-                    .status();
+    let exact_key = process_key(network_id, environment, node_preset_id);
+    let preset = sanitize_preset_id(node_preset_id);
+    // If IPC dropped the preset (`default`), still stop every tracked process for this network.
+    let fallback_all = preset == "default";
+
+    let mut removed: Vec<(String, NodeEntry)> = Vec::new();
+    if let Ok(mut nodes) = ACTIVE_NODES.lock() {
+        if let Some(entry) = nodes.remove(&exact_key) {
+            removed.push((exact_key.clone(), entry));
+        } else {
+            let mut keys: Vec<String> = nodes
+                .iter()
+                .filter(|(_, e)| e.network_id == network_id && e.environment == environment)
+                .filter(|(_, e)| e.node_preset_id == preset)
+                .map(|(k, _)| k.clone())
+                .collect();
+            if keys.is_empty() && fallback_all {
+                keys = nodes
+                    .iter()
+                    .filter(|(_, e)| e.network_id == network_id && e.environment == environment)
+                    .map(|(k, _)| k.clone())
+                    .collect();
             }
-        }
-        #[cfg(unix)]
-        {
-            if pid > 0 {
-                if let Ok(p) = i32::try_from(pid) {
-                    unsafe {
-                        let _ = libc::kill(-p, libc::SIGKILL);
-                    }
+            for k in keys {
+                if let Some(entry) = nodes.remove(&k) {
+                    removed.push((k, entry));
                 }
             }
         }
-        #[cfg(all(not(windows), not(unix)))]
-        {
-            let _ = entry._child.kill();
-        }
-        let _ = entry._child.wait();
     }
-    mark_node_stats_inactive(&key);
-    // Orphans: process still running but no Child in ACTIVE_NODES (e.g. session closed without stop, app restart).
+
+    for (key, mut entry) in removed {
+        emit_and_store_node_log_line(
+            &entry.app,
+            &key,
+            &entry.network_id,
+            &entry.environment,
+            &entry.node_preset_id,
+            "meta",
+            "Stop requested — terminating process".to_string(),
+        );
+        kill_spawned_node_process(&mut entry._child);
+        mark_node_stats_inactive(&key);
+    }
+    mark_node_stats_inactive(&exact_key);
+
+    // Orphans: process still running but no Child in ACTIVE_NODES (e.g. session closed without stop,
+    // local VIBEMINER_VAULTD_EXE outside the zip cache, app restart).
     if let Some(root) = user_data_dir {
         let node_cache = root.join("nodes").join(node_dir_key(network_id, environment));
         kill_processes_executables_under(&node_cache);
+        let data_dir = node_cache.join("data").join(&preset);
+        kill_processes_executables_under(&data_dir);
     }
 }
 

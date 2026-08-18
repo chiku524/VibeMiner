@@ -11,6 +11,24 @@
       return core.invoke(cmd, args || {});
     };
 
+    // start_node uses `{ opts }`; stop/status used to send only snake_case flats which the
+    // remote webview often never delivered — UI looked stopped while vaultd kept running.
+    function nodeTargetArgs(networkId, environment, nodePresetId) {
+      var preset = nodePresetId != null && nodePresetId !== '' ? nodePresetId : null;
+      return {
+        opts: {
+          networkId: networkId,
+          environment: environment,
+          nodePresetId: preset,
+        },
+        networkId: networkId,
+        environment: environment,
+        nodePresetId: preset,
+        network_id: networkId,
+        node_preset_id: preset,
+      };
+    }
+
     window.desktopAPI = {
       isDesktop: true,
       platform: navigator.platform || '',
@@ -77,35 +95,19 @@
         return invoke('start_node', { opts: opts });
       },
       stopNode: function (networkId, environment, nodePresetId) {
-        return invoke('stop_node', {
-          network_id: networkId,
-          environment: environment,
-          node_preset_id: nodePresetId != null && nodePresetId !== '' ? nodePresetId : null,
-        });
+        return invoke('stop_node', nodeTargetArgs(networkId, environment, nodePresetId));
       },
       getNodeStatus: function (networkId, environment, nodePresetId) {
-        return invoke('get_node_status', {
-          network_id: networkId,
-          environment: environment,
-          node_preset_id: nodePresetId != null && nodePresetId !== '' ? nodePresetId : null,
-        });
+        return invoke('get_node_status', nodeTargetArgs(networkId, environment, nodePresetId));
       },
       isNodeRunning: function (networkId, environment, nodePresetId) {
-        return invoke('is_node_running', {
-          network_id: networkId,
-          environment: environment,
-          node_preset_id: nodePresetId != null && nodePresetId !== '' ? nodePresetId : null,
-        });
+        return invoke('is_node_running', nodeTargetArgs(networkId, environment, nodePresetId));
       },
       listRunningNodes: function () {
         return invoke('list_running_nodes', {});
       },
       getNodeLogSnapshot: function (networkId, environment, nodePresetId) {
-        return invoke('get_node_log_snapshot', {
-          network_id: networkId,
-          environment: environment,
-          node_preset_id: nodePresetId != null && nodePresetId !== '' ? nodePresetId : null,
-        });
+        return invoke('get_node_log_snapshot', nodeTargetArgs(networkId, environment, nodePresetId));
       },
       getBoingValidatorIdentity: function (networkId, environment, nodePresetId) {
         return invoke('get_boing_validator_identity', {

@@ -48,9 +48,9 @@ function markNodeSessionProcessExited(prev: MiningSession[], sessionKey: string,
 /**
  * Sync running nodes from the desktop; keep ended node rows (with logs) until dismissed.
  *
- * If the user already stopped a session (`nodeProcessExitedAt` set) but `listRunningNodes` is briefly
- * stale and still returns that node, we must **not** resurrect a "running" row — that kept the dashboard
- * showing a live node after Stop while the process was already gone.
+ * `listRunningNodes` is the source of truth for "still running". If Stop failed to kill the
+ * process, the next sync must show the session as live again (do not hide it behind an
+ * optimistic `nodeProcessExitedAt`).
  */
 function mergeDesktopNodeRowsIntoSessions(
   prev: MiningSession[],
@@ -62,17 +62,12 @@ function mergeDesktopNodeRowsIntoSessions(
   const prevNodes = prev.filter(isMiningSessionNode);
   const now = Date.now();
 
-  const exitedKeys = new Set(
-    prevNodes.filter((n) => n.nodeProcessExitedAt != null).map((n) => sessionListKey(n))
-  );
-
   const rowsFiltered =
     dismissedKeys && dismissedKeys.size > 0
       ? rows.filter((d) => !dismissedKeys.has(desktopNodeRowKey(d)))
       : rows;
 
   const runningNodes: MiningSessionNode[] = rowsFiltered
-    .filter((d) => !exitedKeys.has(desktopNodeRowKey(d)))
     .map((d) => {
       const key = desktopNodeRowKey(d);
       const old = prevNodes.find((s) => sessionListKey(s) === key);
@@ -230,9 +225,32 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
       const preset = sanitizeNodePresetId(session.presetId);
       return (async () => {
         try {
-          await window.desktopAPI?.stopNode?.(session.networkId, session.environment, preset);
+          const result = (await window.desktopAPI?.stopNode?.(
+            session.networkId,
+            session.environment,
+            preset
+          )) as { ok?: boolean; error?: string } | void;
+          if (result && result.ok === false) {
+            addToast(result.error || 'Node did not stop. Try again or restart the app.', 'error');
+            return;
+          }
         } catch (e) {
           console.warn('stopNode failed', e);
+          addToast('Could not stop the node. Try again or restart the app.', 'error');
+          return;
+        }
+        try {
+          const still = await window.desktopAPI?.isNodeRunning?.(
+            session.networkId,
+            session.environment,
+            preset
+          );
+          if (still === true) {
+            addToast('Node is still running. Check the process log or restart the app.', 'error');
+            return;
+          }
+        } catch (e) {
+          console.warn('isNodeRunning after stop failed', e);
         }
         const listFn = window.desktopAPI?.listRunningNodes;
         let rows: DesktopRunningNodeRow[] = [];
@@ -265,7 +283,7 @@ export function MiningProvider({ children }: { children: React.ReactNode }) {
     }
     setSessions((prev) => prev.filter((s) => sessionListKey(s) !== sessionListKey(session)));
     return Promise.resolve();
-  }, []);
+  }, [addToast]);
 
   const registerNodeSession = useCallback(
     (args: { networkId: string; environment: NetworkEnvironment; presetId: string; startedAt?: number }) => {

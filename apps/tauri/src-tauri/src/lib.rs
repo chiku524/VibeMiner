@@ -615,29 +615,93 @@ async fn join_boing_stake_validator(
     .map_err(|e| e.to_string())?
 }
 
-#[tauri::command]
-fn stop_node(
-    app: tauri::AppHandle,
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NodeTargetOpts {
     network_id: String,
     environment: String,
+    #[serde(default)]
     node_preset_id: Option<String>,
-) {
-    let pid = node_preset_id.as_deref().unwrap_or("default");
+}
+
+fn resolve_node_target(
+    opts: Option<NodeTargetOpts>,
+    network_id: Option<String>,
+    environment: Option<String>,
+    node_preset_id: Option<String>,
+) -> Result<(String, String, String), String> {
+    let (nid, env, preset_opt) = if let Some(o) = opts {
+        (o.network_id, o.environment, o.node_preset_id)
+    } else {
+        (
+            network_id.unwrap_or_default(),
+            environment.unwrap_or_default(),
+            node_preset_id,
+        )
+    };
+    if nid.trim().is_empty() {
+        return Err("networkId is required".into());
+    }
+    let env = if env.trim().is_empty() {
+        "mainnet".to_string()
+    } else {
+        env
+    };
+    let preset = preset_opt
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "default".to_string());
+    Ok((nid, env, preset))
+}
+
+/// Same `opts` wrapper as `start_node` so the remote webview actually reaches this command.
+/// Flat camelCase / snake_case args are still accepted for older desktop-bridge.js.
+#[tauri::command]
+async fn stop_node(
+    app: tauri::AppHandle,
+    opts: Option<NodeTargetOpts>,
+    network_id: Option<String>,
+    environment: Option<String>,
+    node_preset_id: Option<String>,
+) -> Result<serde_json::Value, String> {
+    let (network_id, environment, preset) =
+        resolve_node_target(opts, network_id, environment, node_preset_id)?;
     let user_data = app.path().app_data_dir().ok();
-    let ud = user_data.as_ref().map(|p| p.as_path());
-    node::stop_node(ud, &network_id, &environment, pid);
+    let nid = network_id.clone();
+    let env = environment.clone();
+    let pid = preset.clone();
+    let ud = user_data.clone();
+    let still_running = tauri::async_runtime::spawn_blocking(move || {
+        node::stop_node(ud.as_deref(), &nid, &env, &pid);
+        node::is_node_running(&nid, &env, &pid)
+    })
+    .await
+    .map_err(|e| e.to_string())?;
     if let Some(ref path) = user_data {
         let s = settings::load(path);
         if s.link_tunnel_with_boing_node && network_id.to_lowercase().contains("boing") {
             tunnel::stop_cloudflare_tunnel_if_linked_to_boing_node();
         }
     }
+    if still_running {
+        return Ok(serde_json::json!({
+            "ok": false,
+            "error": "Node process is still running"
+        }));
+    }
+    Ok(serde_json::json!({ "ok": true }))
 }
 
 #[tauri::command]
-fn get_node_status(network_id: String, environment: String, node_preset_id: Option<String>) -> Option<serde_json::Value> {
-    let pid = node_preset_id.as_deref().unwrap_or("default");
-    node::get_node_status(&network_id, &environment, pid).map(|s| {
+fn get_node_status(
+    opts: Option<NodeTargetOpts>,
+    network_id: Option<String>,
+    environment: Option<String>,
+    node_preset_id: Option<String>,
+) -> Result<Option<serde_json::Value>, String> {
+    let (network_id, environment, pid) =
+        resolve_node_target(opts, network_id, environment, node_preset_id)?;
+    Ok(node::get_node_status(&network_id, &environment, &pid).map(|s| {
         serde_json::json!({
             "startedAt": s.started_at,
             "status": s.status,
@@ -645,13 +709,19 @@ fn get_node_status(network_id: String, environment: String, node_preset_id: Opti
             "chainHeight": s.chain_height,
             "rpcPort": s.rpc_port,
         })
-    })
+    }))
 }
 
 #[tauri::command]
-fn is_node_running(network_id: String, environment: String, node_preset_id: Option<String>) -> bool {
-    let pid = node_preset_id.as_deref().unwrap_or("default");
-    node::is_node_running(&network_id, &environment, pid)
+fn is_node_running(
+    opts: Option<NodeTargetOpts>,
+    network_id: Option<String>,
+    environment: Option<String>,
+    node_preset_id: Option<String>,
+) -> Result<bool, String> {
+    let (network_id, environment, pid) =
+        resolve_node_target(opts, network_id, environment, node_preset_id)?;
+    Ok(node::is_node_running(&network_id, &environment, &pid))
 }
 
 #[tauri::command]
@@ -661,12 +731,14 @@ fn list_running_nodes() -> Vec<node::RunningNodeDescriptor> {
 
 #[tauri::command]
 fn get_node_log_snapshot(
-    network_id: String,
-    environment: String,
+    opts: Option<NodeTargetOpts>,
+    network_id: Option<String>,
+    environment: Option<String>,
     node_preset_id: Option<String>,
-) -> Vec<node::NodeLogLineEntry> {
-    let pid = node_preset_id.as_deref().unwrap_or("default");
-    node::get_node_log_snapshot(&network_id, &environment, pid)
+) -> Result<Vec<node::NodeLogLineEntry>, String> {
+    let (network_id, environment, pid) =
+        resolve_node_target(opts, network_id, environment, node_preset_id)?;
+    Ok(node::get_node_log_snapshot(&network_id, &environment, &pid))
 }
 
 #[derive(serde::Deserialize)]
